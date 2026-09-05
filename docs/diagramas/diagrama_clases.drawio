@@ -1,0 +1,287 @@
+<mxGraphModel dx="2200" dy="1400" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1600" pageHeight="2400" math="0" shadow="0">
+  <root>
+    <mxCell id="0" />
+    <mxCell id="1" parent="0" />
+
+    <!-- ================= INTERFAZ Evaluador ================= -->
+    <mxCell id="itf_evaluador" value="&lt;&lt;interface&gt;&gt;&#10;Evaluador" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#f5f5f5;strokeColor=#666666;" vertex="1" parent="1">
+      <mxGeometry x="40" y="40" width="240" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="itf_evaluador_ops" value="+ calificarProyecto(proyecto: ProyectoAula, calificaciones: List&lt;CalificacionRAP&gt;): Evaluacion&#10;+ verGruposAsignados(): List&lt;Grupo&gt;" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="itf_evaluador">
+      <mxGeometry y="26" width="240" height="54" as="geometry" />
+    </mxCell>
+
+    <!-- ================= Usuario (abstracta) ================= -->
+    <mxCell id="cls_usuario" value="Usuario&#10;{abstract}" style="swimlane;fontStyle=3;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#dae8fc;strokeColor=#6c8ebf;" vertex="1" parent="1">
+      <mxGeometry x="480" y="40" width="260" height="160" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_usuario_attrs" value="- id: Long&#10;- nombre: String&#10;- correo: String&#10;- passwordHash: String&#10;- activo: boolean&#10;- fechaCreacion: LocalDateTime" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;fontStyle=0;" vertex="1" parent="cls_usuario">
+      <mxGeometry y="26" width="260" height="94" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_usuario_ops" value="+ iniciarSesion(correo, password): boolean&#10;+ getRol(): RolUsuario" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_usuario">
+      <mxGeometry y="120" width="260" height="40" as="geometry" />
+    </mxCell>
+
+    <!-- ================= SuperAdmin ================= -->
+    <mxCell id="cls_superadmin" value="SuperAdmin" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="40" y="260" width="260" height="70" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_superadmin_ops" value="+ definirParametrosGlobales(): void&#10;+ gestionarFacultades(): void" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_superadmin">
+      <mxGeometry y="26" width="260" height="44" as="geometry" />
+    </mxCell>
+
+    <!-- ================= Admin (facultad/decano) ================= -->
+    <mxCell id="cls_admin" value="Admin" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="340" y="260" width="260" height="100" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_admin_attrs" value="- facultad: Facultad" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_admin">
+      <mxGeometry y="26" width="260" height="24" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_admin_ops" value="+ definirMomentos(programa: Programa): void&#10;+ definirRAP(programa: Programa): void" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_admin">
+      <mxGeometry y="50" width="260" height="50" as="geometry" />
+    </mxCell>
+
+    <!-- ================= Docente ================= -->
+    <mxCell id="cls_docente" value="Docente" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="640" y="260" width="280" height="130" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_docente_attrs" value="- gruposAsignados: List&lt;Grupo&gt;" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_docente">
+      <mxGeometry y="26" width="280" height="24" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_docente_ops" value="+ definirGrupos(): void&#10;+ definirFechaEntrega(): void&#10;+ crearUsuarioEmpresario(): Empresario&#10;+ crearUsuarioEgresado(): Egresado&#10;+ definirFechaEvaluacion(): void" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_docente">
+      <mxGeometry y="50" width="280" height="80" as="geometry" />
+    </mxCell>
+
+    <!-- ================= Empresario ================= -->
+    <mxCell id="cls_empresario" value="Empresario" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="980" y="220" width="240" height="70" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_empresario_attrs" value="- empresa: String" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_empresario">
+      <mxGeometry y="26" width="240" height="44" as="geometry" />
+    </mxCell>
+
+    <!-- ================= Egresado ================= -->
+    <mxCell id="cls_egresado" value="Egresado" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="980" y="320" width="240" height="70" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_egresado_attrs" value="- anioGraduacion: int" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_egresado">
+      <mxGeometry y="26" width="240" height="44" as="geometry" />
+    </mxCell>
+
+    <!-- ================= Estudiante ================= -->
+    <mxCell id="cls_estudiante" value="Estudiante" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="440" y="440" width="260" height="110" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_estudiante_attrs" value="- codigoEstudiante: String&#10;- semestreActual: int" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_estudiante">
+      <mxGeometry y="26" width="260" height="34" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_estudiante_ops" value="+ unirseAGrupo(grupo: Grupo): void&#10;+ subirEntrega(entrega: Entrega): void&#10;+ verCalificacionPorRAP(): List&lt;CalificacionRAP&gt;" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_estudiante">
+      <mxGeometry y="60" width="260" height="50" as="geometry" />
+    </mxCell>
+
+    <!-- ================= Facultad ================= -->
+    <mxCell id="cls_facultad" value="Facultad" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+      <mxGeometry x="40" y="440" width="240" height="70" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_facultad_attrs" value="- id: Long&#10;- nombre: String" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_facultad">
+      <mxGeometry y="26" width="240" height="44" as="geometry" />
+    </mxCell>
+
+    <!-- ================= Programa ================= -->
+    <mxCell id="cls_programa" value="Programa" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+      <mxGeometry x="40" y="580" width="240" height="80" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_programa_attrs" value="- id: Long&#10;- nombre: String&#10;- codigo: String" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_programa">
+      <mxGeometry y="26" width="240" height="54" as="geometry" />
+    </mxCell>
+
+    <!-- ================= Momento ================= -->
+    <mxCell id="cls_momento" value="Momento" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+      <mxGeometry x="40" y="720" width="260" height="110" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_momento_attrs" value="- id: Long&#10;- numero: int&#10;- semestreDesde: int&#10;- semestreHasta: int&#10;- asignaturaAsociada: String" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_momento">
+      <mxGeometry y="26" width="260" height="84" as="geometry" />
+    </mxCell>
+
+    <!-- ================= RAP ================= -->
+    <mxCell id="cls_rap" value="RAP" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#ffe6cc;strokeColor=#d79b00;" vertex="1" parent="1">
+      <mxGeometry x="40" y="880" width="260" height="100" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_rap_attrs" value="- id: Long&#10;- codigo: String&#10;- descripcion: String&#10;- pesoEvaluativo: double" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_rap">
+      <mxGeometry y="26" width="260" height="74" as="geometry" />
+    </mxCell>
+
+    <!-- ================= Grupo ================= -->
+    <mxCell id="cls_grupo" value="Grupo" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="440" y="600" width="260" height="90" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_grupo_attrs" value="- id: Long&#10;- nombreIdentificador: String&#10;- integrantes: List&lt;Estudiante&gt;" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_grupo">
+      <mxGeometry y="26" width="260" height="64" as="geometry" />
+    </mxCell>
+
+    <!-- ================= ProyectoAula ================= -->
+    <mxCell id="cls_proyecto" value="ProyectoAula" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="440" y="740" width="260" height="110" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_proyecto_attrs" value="- id: Long&#10;- titulo: String&#10;- fechaLimiteEntrega: LocalDate&#10;- fechaEvaluacion: LocalDate" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_proyecto">
+      <mxGeometry y="26" width="260" height="84" as="geometry" />
+    </mxCell>
+
+    <!-- ================= Entrega ================= -->
+    <mxCell id="cls_entrega" value="Entrega" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#d5e8d4;strokeColor=#82b366;" vertex="1" parent="1">
+      <mxGeometry x="440" y="890" width="260" height="120" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_entrega_attrs" value="- id: Long&#10;- numeroVersion: int&#10;- archivoZipUrl: String&#10;- archivoPresentacionUrl: String&#10;- fechaSubida: LocalDateTime" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_entrega">
+      <mxGeometry y="26" width="260" height="94" as="geometry" />
+    </mxCell>
+
+    <!-- ================= Evaluacion ================= -->
+    <mxCell id="cls_evaluacion" value="Evaluacion" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="820" y="600" width="260" height="110" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_evaluacion_attrs" value="- id: Long&#10;- fechaEvaluacion: LocalDateTime&#10;- notaTotal: double&#10;- comentarioGeneral: String" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_evaluacion">
+      <mxGeometry y="26" width="260" height="84" as="geometry" />
+    </mxCell>
+
+    <!-- ================= CalificacionRAP ================= -->
+    <mxCell id="cls_califrap" value="CalificacionRAP" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="820" y="750" width="260" height="90" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_califrap_attrs" value="- id: Long&#10;- puntaje: double&#10;- nivelAlcanzado: String" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_califrap">
+      <mxGeometry y="26" width="260" height="64" as="geometry" />
+    </mxCell>
+
+    <!-- ================= Reporte ================= -->
+    <mxCell id="cls_reporte" value="Reporte" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#e1d5e7;strokeColor=#9673a6;" vertex="1" parent="1">
+      <mxGeometry x="820" y="900" width="260" height="130" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_reporte_attrs" value="- id: Long&#10;- tipo: TipoReporte&#10;- parametrosFiltro: String&#10;- fechaGeneracion: LocalDateTime" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_reporte">
+      <mxGeometry y="26" width="260" height="64" as="geometry" />
+    </mxCell>
+    <mxCell id="cls_reporte_ops" value="+ generar(): byte[]" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="cls_reporte">
+      <mxGeometry y="90" width="260" height="30" as="geometry" />
+    </mxCell>
+
+    <!-- ============ ENUM RolUsuario ============ -->
+    <mxCell id="enum_rol" value="&lt;&lt;enumeration&gt;&gt;&#10;RolUsuario" style="swimlane;fontStyle=1;align=center;verticalAlign=middle;childLayout=stackLayout;horizontal=1;startSize=26;horizontalStack=1;resizeParent=1;resizeParentMax=0;collapsible=1;swimlaneFillColor=#ffffff;fillColor=#fff2cc;strokeColor=#d6b656;" vertex="1" parent="1">
+      <mxGeometry x="800" y="40" width="220" height="120" as="geometry" />
+    </mxCell>
+    <mxCell id="enum_rol_vals" value="SUPER_ADMIN&#10;ADMIN&#10;DOCENTE&#10;ESTUDIANTE&#10;EMPRESARIO&#10;EGRESADO" style="text;align=left;verticalAlign=top;spacingLeft=6;spacingTop=2;" vertex="1" parent="enum_rol">
+      <mxGeometry y="26" width="220" height="94" as="geometry" />
+    </mxCell>
+
+    <!-- ================= RELACIONES ================= -->
+
+    <!-- Herencia (Generalization) hacia Usuario -->
+    <mxCell id="e_super_usr" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=0;endSize=16;" edge="1" parent="1" source="cls_superadmin" target="cls_usuario">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_admin_usr" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=0;endSize=16;" edge="1" parent="1" source="cls_admin" target="cls_usuario">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_doc_usr" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=0;endSize=16;" edge="1" parent="1" source="cls_docente" target="cls_usuario">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_emp_usr" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=0;endSize=16;" edge="1" parent="1" source="cls_empresario" target="cls_usuario">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_egr_usr" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=0;endSize=16;" edge="1" parent="1" source="cls_egresado" target="cls_usuario">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_est_usr" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=block;endFill=0;endSize=16;" edge="1" parent="1" source="cls_estudiante" target="cls_usuario">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Realización de interfaz (dashed) -->
+    <mxCell id="e_doc_itf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=block;endFill=0;endSize=16;" edge="1" parent="1" source="cls_docente" target="itf_evaluador">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_emp_itf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=block;endFill=0;endSize=16;" edge="1" parent="1" source="cls_empresario" target="itf_evaluador">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+    <mxCell id="e_egr_itf" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=block;endFill=0;endSize=16;" edge="1" parent="1" source="cls_egresado" target="itf_evaluador">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Usuario -> RolUsuario (dependencia/asociación con enum) -->
+    <mxCell id="e_usr_enum" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=open;endFill=0;dashed=1;endSize=12;" edge="1" parent="1" source="cls_usuario" target="enum_rol">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Facultad 1 - * Programa (composición) -->
+    <mxCell id="e_fac_prog" value="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=diamondThin;startFill=1;endArrow=none;" edge="1" parent="1" source="cls_facultad" target="cls_programa">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Programa 1 - * Momento (composición) -->
+    <mxCell id="e_prog_mom" value="1..*" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=diamondThin;startFill=1;endArrow=none;" edge="1" parent="1" source="cls_programa" target="cls_momento">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Momento *-* RAP (asociación) -->
+    <mxCell id="e_mom_rap" value="1..*" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;startArrow=none;" edge="1" parent="1" source="cls_momento" target="cls_rap">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Admin - Facultad (asociación 1 a 1) -->
+    <mxCell id="e_admin_fac" value="1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" edge="1" parent="1" source="cls_admin" target="cls_facultad">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Docente 1 - * Grupo (asociación) -->
+    <mxCell id="e_doc_grupo" value="1        1..*" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" edge="1" parent="1" source="cls_docente" target="cls_grupo">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Grupo *-1 Programa -->
+    <mxCell id="e_grupo_prog" value="*        1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" edge="1" parent="1" source="cls_grupo" target="cls_programa">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Estudiante *-1 Grupo (agregación) -->
+    <mxCell id="e_est_grupo" value="*        1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=diamondThin;startFill=0;endArrow=none;" edge="1" parent="1" source="cls_estudiante" target="cls_grupo">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Grupo 1 - * ProyectoAula (composición) -->
+    <mxCell id="e_grupo_proy" value="1        1..*" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=diamondThin;startFill=1;endArrow=none;" edge="1" parent="1" source="cls_grupo" target="cls_proyecto">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ProyectoAula *-1 Momento -->
+    <mxCell id="e_proy_mom" value="*        1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" edge="1" parent="1" source="cls_proyecto" target="cls_momento">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ProyectoAula 1 - * Entrega (composición) -->
+    <mxCell id="e_proy_entrega" value="1        1..*" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=diamondThin;startFill=1;endArrow=none;" edge="1" parent="1" source="cls_proyecto" target="cls_entrega">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- ProyectoAula 1 - * Evaluacion (composición) -->
+    <mxCell id="e_proy_eval" value="1        1..*" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=diamondThin;startFill=1;endArrow=none;" edge="1" parent="1" source="cls_proyecto" target="cls_evaluacion">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Evaluacion *-1 Evaluador (interfaz) -->
+    <mxCell id="e_eval_itf" value="*        1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;dashed=1;" edge="1" parent="1" source="cls_evaluacion" target="itf_evaluador">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Evaluacion 1 - * CalificacionRAP (composición) -->
+    <mxCell id="e_eval_califrap" value="1        1..*" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;startArrow=diamondThin;startFill=1;endArrow=none;" edge="1" parent="1" source="cls_evaluacion" target="cls_califrap">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- CalificacionRAP *-1 RAP -->
+    <mxCell id="e_califrap_rap" value="*        1" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=none;" edge="1" parent="1" source="cls_califrap" target="cls_rap">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+    <!-- Reporte - Programa/Momento (dependencia) -->
+    <mxCell id="e_reporte_mom" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;dashed=1;endArrow=open;endFill=0;" edge="1" parent="1" source="cls_reporte" target="cls_evaluacion">
+      <mxGeometry relative="1" as="geometry" />
+    </mxCell>
+
+  </root>
+</mxGraphModel>

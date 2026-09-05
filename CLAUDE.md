@@ -1,0 +1,85 @@
+# CLAUDE.md — Contexto para Claude Code
+
+Este archivo se carga automáticamente al iniciar una sesión de Claude Code en esta
+raíz. Contiene lo esencial para trabajar en SIERAP sin tener que re-explicarlo.
+
+## Resumen del proyecto
+
+SIERAP (Sistema Integral Evaluador de Resultados de Aprendizajes por Programa) es un
+sistema web para que la Universidad Popular del Cesar (UPC) gestione y evalúe los
+proyectos de aula y los RAP (Resultados de Aprendizaje del Programa) de sus
+estudiantes, reemplazando el flujo actual gestionado en AULAWEB (lento, sin
+reportería, poco flexible). Contexto completo en [`README.md`](README.md) y en
+`/docs`.
+
+**Este es también el proyecto de aula (Momento 1) de la asignatura Programación II
+de uno de los desarrolladores** — cualquier trabajo aquí debe poder sustentarse
+también contra la rúbrica oficial de la UPC en
+`docs/00-guia-oficial-momento1.md`.
+
+## Stack (no negociable salvo discusión explícita)
+
+- **Backend:** Java 21 + Spring Boot 3.x — Spring Web, Spring Data JPA, Spring
+  Security + JWT. Arquitectura por capas: `controller → service → repository →
+  entity`, con DTOs en el borde de la API.
+- **Base de datos:** PostgreSQL.
+- **Frontend:** React + TypeScript.
+- **Build backend:** Maven (a confirmar con el equipo si prefieren Gradle).
+
+## Roles del sistema (fundamentales para cualquier feature)
+
+`super_admin`, `admin` (por facultad, define momentos/RAP por programa),
+`docente` (define grupos/fechas, solo ve sus grupos asignados), `estudiante`
+(sube entregas versionadas, ve su calificación por RAP), `empresario` y
+`egresado` (evalúan grupos asignados). Docente/Empresario/Egresado implementan
+una interfaz común `Evaluador`. Ver `docs/03-entidades-dominio.md` para el
+modelo de clases completo y `docs/diagramas/diagrama_clases.drawio` para el UML.
+
+## Reglas de control de acceso a tener siempre presentes
+
+- Un docente **solo** debe poder ver/gestionar los grupos que tiene asignados —
+  nunca todos los grupos del sistema.
+- Un admin de facultad solo gestiona programas/momentos/RAP de **su** facultad.
+- Empresarios/egresados solo ven y califican los grupos que se les asignaron, y
+  solo dentro de la fecha de evaluación estipulada (que a su vez debe caer dentro
+  de la fecha límite que define la UPC).
+- Todo lo de RAP/momentos/criterios/puntuación es **configurable** por
+  admin/super_admin — evitar hardcodear valores de negocio (nombres de RAP,
+  pesos, rangos de semestre) en el código.
+
+## Convenciones de código
+
+- Nomenclatura de paquetes/clases/métodos/atributos siguiendo convención estándar
+  de Java (paquetes en minúsculas, clases en PascalCase, métodos/atributos en
+  camelCase) — esto es parte de la rúbrica de evaluación de la universidad.
+- Cada clase debe llevar comentarios/documentación (Javadoc mínimo en clases de
+  dominio) — también es parte de la rúbrica.
+- Manejo de excepciones centralizado vía `@ControllerAdvice`, no try/catch
+  disperso en controllers.
+
+## Dónde está cada cosa
+
+- `docs/00-guia-oficial-momento1.md` — rúbrica oficial y requisitos de la UPC,
+  úsala para verificar que cualquier entregable de universidad cumpla criterios.
+- `docs/01-planteamiento-problema.md` y `docs/02-descripcion-solucion.md` — el
+  porqué del proyecto, no deberían necesitar cambios frecuentes.
+- `docs/03-entidades-dominio.md` — el modelo de dominio; si se agregan/cambian
+  entidades, actualizar este archivo Y el diagrama en `docs/diagramas/`.
+- `docs/04-requerimientos-funcionales.md` — los 12 requerimientos funcionales
+  base por rol; cualquier feature nueva debería trazarse a uno de estos o
+  justificar por qué es una extensión.
+- `docs/05-decisiones-tecnicas.md` — registro de decisiones técnicas (ADRs).
+  Añadir una entrada nueva cuando se tome una decisión de arquitectura no trivial
+  (elección de librería, patrón, estructura de módulos, etc.).
+- `backend/` y `frontend/` — código fuente (se crean cuando arranque la
+  implementación).
+
+## Al iniciar cualquier feature nueva
+
+1. Revisar si el requerimiento ya está cubierto en
+   `docs/04-requerimientos-funcionales.md`; si no, señalarlo antes de implementar.
+2. Confirmar el rol/control de acceso correspondiente.
+3. Si implica una entidad nueva o cambio de relación, actualizar
+   `docs/03-entidades-dominio.md` y el `.drawio`.
+4. Si es una decisión técnica no trivial, añadir un ADR en
+   `docs/05-decisiones-tecnicas.md`.
