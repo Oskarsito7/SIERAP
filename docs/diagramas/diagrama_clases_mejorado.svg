@@ -1,0 +1,371 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2140" height="1560" viewBox="0 0 2140 1560" font-family="Arial, Helvetica, sans-serif" font-size="12">
+<defs>
+<marker id="tri" markerWidth="16" markerHeight="16" refX="14" refY="7" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L14,7 L0,14 z" fill="#fff" stroke="#3F4A5A" stroke-width="1.3"/></marker>
+<marker id="dia" markerWidth="18" markerHeight="12" refX="0" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,6 L8,1 L16,6 L8,11 z" fill="#3F4A5A" stroke="#3F4A5A" stroke-width="1.2"/></marker>
+<marker id="diaO" markerWidth="18" markerHeight="12" refX="0" refY="6" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,6 L8,1 L16,6 L8,11 z" fill="#fff" stroke="#3F4A5A" stroke-width="1.2"/></marker>
+<marker id="open" markerWidth="12" markerHeight="12" refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,5 L0,10" fill="none" stroke="#3F4A5A" stroke-width="1.3"/></marker>
+<marker id="fill" markerWidth="12" markerHeight="12" refX="10" refY="5" orient="auto" markerUnits="userSpaceOnUse"><path d="M0,0 L10,5 L0,10 z" fill="#3F4A5A"/></marker>
+</defs>
+<rect width="100%" height="100%" fill="#FFFFFF"/>
+<rect x="100" y="1290" width="620" height="240" rx="10" fill="#F8FAFC" stroke="#CBD5E1" stroke-width="1.2"/>
+<text x="114" y="1314" font-size="14" font-weight="bold" fill="#334155">Leyenda</text>
+<path d="M245,360 L245,325 L1020,325 L1020,291" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-end="url(#tri)"/>
+<path d="M570,360 L570,325 L1020,325 L1020,291" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-end="url(#tri)"/>
+<path d="M920,360 L920,325 L1020,325 L1020,291" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-end="url(#tri)"/>
+<path d="M1226.5,360 L1226.5,325 L1020,325 L1020,291" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-end="url(#tri)"/>
+<path d="M1568.5,360 L1568.5,325 L1020,325 L1020,291" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-end="url(#tri)"/>
+<path d="M1841,360 L1841,325 L1020,325 L1020,291" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-end="url(#tri)"/>
+<path d="M1375.6,360 L1375.6,262 L1720,262 L1720,193" fill="none" stroke="#fff" stroke-width="7"/>
+<path d="M1375.6,360 L1375.6,262 L1720,262 L1720,193" fill="none" stroke="#3F4A5A" stroke-width="1.3" stroke-dasharray="6 4" marker-end="url(#tri)"/>
+<path d="M1671.4,360 L1671.4,262 L1720,262 L1720,193" fill="none" stroke="#fff" stroke-width="7"/>
+<path d="M1671.4,360 L1671.4,262 L1720,262 L1720,193" fill="none" stroke="#3F4A5A" stroke-width="1.3" stroke-dasharray="6 4" marker-end="url(#tri)"/>
+<path d="M1954.4,360 L1954.4,262 L1720,262 L1720,193" fill="none" stroke="#fff" stroke-width="7"/>
+<path d="M1954.4,360 L1954.4,262 L1720,262 L1720,193" fill="none" stroke="#3F4A5A" stroke-width="1.3" stroke-dasharray="6 4" marker-end="url(#tri)"/>
+<path d="M860,150 L740,150" fill="none" stroke="#3F4A5A" stroke-width="1.3" stroke-dasharray="6 4" marker-end="url(#open)"/>
+<path d="M245,439 L245,580" fill="none" stroke="#3F4A5A" stroke-width="1.3" stroke-dasharray="6 4" marker-end="url(#open)"/>
+<path d="M570,462 L570,580" fill="none" stroke="#3F4A5A" stroke-width="1.3"/>
+<path d="M570,682 L570,740" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-start="url(#dia)"/>
+<path d="M570,872 L570,930" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-start="url(#dia)"/>
+<path d="M570,1077 L570,1150" fill="none" stroke="#3F4A5A" stroke-width="1.3"/>
+<path d="M420,1000 L290,1000" fill="none" stroke="#3F4A5A" stroke-width="1.3" stroke-dasharray="6 4" marker-end="url(#open)"/>
+<path d="M920,580 L920,507" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-start="url(#diaO)"/>
+<path d="M1230,477 L1230,610 L1070,610" fill="none" stroke="#3F4A5A" stroke-width="1.3"/>
+<path d="M1070,680 L1190,680" fill="none" stroke="#3F4A5A" stroke-width="1.3"/>
+<path d="M730,780 L750,780 L750,680 L770,680" fill="none" stroke="#3F4A5A" stroke-width="1.3"/>
+<path d="M920,712 L920,820" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-start="url(#dia)"/>
+<path d="M720,950 L770,950" fill="none" stroke="#3F4A5A" stroke-width="1.3"/>
+<path d="M920,967 L920,1040" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-start="url(#dia)"/>
+<path d="M1070,880 L1190,880" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-start="url(#dia)"/>
+<path d="M1335,957 L1335,1060" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-start="url(#dia)"/>
+<path d="M1335,1139 L1335,1225 L720,1225" fill="none" stroke="#3F4A5A" stroke-width="1.3"/>
+<path d="M1480,1100 L1550,1100" fill="none" stroke="#3F4A5A" stroke-width="1.3" stroke-dasharray="6 4" marker-end="url(#open)"/>
+<path d="M1480,870 L2090,870 L2090,140 L1900,140" fill="none" stroke="#3F4A5A" stroke-width="1.3"/>
+<path d="M1325,1410 L1325,1375 L1710,1375 L1710,1311" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-end="url(#tri)"/>
+<path d="M1615,1410 L1615,1375 L1710,1375 L1710,1311" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-end="url(#tri)"/>
+<path d="M1915,1410 L1915,1375 L1710,1375 L1710,1311" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-end="url(#tri)"/>
+<path d="M1800,1210 L1800,930 L1480,930" fill="none" stroke="#3F4A5A" stroke-width="1.3" stroke-dasharray="6 4" marker-end="url(#open)"/>
+<path d="M381,1328 L470,1328" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-end="url(#tri)"/>
+<path d="M381,1360 L470,1360" fill="none" stroke="#3F4A5A" stroke-width="1.3" stroke-dasharray="6 4" marker-end="url(#tri)"/>
+<path d="M381,1392 L470,1392" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-start="url(#dia)"/>
+<path d="M381,1424 L470,1424" fill="none" stroke="#3F4A5A" stroke-width="1.3" marker-start="url(#diaO)"/>
+<path d="M381,1456 L470,1456" fill="none" stroke="#3F4A5A" stroke-width="1.3"/>
+<path d="M381,1488 L470,1488" fill="none" stroke="#3F4A5A" stroke-width="1.3" stroke-dasharray="6 4" marker-end="url(#open)"/>
+<rect x="560" y="100" width="180" height="138" fill="#fff" stroke="#64748B" stroke-width="1.4"/>
+<rect x="560" y="100" width="180" height="40" fill="#F1F5F9" stroke="#64748B" stroke-width="1.4"/>
+<text x="650" y="115" text-anchor="middle" font-size="11" fill="#1F2937">«enumeration»</text>
+<text x="650" y="132" text-anchor="middle" font-weight="bold" fill="#1F2937">RolUsuario</text>
+<text x="567" y="155" fill="#1F2937">SUPER_ADMIN</text>
+<text x="567" y="170" fill="#1F2937">ADMIN</text>
+<text x="567" y="185" fill="#1F2937">DOCENTE</text>
+<text x="567" y="200" fill="#1F2937">ESTUDIANTE</text>
+<text x="567" y="215" fill="#1F2937">EMPRESARIO</text>
+<text x="567" y="230" fill="#1F2937">EGRESADO</text>
+<rect x="860" y="100" width="320" height="191" fill="#fff" stroke="#3B6FB6" stroke-width="1.4"/>
+<rect x="860" y="100" width="320" height="40" fill="#DBEAFE" stroke="#3B6FB6" stroke-width="1.4"/>
+<text x="1020" y="117" text-anchor="middle" font-weight="bold" font-style="italic" fill="#1F2937">Usuario</text>
+<text x="1020" y="132" text-anchor="middle" font-size="11" fill="#1F2937">{abstract}</text>
+<text x="867" y="155" fill="#1F2937">- id: Long</text>
+<text x="867" y="170" fill="#1F2937">- nombre: String</text>
+<text x="867" y="185" fill="#1F2937">- correo: String</text>
+<text x="867" y="200" fill="#1F2937">- passwordHash: String</text>
+<text x="867" y="215" fill="#1F2937">- activo: boolean</text>
+<text x="867" y="230" fill="#1F2937">- fechaCreacion: LocalDateTime</text>
+<line x1="860" y1="238" x2="1180" y2="238" stroke="#3B6FB6" stroke-width="1.2"/>
+<text x="867" y="253" fill="#1F2937" font-style="italic">+ getRol(): RolUsuario {abstract}</text>
+<text x="867" y="268" fill="#1F2937">+ cambiarPassword(actual, nueva): void</text>
+<text x="867" y="283" fill="#1F2937">+ estaActivo(): boolean</text>
+<rect x="1540" y="100" width="360" height="93" fill="#fff" stroke="#64748B" stroke-width="1.4"/>
+<rect x="1540" y="100" width="360" height="40" fill="#F1F5F9" stroke="#64748B" stroke-width="1.4"/>
+<text x="1720" y="115" text-anchor="middle" font-size="11" fill="#1F2937">«interface»</text>
+<text x="1720" y="132" text-anchor="middle" font-weight="bold" fill="#1F2937">Evaluador</text>
+<text x="1547" y="155" fill="#1F2937">+ calificar(proyecto: ProyectoAula): Evaluacion</text>
+<text x="1547" y="170" fill="#1F2937">+ getGruposAsignados(): List&lt;Grupo&gt;</text>
+<text x="1547" y="185" fill="#1F2937">+ puedeEvaluar(p: ProyectoAula, hoy: LocalDate): boolean</text>
+<rect x="100" y="360" width="290" height="79" fill="#fff" stroke="#3B6FB6" stroke-width="1.4"/>
+<rect x="100" y="360" width="290" height="26" fill="#DBEAFE" stroke="#3B6FB6" stroke-width="1.4"/>
+<text x="245" y="377" text-anchor="middle" font-weight="bold" fill="#1F2937">SuperAdmin</text>
+<text x="107" y="401" fill="#1F2937">+ getRol(): RolUsuario</text>
+<text x="107" y="416" fill="#1F2937">+ crearFacultad(nombre: String): Facultad</text>
+<text x="107" y="431" fill="#1F2937">+ definirParametro(clave, valor): void</text>
+<rect x="420" y="360" width="300" height="102" fill="#fff" stroke="#3B6FB6" stroke-width="1.4"/>
+<rect x="420" y="360" width="300" height="26" fill="#DBEAFE" stroke="#3B6FB6" stroke-width="1.4"/>
+<text x="570" y="377" text-anchor="middle" font-weight="bold" fill="#1F2937">Admin</text>
+<text x="427" y="401" fill="#1F2937">- facultad: Facultad</text>
+<line x1="420" y1="409" x2="720" y2="409" stroke="#3B6FB6" stroke-width="1.2"/>
+<text x="427" y="424" fill="#1F2937">+ getRol(): RolUsuario</text>
+<text x="427" y="439" fill="#1F2937">+ definirMomento(p: Programa, m: Momento): void</text>
+<text x="427" y="454" fill="#1F2937">+ definirRAP(m: Momento, rap: RAP): void</text>
+<rect x="750" y="360" width="340" height="147" fill="#fff" stroke="#3B6FB6" stroke-width="1.4"/>
+<rect x="750" y="360" width="340" height="26" fill="#DBEAFE" stroke="#3B6FB6" stroke-width="1.4"/>
+<text x="920" y="377" text-anchor="middle" font-weight="bold" fill="#1F2937">Estudiante</text>
+<text x="757" y="401" fill="#1F2937">- codigoEstudiante: String</text>
+<text x="757" y="416" fill="#1F2937">- semestreActual: int</text>
+<text x="757" y="431" fill="#1F2937">- grupo: Grupo</text>
+<line x1="750" y1="439" x2="1090" y2="439" stroke="#3B6FB6" stroke-width="1.2"/>
+<text x="757" y="454" fill="#1F2937">+ getRol(): RolUsuario</text>
+<text x="757" y="469" fill="#1F2937">+ unirseAGrupo(grupo: Grupo): void</text>
+<text x="757" y="484" fill="#1F2937">+ subirEntrega(rutaZip, rutaPresentacion): Entrega</text>
+<text x="757" y="499" fill="#1F2937">+ consultarDesempenoPorRAP(): List&lt;CalificacionRAP&gt;</text>
+<rect x="1120" y="360" width="355" height="117" fill="#fff" stroke="#3B6FB6" stroke-width="1.4"/>
+<rect x="1120" y="360" width="355" height="26" fill="#DBEAFE" stroke="#3B6FB6" stroke-width="1.4"/>
+<text x="1297.5" y="377" text-anchor="middle" font-weight="bold" fill="#1F2937">Docente</text>
+<text x="1127" y="401" fill="#1F2937">- gruposAsignados: List&lt;Grupo&gt;</text>
+<line x1="1120" y1="409" x2="1475" y2="409" stroke="#3B6FB6" stroke-width="1.2"/>
+<text x="1127" y="424" fill="#1F2937">+ getRol(): RolUsuario</text>
+<text x="1127" y="439" fill="#1F2937">+ crearGrupo(nombre, periodo): Grupo</text>
+<text x="1127" y="454" fill="#1F2937">+ definirFechaEntrega(p: ProyectoAula, f: LocalDate): void</text>
+<text x="1127" y="469" fill="#1F2937">+ registrarEvaluador(e: Evaluador, g: Grupo): void</text>
+<rect x="1495" y="360" width="245" height="102" fill="#fff" stroke="#3B6FB6" stroke-width="1.4"/>
+<rect x="1495" y="360" width="245" height="26" fill="#DBEAFE" stroke="#3B6FB6" stroke-width="1.4"/>
+<text x="1617.5" y="377" text-anchor="middle" font-weight="bold" fill="#1F2937">Empresario</text>
+<text x="1502" y="401" fill="#1F2937">- empresa: String</text>
+<text x="1502" y="416" fill="#1F2937">- cargo: String</text>
+<text x="1502" y="431" fill="#1F2937">- gruposAsignados: List&lt;Grupo&gt;</text>
+<line x1="1495" y1="439" x2="1740" y2="439" stroke="#3B6FB6" stroke-width="1.2"/>
+<text x="1502" y="454" fill="#1F2937">+ getRol(): RolUsuario</text>
+<rect x="1760" y="360" width="270" height="102" fill="#fff" stroke="#3B6FB6" stroke-width="1.4"/>
+<rect x="1760" y="360" width="270" height="26" fill="#DBEAFE" stroke="#3B6FB6" stroke-width="1.4"/>
+<text x="1895" y="377" text-anchor="middle" font-weight="bold" fill="#1F2937">Egresado</text>
+<text x="1767" y="401" fill="#1F2937">- anioGraduacion: int</text>
+<text x="1767" y="416" fill="#1F2937">- programaEgreso: Programa</text>
+<text x="1767" y="431" fill="#1F2937">- gruposAsignados: List&lt;Grupo&gt;</text>
+<line x1="1760" y1="439" x2="2030" y2="439" stroke="#3B6FB6" stroke-width="1.2"/>
+<text x="1767" y="454" fill="#1F2937">+ getRol(): RolUsuario</text>
+<rect x="100" y="580" width="290" height="79" fill="#fff" stroke="#2F855A" stroke-width="1.4"/>
+<rect x="100" y="580" width="290" height="26" fill="#DCFCE7" stroke="#2F855A" stroke-width="1.4"/>
+<text x="245" y="597" text-anchor="middle" font-weight="bold" fill="#1F2937">ParametroGlobal</text>
+<text x="107" y="621" fill="#1F2937">- clave: String</text>
+<text x="107" y="636" fill="#1F2937">- valor: String</text>
+<text x="107" y="651" fill="#1F2937">- descripcion: String</text>
+<rect x="420" y="580" width="300" height="102" fill="#fff" stroke="#2F855A" stroke-width="1.4"/>
+<rect x="420" y="580" width="300" height="26" fill="#DCFCE7" stroke="#2F855A" stroke-width="1.4"/>
+<text x="570" y="597" text-anchor="middle" font-weight="bold" fill="#1F2937">Facultad</text>
+<text x="427" y="621" fill="#1F2937">- id: Long</text>
+<text x="427" y="636" fill="#1F2937">- nombre: String</text>
+<text x="427" y="651" fill="#1F2937">- programas: List&lt;Programa&gt;</text>
+<line x1="420" y1="659" x2="720" y2="659" stroke="#2F855A" stroke-width="1.2"/>
+<text x="427" y="674" fill="#1F2937">+ agregarPrograma(p: Programa): void</text>
+<rect x="420" y="740" width="310" height="132" fill="#fff" stroke="#2F855A" stroke-width="1.4"/>
+<rect x="420" y="740" width="310" height="26" fill="#DCFCE7" stroke="#2F855A" stroke-width="1.4"/>
+<text x="575" y="757" text-anchor="middle" font-weight="bold" fill="#1F2937">Programa</text>
+<text x="427" y="781" fill="#1F2937">- id: Long</text>
+<text x="427" y="796" fill="#1F2937">- codigo: String</text>
+<text x="427" y="811" fill="#1F2937">- nombre: String</text>
+<text x="427" y="826" fill="#1F2937">- momentos: List&lt;Momento&gt;</text>
+<line x1="420" y1="834" x2="730" y2="834" stroke="#2F855A" stroke-width="1.2"/>
+<text x="427" y="849" fill="#1F2937">+ agregarMomento(m: Momento): void</text>
+<text x="427" y="864" fill="#1F2937">+ getMomentoPorSemestre(sem: int): Momento</text>
+<rect x="420" y="930" width="300" height="147" fill="#fff" stroke="#2F855A" stroke-width="1.4"/>
+<rect x="420" y="930" width="300" height="26" fill="#DCFCE7" stroke="#2F855A" stroke-width="1.4"/>
+<text x="570" y="947" text-anchor="middle" font-weight="bold" fill="#1F2937">Momento</text>
+<text x="427" y="971" fill="#1F2937">- id: Long</text>
+<text x="427" y="986" fill="#1F2937">- numero: int</text>
+<text x="427" y="1001" fill="#1F2937">- nivel: NivelExigencia</text>
+<text x="427" y="1016" fill="#1F2937">- semestreDesde: int</text>
+<text x="427" y="1031" fill="#1F2937">- semestreHasta: int</text>
+<text x="427" y="1046" fill="#1F2937">- asignatura: String</text>
+<line x1="420" y1="1054" x2="720" y2="1054" stroke="#2F855A" stroke-width="1.2"/>
+<text x="427" y="1069" fill="#1F2937">+ incluyeSemestre(semestre: int): boolean</text>
+<rect x="100" y="950" width="190" height="93" fill="#fff" stroke="#64748B" stroke-width="1.4"/>
+<rect x="100" y="950" width="190" height="40" fill="#F1F5F9" stroke="#64748B" stroke-width="1.4"/>
+<text x="195" y="965" text-anchor="middle" font-size="11" fill="#1F2937">«enumeration»</text>
+<text x="195" y="982" text-anchor="middle" font-weight="bold" fill="#1F2937">NivelExigencia</text>
+<text x="107" y="1005" fill="#1F2937">BAJO</text>
+<text x="107" y="1020" fill="#1F2937">MEDIO</text>
+<text x="107" y="1035" fill="#1F2937">ALTO</text>
+<rect x="420" y="1150" width="300" height="94" fill="#fff" stroke="#2F855A" stroke-width="1.4"/>
+<rect x="420" y="1150" width="300" height="26" fill="#DCFCE7" stroke="#2F855A" stroke-width="1.4"/>
+<text x="570" y="1167" text-anchor="middle" font-weight="bold" fill="#1F2937">RAP</text>
+<text x="427" y="1191" fill="#1F2937">- id: Long</text>
+<text x="427" y="1206" fill="#1F2937">- codigo: String</text>
+<text x="427" y="1221" fill="#1F2937">- descripcion: String</text>
+<text x="427" y="1236" fill="#1F2937">- pesoEvaluativo: double</text>
+<rect x="1190" y="640" width="290" height="132" fill="#fff" stroke="#2F855A" stroke-width="1.4"/>
+<rect x="1190" y="640" width="290" height="26" fill="#DCFCE7" stroke="#2F855A" stroke-width="1.4"/>
+<text x="1335" y="657" text-anchor="middle" font-weight="bold" fill="#1F2937">PeriodoAcademico</text>
+<text x="1197" y="681" fill="#1F2937">- id: Long</text>
+<text x="1197" y="696" fill="#1F2937">- codigo: String   (ej. 2026-2)</text>
+<text x="1197" y="711" fill="#1F2937">- fechaInicio: LocalDate</text>
+<text x="1197" y="726" fill="#1F2937">- fechaFin: LocalDate</text>
+<text x="1197" y="741" fill="#1F2937">- limiteEvaluacionUPC: LocalDate</text>
+<line x1="1190" y1="749" x2="1480" y2="749" stroke="#2F855A" stroke-width="1.2"/>
+<text x="1197" y="764" fill="#1F2937">+ contiene(fecha: LocalDate): boolean</text>
+<rect x="770" y="580" width="300" height="132" fill="#fff" stroke="#B7791F" stroke-width="1.4"/>
+<rect x="770" y="580" width="300" height="26" fill="#FEF3C7" stroke="#B7791F" stroke-width="1.4"/>
+<text x="920" y="597" text-anchor="middle" font-weight="bold" fill="#1F2937">Grupo</text>
+<text x="777" y="621" fill="#1F2937">- id: Long</text>
+<text x="777" y="636" fill="#1F2937">- nombre: String</text>
+<text x="777" y="651" fill="#1F2937">- integrantes: List&lt;Estudiante&gt;</text>
+<text x="777" y="666" fill="#1F2937">- abierto: boolean</text>
+<line x1="770" y1="674" x2="1070" y2="674" stroke="#B7791F" stroke-width="1.2"/>
+<text x="777" y="689" fill="#1F2937">+ agregarIntegrante(e: Estudiante): void</text>
+<text x="777" y="704" fill="#1F2937">+ estaCompleto(): boolean</text>
+<rect x="770" y="820" width="300" height="147" fill="#fff" stroke="#B7791F" stroke-width="1.4"/>
+<rect x="770" y="820" width="300" height="26" fill="#FEF3C7" stroke="#B7791F" stroke-width="1.4"/>
+<text x="920" y="837" text-anchor="middle" font-weight="bold" fill="#1F2937">ProyectoAula</text>
+<text x="777" y="861" fill="#1F2937">- id: Long</text>
+<text x="777" y="876" fill="#1F2937">- titulo: String</text>
+<text x="777" y="891" fill="#1F2937">- fechaLimiteEntrega: LocalDate</text>
+<text x="777" y="906" fill="#1F2937">- fechaEvaluacion: LocalDate</text>
+<line x1="770" y1="914" x2="1070" y2="914" stroke="#B7791F" stroke-width="1.2"/>
+<text x="777" y="929" fill="#1F2937">+ registrarEntrega(e: Entrega): void</text>
+<text x="777" y="944" fill="#1F2937">+ getUltimaEntrega(): Entrega</text>
+<text x="777" y="959" fill="#1F2937">+ getNotaFinal(): double</text>
+<rect x="770" y="1040" width="300" height="132" fill="#fff" stroke="#B7791F" stroke-width="1.4"/>
+<rect x="770" y="1040" width="300" height="26" fill="#FEF3C7" stroke="#B7791F" stroke-width="1.4"/>
+<text x="920" y="1057" text-anchor="middle" font-weight="bold" fill="#1F2937">Entrega</text>
+<text x="777" y="1081" fill="#1F2937">- id: Long</text>
+<text x="777" y="1096" fill="#1F2937">- numeroVersion: int</text>
+<text x="777" y="1111" fill="#1F2937">- rutaArchivoZip: String</text>
+<text x="777" y="1126" fill="#1F2937">- rutaPresentacion: String</text>
+<text x="777" y="1141" fill="#1F2937">- fechaSubida: LocalDateTime</text>
+<line x1="770" y1="1149" x2="1070" y2="1149" stroke="#B7791F" stroke-width="1.2"/>
+<text x="777" y="1164" fill="#1F2937">+ fueATiempo(limite: LocalDate): boolean</text>
+<rect x="1190" y="840" width="290" height="117" fill="#fff" stroke="#7E57C2" stroke-width="1.4"/>
+<rect x="1190" y="840" width="290" height="26" fill="#EDE4FB" stroke="#7E57C2" stroke-width="1.4"/>
+<text x="1335" y="857" text-anchor="middle" font-weight="bold" fill="#1F2937">Evaluacion</text>
+<text x="1197" y="881" fill="#1F2937">- id: Long</text>
+<text x="1197" y="896" fill="#1F2937">- fecha: LocalDateTime</text>
+<text x="1197" y="911" fill="#1F2937">- comentario: String</text>
+<text x="1197" y="926" fill="#1F2937">- calificaciones: List&lt;CalificacionRAP&gt;</text>
+<line x1="1190" y1="934" x2="1480" y2="934" stroke="#7E57C2" stroke-width="1.2"/>
+<text x="1197" y="949" fill="#1F2937">+ calcularNotaTotal(): double</text>
+<rect x="1190" y="1060" width="290" height="79" fill="#fff" stroke="#7E57C2" stroke-width="1.4"/>
+<rect x="1190" y="1060" width="290" height="26" fill="#EDE4FB" stroke="#7E57C2" stroke-width="1.4"/>
+<text x="1335" y="1077" text-anchor="middle" font-weight="bold" fill="#1F2937">CalificacionRAP</text>
+<text x="1197" y="1101" fill="#1F2937">- id: Long</text>
+<text x="1197" y="1116" fill="#1F2937">- puntaje: double</text>
+<text x="1197" y="1131" fill="#1F2937">- nivel: NivelDesempeno</text>
+<rect x="1550" y="1045" width="190" height="108" fill="#fff" stroke="#64748B" stroke-width="1.4"/>
+<rect x="1550" y="1045" width="190" height="40" fill="#F1F5F9" stroke="#64748B" stroke-width="1.4"/>
+<text x="1645" y="1060" text-anchor="middle" font-size="11" fill="#1F2937">«enumeration»</text>
+<text x="1645" y="1077" text-anchor="middle" font-weight="bold" fill="#1F2937">NivelDesempeno</text>
+<text x="1557" y="1100" fill="#1F2937">BAJO</text>
+<text x="1557" y="1115" fill="#1F2937">BASICO</text>
+<text x="1557" y="1130" fill="#1F2937">ALTO</text>
+<text x="1557" y="1145" fill="#1F2937">SOBRESALIENTE</text>
+<rect x="1560" y="1210" width="300" height="101" fill="#fff" stroke="#7E57C2" stroke-width="1.4"/>
+<rect x="1560" y="1210" width="300" height="40" fill="#EDE4FB" stroke="#7E57C2" stroke-width="1.4"/>
+<text x="1710" y="1227" text-anchor="middle" font-weight="bold" font-style="italic" fill="#1F2937">Reporte</text>
+<text x="1710" y="1242" text-anchor="middle" font-size="11" fill="#1F2937">{abstract}</text>
+<text x="1567" y="1265" fill="#1F2937">- fechaGeneracion: LocalDateTime</text>
+<text x="1567" y="1280" fill="#1F2937">- periodo: PeriodoAcademico</text>
+<line x1="1560" y1="1288" x2="1860" y2="1288" stroke="#7E57C2" stroke-width="1.2"/>
+<text x="1567" y="1303" fill="#1F2937" font-style="italic">+ generar(): byte[] {abstract}</text>
+<rect x="1190" y="1410" width="270" height="72" fill="#fff" stroke="#7E57C2" stroke-width="1.4"/>
+<rect x="1190" y="1410" width="270" height="26" fill="#EDE4FB" stroke="#7E57C2" stroke-width="1.4"/>
+<text x="1325" y="1427" text-anchor="middle" font-weight="bold" fill="#1F2937">ReporteIndividual</text>
+<text x="1197" y="1451" fill="#1F2937">- estudiante: Estudiante</text>
+<line x1="1190" y1="1459" x2="1460" y2="1459" stroke="#7E57C2" stroke-width="1.2"/>
+<text x="1197" y="1474" fill="#1F2937">+ generar(): byte[]</text>
+<rect x="1490" y="1410" width="250" height="72" fill="#fff" stroke="#7E57C2" stroke-width="1.4"/>
+<rect x="1490" y="1410" width="250" height="26" fill="#EDE4FB" stroke="#7E57C2" stroke-width="1.4"/>
+<text x="1615" y="1427" text-anchor="middle" font-weight="bold" fill="#1F2937">ReporteGrupal</text>
+<text x="1497" y="1451" fill="#1F2937">- grupo: Grupo</text>
+<line x1="1490" y1="1459" x2="1740" y2="1459" stroke="#7E57C2" stroke-width="1.2"/>
+<text x="1497" y="1474" fill="#1F2937">+ generar(): byte[]</text>
+<rect x="1770" y="1410" width="290" height="87" fill="#fff" stroke="#7E57C2" stroke-width="1.4"/>
+<rect x="1770" y="1410" width="290" height="26" fill="#EDE4FB" stroke="#7E57C2" stroke-width="1.4"/>
+<text x="1915" y="1427" text-anchor="middle" font-weight="bold" fill="#1F2937">ReporteComparativo</text>
+<text x="1777" y="1451" fill="#1F2937">- periodoA: PeriodoAcademico</text>
+<text x="1777" y="1466" fill="#1F2937">- periodoB: PeriodoAcademico</text>
+<line x1="1770" y1="1474" x2="2060" y2="1474" stroke="#7E57C2" stroke-width="1.2"/>
+<text x="1777" y="1489" fill="#1F2937">+ generar(): byte[]</text>
+<rect x="120" y="1330" width="26" height="22" rx="0" fill="#DBEAFE" stroke="#3B6FB6" stroke-width="1.4"/>
+<text x="133" y="1345" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<rect x="120" y="1368" width="26" height="22" rx="0" fill="#DCFCE7" stroke="#2F855A" stroke-width="1.4"/>
+<text x="133" y="1383" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<rect x="120" y="1406" width="26" height="22" rx="0" fill="#FEF3C7" stroke="#B7791F" stroke-width="1.4"/>
+<text x="133" y="1421" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<rect x="120" y="1444" width="26" height="22" rx="0" fill="#EDE4FB" stroke="#7E57C2" stroke-width="1.4"/>
+<text x="133" y="1459" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<rect x="120" y="1482" width="26" height="22" rx="0" fill="#F1F5F9" stroke="#64748B" stroke-width="1.4"/>
+<text x="133" y="1497" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<rect x="380" y="1325" width="1" height="6" rx="0" fill="#fff" stroke="#fff" stroke-width="1.4"/>
+<text x="380.5" y="1332" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<rect x="470" y="1325" width="1" height="6" rx="0" fill="#fff" stroke="#fff" stroke-width="1.4"/>
+<text x="470.5" y="1332" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<rect x="380" y="1357" width="1" height="6" rx="0" fill="#fff" stroke="#fff" stroke-width="1.4"/>
+<text x="380.5" y="1364" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<rect x="470" y="1357" width="1" height="6" rx="0" fill="#fff" stroke="#fff" stroke-width="1.4"/>
+<text x="470.5" y="1364" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<rect x="380" y="1389" width="1" height="6" rx="0" fill="#fff" stroke="#fff" stroke-width="1.4"/>
+<text x="380.5" y="1396" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<rect x="470" y="1389" width="1" height="6" rx="0" fill="#fff" stroke="#fff" stroke-width="1.4"/>
+<text x="470.5" y="1396" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<rect x="380" y="1421" width="1" height="6" rx="0" fill="#fff" stroke="#fff" stroke-width="1.4"/>
+<text x="380.5" y="1428" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<rect x="470" y="1421" width="1" height="6" rx="0" fill="#fff" stroke="#fff" stroke-width="1.4"/>
+<text x="470.5" y="1428" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<rect x="380" y="1453" width="1" height="6" rx="0" fill="#fff" stroke="#fff" stroke-width="1.4"/>
+<text x="380.5" y="1460" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<rect x="470" y="1453" width="1" height="6" rx="0" fill="#fff" stroke="#fff" stroke-width="1.4"/>
+<text x="470.5" y="1460" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<rect x="380" y="1485" width="1" height="6" rx="0" fill="#fff" stroke="#fff" stroke-width="1.4"/>
+<text x="380.5" y="1492" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<rect x="470" y="1485" width="1" height="6" rx="0" fill="#fff" stroke="#fff" stroke-width="1.4"/>
+<text x="470.5" y="1492" text-anchor="middle" font-weight="bold" fill="#1F2937"></text>
+<text x="40" y="42" text-anchor="start" font-size="22" font-weight="bold" fill="#1F2937">SIERAP — Diagrama de clases del dominio (versión mejorada · Fase 2)</text>
+<text x="40" y="66" text-anchor="start" font-size="13" fill="#64748B">Herencia, clases abstractas, interfaces, enumeraciones y relaciones de composición, agregación, asociación y dependencia.</text>
+<rect x="779" y="132" width="42" height="16" fill="#fff"/>
+<text x="800" y="142" text-anchor="middle" font-size="11" font-style="italic" fill="#4B5563">«use»</text>
+<rect x="209.4" y="500" width="71.19999999999999" height="16" fill="#fff"/>
+<text x="245" y="510" text-anchor="middle" font-size="11" font-style="italic" fill="#4B5563">«gestiona»</text>
+<text x="576" y="477" text-anchor="start" font-size="11" fill="#374151">1</text>
+<text x="576" y="574" text-anchor="start" font-size="11" fill="#374151">1</text>
+<rect x="535.8" y="510" width="68.4" height="16" fill="#fff"/>
+<text x="570" y="520" text-anchor="middle" font-size="11" font-style="italic" fill="#4B5563">administra</text>
+<text x="576" y="697" text-anchor="start" font-size="11" fill="#374151">1</text>
+<text x="576" y="734" text-anchor="start" font-size="11" fill="#374151">1..*</text>
+<text x="576" y="887" text-anchor="start" font-size="11" fill="#374151">1</text>
+<text x="576" y="924" text-anchor="start" font-size="11" fill="#374151">1..*</text>
+<text x="576" y="1092" text-anchor="start" font-size="11" fill="#374151">*</text>
+<text x="576" y="1144" text-anchor="start" font-size="11" fill="#374151">1..*</text>
+<rect x="617.2" y="1112" width="45.6" height="16" fill="#fff"/>
+<text x="640" y="1122" text-anchor="middle" font-size="11" font-style="italic" fill="#4B5563">evalúa</text>
+<rect x="334" y="982" width="42" height="16" fill="#fff"/>
+<text x="355" y="992" text-anchor="middle" font-size="11" font-style="italic" fill="#4B5563">«use»</text>
+<text x="926" y="574" text-anchor="start" font-size="11" fill="#374151">0..1</text>
+<text x="926" y="522" text-anchor="start" font-size="11" fill="#374151">3..5</text>
+<text x="1236" y="492" text-anchor="start" font-size="11" fill="#374151">1</text>
+<text x="1076" y="603" text-anchor="start" font-size="11" fill="#374151">*</text>
+<rect x="1145.4" y="590" width="39.199999999999996" height="16" fill="#fff"/>
+<text x="1165" y="600" text-anchor="middle" font-size="11" font-style="italic" fill="#4B5563">dicta</text>
+<text x="1076" y="675" text-anchor="start" font-size="11" fill="#374151">*</text>
+<text x="1184" y="675" text-anchor="end" font-size="11" fill="#374151">1</text>
+<text x="734" y="791" text-anchor="start" font-size="11" fill="#374151">1</text>
+<text x="764" y="673" text-anchor="end" font-size="11" fill="#374151">*</text>
+<text x="926" y="727" text-anchor="start" font-size="11" fill="#374151">1</text>
+<text x="926" y="814" text-anchor="start" font-size="11" fill="#374151">1..*</text>
+<text x="726" y="963" text-anchor="start" font-size="11" fill="#374151">1</text>
+<text x="764" y="963" text-anchor="end" font-size="11" fill="#374151">*</text>
+<text x="926" y="982" text-anchor="start" font-size="11" fill="#374151">1</text>
+<text x="926" y="1034" text-anchor="start" font-size="11" fill="#374151">0..*</text>
+<text x="1076" y="875" text-anchor="start" font-size="11" fill="#374151">1</text>
+<text x="1184" y="875" text-anchor="end" font-size="11" fill="#374151">0..*</text>
+<text x="1341" y="972" text-anchor="start" font-size="11" fill="#374151">1</text>
+<text x="1341" y="1054" text-anchor="start" font-size="11" fill="#374151">1..*</text>
+<text x="1341" y="1154" text-anchor="start" font-size="11" fill="#374151">*</text>
+<text x="726" y="1220" text-anchor="start" font-size="11" fill="#374151">1</text>
+<rect x="975.4" y="1209" width="69.2" height="16" fill="#fff"/>
+<text x="1010" y="1219" text-anchor="middle" font-size="11" font-style="italic" fill="#4B5563">califica un</text>
+<rect x="1494" y="1082" width="42" height="16" fill="#fff"/>
+<text x="1515" y="1092" text-anchor="middle" font-size="11" font-style="italic" fill="#4B5563">«use»</text>
+<text x="1486" y="865" text-anchor="start" font-size="11" fill="#374151">*</text>
+<text x="1906" y="135" text-anchor="start" font-size="11" fill="#374151">1</text>
+<rect x="1737.6" y="864" width="84.80000000000001" height="16" fill="#fff"/>
+<text x="1780" y="874" text-anchor="middle" font-size="11" font-style="italic" fill="#4B5563">realizada por</text>
+<rect x="1779" y="980" width="42" height="16" fill="#fff"/>
+<text x="1800" y="990" text-anchor="middle" font-size="11" font-style="italic" fill="#4B5563">«use»</text>
+<text x="156" y="1346" text-anchor="start" font-size="12" fill="#1F2937">Usuarios y roles</text>
+<text x="156" y="1384" text-anchor="start" font-size="12" fill="#1F2937">Estructura académica</text>
+<text x="156" y="1422" text-anchor="start" font-size="12" fill="#1F2937">Estructura operativa</text>
+<text x="156" y="1460" text-anchor="start" font-size="12" fill="#1F2937">Evaluación y reportería</text>
+<text x="156" y="1498" text-anchor="start" font-size="12" fill="#1F2937">Interfaces y enumeraciones</text>
+<text x="486" y="1332" text-anchor="start" font-size="12" fill="#1F2937">Herencia</text>
+<text x="486" y="1364" text-anchor="start" font-size="12" fill="#1F2937">Realización (implementa)</text>
+<text x="486" y="1396" text-anchor="start" font-size="12" fill="#1F2937">Composición (el todo ◆)</text>
+<text x="486" y="1428" text-anchor="start" font-size="12" fill="#1F2937">Agregación (el todo ◇)</text>
+<text x="486" y="1460" text-anchor="start" font-size="12" fill="#1F2937">Asociación</text>
+<text x="486" y="1492" text-anchor="start" font-size="12" fill="#1F2937">Dependencia</text>
+</svg>

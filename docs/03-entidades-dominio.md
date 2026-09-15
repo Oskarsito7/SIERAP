@@ -1,9 +1,15 @@
 # 03 — Entidades del dominio
 
 A continuación se listan las clases del dominio identificadas para la solución,
-agrupadas por área funcional. El diagrama de clases UML correspondiente está en
-[`diagramas/diagrama_clases.drawio`](diagramas/diagrama_clases.drawio) (ábrelo en
-[app.diagrams.net](https://app.diagrams.net)).
+agrupadas por área funcional. Diagramas:
+
+- **Diagrama de clases (mejorado, Fase 2):** [`diagramas/diagrama_clases.md`](diagramas/diagrama_clases.md)
+  (Mermaid, se ve directo en GitHub) · [PNG](diagramas/diagrama_clases_mejorado.png) ·
+  [editable .drawio](diagramas/diagrama_clases_mejorado.drawio).
+- **Diagrama de jerarquías:** [`diagramas/diagrama_jerarquias.md`](diagramas/diagrama_jerarquias.md).
+- **Diagrama de capas (paquetes):** [`diagramas/diagrama_capas.md`](diagramas/diagrama_capas.md).
+- Diagrama de clases preliminar (Fase 1): [`diagramas/diagrama_clases.drawio`](diagramas/diagrama_clases.drawio)
+  (ábrelo en [app.diagrams.net](https://app.diagrams.net)).
 
 ## Usuarios (jerarquía de herencia)
 
@@ -31,6 +37,8 @@ distintos — caso de uso natural para una interfaz en lugar de herencia).
 | `Programa` | Programa académico (p. ej. Ing. de Sistemas), perteneciente a una `Facultad`. Define sus propios `Momento` y `RAP`. |
 | `Momento` | Etapa de evaluación acumulativa dentro de un `Programa` (Momento I, II, III), asociada a un rango de semestres y a una asignatura. |
 | `RAP` | Resultado de Aprendizaje del Programa evaluado dentro de un `Momento`, con su descripción y peso evaluativo. |
+| `PeriodoAcademico` | Semestre académico (p. ej. 2026-2) con sus fechas y la fecha límite de evaluación fijada por la UPC. Permite validar fechas (RF 9) y comparar resultados entre semestres y años (RF 12). *(Fase 2)* |
+| `ParametroGlobal` | Parámetro institucional clave/valor definido por el `SuperAdmin` (p. ej. integrantes por grupo), para no hardcodear reglas (RF 11). *(Fase 2)* |
 
 ## Estructura operativa
 
@@ -46,13 +54,16 @@ distintos — caso de uso natural para una interfaz en lugar de herencia).
 |---|---|
 | `Evaluacion` | Calificación que un `Evaluador` (docente, empresario o egresado) realiza sobre un `ProyectoAula`; agrupa una o varias `CalificacionRAP`. |
 | `CalificacionRAP` | Puntaje individual asignado a un `RAP` específico dentro de una `Evaluacion`. |
-| `Reporte` | Informe generado (individual, grupal o comparativo) a partir de las `Evaluacion` registradas, filtrable por semestre, momento, programa o año. |
+| `Reporte` (abstracta) | Informe generado a partir de las `Evaluacion` registradas, filtrable por semestre, momento, programa o año. Define `generar()` abstracto. *(abstracta desde la Fase 2)* |
+| `ReporteIndividual` / `ReporteGrupal` / `ReporteComparativo` | Subclases de `Reporte`: cada una implementa su propio `generar()` (por estudiante y RAP, por grupo, o comparando dos periodos). *(Fase 2)* |
 
 ## Enumeración
 
 | Enum | Descripción |
 |---|---|
 | `RolUsuario` | `SUPER_ADMIN`, `ADMIN`, `DOCENTE`, `ESTUDIANTE`, `EMPRESARIO`, `EGRESADO` — usado para el control de acceso por rol (Spring Security). |
+| `NivelExigencia` | `BAJO`, `MEDIO`, `ALTO` — nivel de exigencia de un `Momento`. *(Fase 2)* |
+| `NivelDesempeno` | `BAJO`, `BASICO`, `ALTO`, `SOBRESALIENTE` — nivel alcanzado en una `CalificacionRAP`, alineado con la rúbrica. *(Fase 2)* |
 
 ## Relaciones representadas en el diagrama
 
