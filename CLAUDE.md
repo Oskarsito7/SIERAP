@@ -71,6 +71,10 @@ modelo de clases completo y `docs/diagramas/diagrama_clases.drawio` para el UML.
 - `docs/05-decisiones-tecnicas.md` — registro de decisiones técnicas (ADRs).
   Añadir una entrada nueva cuando se tome una decisión de arquitectura no trivial
   (elección de librería, patrón, estructura de módulos, etc.).
+- `docs/06-plan-de-trabajo.md` — etapas del desarrollo, reparto entre los tres
+  integrantes, estrategia de ramas (`main`/`develop`/`feature/*`), convención de
+  commits, checklist de PR y estrategia de pruebas. Consúltalo antes de abrir una
+  rama o de proponer en qué orden implementar algo.
 - `backend/` y `frontend/` — código fuente (se crean cuando arranque la
   implementación).
 

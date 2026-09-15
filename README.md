@@ -130,6 +130,7 @@ SIERAP/
 │   ├── 03-entidades-dominio.md        ← listado y descripción de clases
 │   ├── 04-requerimientos-funcionales.md ← 12 requerimientos por rol (lluvia de ideas formalizada)
 │   ├── 05-decisiones-tecnicas.md      ← ADRs: por qué Java/Spring/Postgres/React
+│   ├── 06-plan-de-trabajo.md          ← etapas, reparto entre los 3 devs, ramas y pruebas
 │   ├── diagramas/
 │   │   └── diagrama_clases.drawio     ← diagrama UML de clases (abrir en app.diagrams.net)
 │   └── entregas/                      ← documentos formales de entrega a la universidad

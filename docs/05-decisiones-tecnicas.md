@@ -86,6 +86,38 @@ del equipo (+2 años), ya conocido y aprobado por el docente.
 
 ---
 
+## ADR-005 — Flujo de ramas Git Flow simplificado (`main` / `develop` / `feature/*`)
+
+**Fecha:** al inicio de la implementación, antes de crear `backend/` y `frontend/`.
+**Estado:** Aceptada.
+
+**Contexto:** el equipo son tres personas trabajando en paralelo sobre el mismo
+repositorio, con niveles de experiencia distintos, y con entregas a la universidad
+en fechas fijas. Trabajar todos directamente sobre `main` haría imposible tener un
+estado estable garantizado el día de la sustentación, y no dejaría evidencia de
+proceso (la guía pide documentar cómo se desarrolló el proyecto).
+
+**Decisión:** Git Flow simplificado — `main` como rama de producción (solo estados
+entregados y estables, con tag por entrega), `develop` como rama de integración, y
+ramas temporales `feature/`, `fix/`, `test/`, `refactor/`, `docs/`, `chore/`,
+`release/` y `hotfix/`. Todo entra a `develop` vía Pull Request con al menos una
+aprobación de otro integrante. Detalle completo en
+[`06-plan-de-trabajo.md`](06-plan-de-trabajo.md).
+
+**Alternativas consideradas:** *trunk-based* con push directo a `main` (descartado:
+sin una rama estable, cualquier commit roto la noche anterior compromete la
+sustentación); una rama por persona en lugar de una por funcionalidad (descartado:
+las ramas de larga vida acumulan conflictos enormes y no permiten revisión por
+unidad de trabajo).
+
+**Consecuencias:** ningún cambio llega a `main` sin pasar por `develop` y por una
+revisión. La revisión cruzada obligatoria además sirve como preparación para la
+sustentación, que según la rúbrica es individual y evalúa el dominio del código
+completo, no solo de la parte que cada quien escribió. Requiere configurar
+protección de ramas en GitHub y un workflow de CI que valide cada PR.
+
+---
+
 ## Plantilla para nuevas entradas
 
 ```
