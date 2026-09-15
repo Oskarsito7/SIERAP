@@ -133,7 +133,7 @@ SIERAP/
 │   ├── 06-plan-de-trabajo.md          ← etapas, reparto entre los 3 devs, ramas y pruebas
 │   ├── diagramas/
 │   │   └── diagrama_clases.drawio     ← diagrama UML de clases (abrir en app.diagrams.net)
-│   └── entregas/                      ← documentos formales de entrega a la universidad
+│   └── entregas/                      ← documentos formales de entrega (incluye presentacion-sierap.pptx)
 ├── backend/                           ← (por crear) API Java + Spring Boot
 └── frontend/                          ← (por crear) app React + TypeScript
 ```
