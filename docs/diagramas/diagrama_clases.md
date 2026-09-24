@@ -1,16 +1,17 @@
-# Diagrama de clases (vigente · Etapa 1)
+# Class diagram (current · Stage 1)
 
-Modelo de dominio de SIERAP con herencia, clases abstractas, interfaces,
-enumeraciones y relaciones de composición, agregación, asociación y dependencia.
-GitHub renderiza este diagrama directamente a partir del código Mermaid.
+SIERAP domain model with inheritance, abstract classes, interfaces, enumerations and
+composition, aggregation, association and dependency relationships. GitHub renders
+this diagram directly from the Mermaid code.
 
-> **Este es el diagrama vigente** y el contrato de la Etapa 1: incorpora las
-> decisiones del 2026-09-24 (ver `docs/04`, sección "Decisiones del equipo", y los
-> ADR-009 a ADR-014). Clases y atributos en inglés (ADR-014). La versión con diseño detallado
-> ([`diagrama_clases_mejorado.png`](diagrama_clases_mejorado.png) · editable en
-> [`diagrama_clases_mejorado.drawio`](diagrama_clases_mejorado.drawio)) corresponde
-> a la Fase 2 y se regenera al cerrar la Etapa 1. El diagrama preliminar de la
-> Fase 1 sigue en [`diagrama_clases.drawio`](diagrama_clases.drawio).
+> **This is the current diagram** and the Stage 1 contract: it includes the
+> 2026-09-24 decisions (see `docs/04`, "Team decisions" section, and ADR-009 to
+> ADR-014). Class and attribute names are in English (ADR-014); the Spanish → English
+> name table is in [`../03-entidades-dominio.md`](../03-entidades-dominio.md). The
+> detailed-design version ([`diagrama_clases_mejorado.png`](diagrama_clases_mejorado.png)
+> · editable in [`diagrama_clases_mejorado.drawio`](diagrama_clases_mejorado.drawio))
+> belongs to Phase 2 and is regenerated when Stage 1 closes. The Phase 1 preliminary
+> diagram is still in [`diagrama_clases.drawio`](diagrama_clases.drawio).
 
 ```mermaid
 classDiagram
@@ -93,6 +94,7 @@ class GlobalParameter {
 }
 class Faculty {
   -id: Long
+  -code: String
   -name: String
   -programs: List~Program~
 }
@@ -270,31 +272,32 @@ Report <|-- ComparativeReport
 Report ..> Evaluation : «use»
 ```
 
-## Cambios de la Etapa 1 (decisiones del 2026-09-24)
+## Stage 1 changes (2026-09-24 decisions)
 
-| Cambio | Motivo |
+| Change | Reason |
 |---|---|
-| Todas las clases, atributos y métodos pasan a inglés (`Facultad` → `Faculty`, `Momento` → `Moment`, `RAP` → `LearningOutcome`, `CriterioEvaluacion` → `EvaluationCriterion`, `NivelDesempeno` → `PerformanceLevel`, `Grupo` → `ProjectGroup`…); la tabla de equivalencias está en `docs/03` | El código se escribe en inglés y solo lo que ve el usuario final queda en español (ADR-014). |
-| Puntajes (`score`, `getMaxScore()`, notas) como `BigDecimal` en lugar de `double` | Sumas exactas: el Momento 1 debe dar 5.00, no 4.9999… (ADR-013). |
-| `Usuario`: `nombre` → `nombres` + `apellidos`; nuevos `tipoDocumento` y `numeroDocumento`; enum `TipoDocumento` | Guardar el documento de identidad además del correo, que es el dato de inicio de sesión. |
-| `Empresario` y `Egresado` → una sola subclase `EvaluadorExterno` con `TipoEvaluador` (catálogo) | Se deben poder crear más tipos de evaluador sin programar (ADR-011). |
-| `Docente` pertenece a una `Facultad` | Solo usan SIERAP los docentes con proyecto de aula, que dictan en su facultad. |
-| `Estudiante` pierde `grupo` y gana `programa` | Un estudiante tiene un grupo por momento con historial; la relación queda del lado de `Grupo`. |
-| `Momento` pertenece a un `PeriodoAcademico`; `nivelExigencia` pasa a texto libre | La configuración se versiona por periodo y no hay niveles estándar (ADR-010). |
-| `Momento` gana `estado` (`EstadoMomento`), integrantes mín./máx. y tres ventanas de fechas | Ciclo de vida del momento: configuración → lanzar → entregas → calificación (ADR-012). |
-| `RAP` pertenece a un `Momento` (composición) y pierde `pesoEvaluativo` | Cada momento tiene sus propios RAP; el peso lo dan los puntajes de sus criterios. |
-| Nuevas `CriterioEvaluacion` y `NivelDesempeno` (entidad) | Estructura de la rúbrica de la UPC: cada RAP tiene criterios y cada criterio niveles con puntaje, todo configurable. |
-| `Grupo` y `ProyectoAula` se fusionan; `Grupo` pertenece a un `Momento` | Cada grupo tiene un solo proyecto; el docente habilita grupos dentro de un momento. |
-| `CalificacionRAP` → `CalificacionCriterio` | El evaluador elige un nivel por criterio; el desempeño por RAP se calcula sumando. |
-| Se eliminan los enums `NivelExigencia` y `NivelDesempeno` | Nada estándar en el código (ADR-010). |
-| Sin autoevaluación del estudiante | `Estudiante` no implementa `Evaluador`. |
+| Every class, attribute and method moves to English (`Facultad` → `Faculty`, `Momento` → `Moment`, `RAP` → `LearningOutcome`, `CriterioEvaluacion` → `EvaluationCriterion`, `NivelDesempeno` → `PerformanceLevel`, `Grupo` → `ProjectGroup`…); the full table is in `docs/03` | Code and documentation in English; screens, error messages and Javadoc in Spanish (ADR-014). |
+| `Faculty` gains `code` (unique, required) | Institutional code of the faculty (e.g. `04`), like `Program.code` (e.g. `108`). |
+| Scores (`score`, `getMaxScore()`, grades) as `BigDecimal` instead of `double` | Exact sums: Moment 1 must add up to 5.00, not 4.9999… (ADR-013). |
+| `User`: `name` → `firstNames` + `lastNames`; new `documentType` and `documentNumber`; `DocumentType` enum | Store the identity document besides the email, which is the login field. |
+| `Empresario` and `Egresado` → a single `ExternalEvaluator` subclass with an `EvaluatorType` (catalog) | More evaluator types must be creatable without programming (ADR-011). |
+| `Teacher` belongs to a `Faculty` | Only teachers with a classroom project use SIERAP, and they teach in their faculty. |
+| `Student` loses `group` and gains `program` | A student has one group per moment with history; the relationship lives on the `ProjectGroup` side. |
+| `Moment` belongs to an `AcademicPeriod`; `requirementLevel` becomes free text | The configuration is versioned per period and there are no standard levels (ADR-010). |
+| `Moment` gains `status` (`MomentStatus`), min./max. members and three date windows | Moment lifecycle: configuration → launch → submissions → grading (ADR-012). |
+| `LearningOutcome` (RAP) belongs to a `Moment` (composition) and loses its evaluative weight | Each moment has its own RAP; the weight comes from the scores of its criteria. |
+| New `EvaluationCriterion` and `PerformanceLevel` (entity) | Structure of the UPC rubric: each RAP has criteria and each criterion levels with scores, all configurable. |
+| Group and classroom project merge into `ProjectGroup`, which belongs to a `Moment` | Each group has a single project; the teacher enables groups within a moment. |
+| Per-RAP grade → `CriterionGrade` | The evaluator picks one level per criterion; the performance per RAP is a sum. |
+| The `NivelExigencia` and `NivelDesempeno` enums are removed | Nothing standard in the code (ADR-010). |
+| No student self-assessment | `Student` does not implement `Evaluator`. |
 
-## Cambios frente al diagrama preliminar (Fase 1)
+## Changes compared with the preliminary diagram (Phase 1)
 
-| Cambio | Motivo |
+| Change | Reason |
 |---|---|
-| `PeriodoAcademico` (nueva) | RF 9 exige validar que la fecha de evaluación caiga en el rango de la UPC, y RF 12 compara resultados entre semestres y años: ambos necesitan el periodo como entidad. |
-| `ParametroGlobal` (nueva) | RF 11: el super_admin define parámetros globales (p. ej. integrantes por grupo) sin hardcodearlos. |
-| `Reporte` pasa a ser abstracta con 3 subclases | Cada tipo de reporte implementa su propio `generar()`: polimorfismo en lugar de un `switch` por tipo. Resuelve el pendiente de la Fase 1 sobre reportería. |
-| `Usuario.getRol()` abstracto | Cada rol lo sobrescribe; `iniciarSesion()` sale del dominio y pasa a `AuthService` (capa de servicio). |
-| Multiplicidad `3..5` en `Grupo`—`Estudiante` | Confirma la cardinalidad de la guía oficial que estaba pendiente. |
+| `AcademicPeriod` (new) | RF 9 requires validating that the evaluation date falls within the UPC range, and RF 12 compares results across semesters and years: both need the period as an entity. |
+| `GlobalParameter` (new) | RF 11: the super_admin defines global parameters without hard-coding them. |
+| `Report` becomes abstract with 3 subclasses | Each report type implements its own `generate()`: polymorphism instead of a `switch` by type. Resolves the Phase 1 open item about reporting. |
+| Abstract `User.getRole()` | Each role overrides it; login leaves the domain and moves to `AuthService` (service layer). |
+| Multiplicity `min..max` on `ProjectGroup`—`Student` | The number of members is configured per moment (Moment 1: 3 to 5). |

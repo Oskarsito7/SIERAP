@@ -1,55 +1,54 @@
-# 02 — Descripción de la solución
+# 02 — Solution description
 
-## Alcance
+## Scope
 
-Sistema web para la gestión y evaluación de los proyectos de aula y RAP
-institucionales de la UPC, con backend en Java y base de datos relacional
-(PostgreSQL), que reemplaza el flujo actual gestionado en AULAWEB.
+Web system to manage and assess the UPC's classroom projects and institutional RAP
+(program learning outcomes), with a Java backend and a relational database
+(PostgreSQL), replacing the current flow managed in AULAWEB.
 
-## Qué hace
+## What it does
 
-Permite a estudiantes organizarse en grupos y subir entregas versionadas de su
-proyecto de aula; a docentes definir grupos, fechas y evaluar; a empresarios y
-egresados calificar los proyectos asignados; a un admin de facultad (decano)
-configurar momentos y RAP por programa; y a un super_admin configurar los
-parámetros globales del sistema. Genera reportes individuales, grupales y
-comparativos entre semestres/años.
+It lets students organize themselves into groups and upload versioned submissions of
+their classroom project; teachers define groups and dates and grade; business people
+and alumni grade the projects assigned to them; a faculty admin (dean) configure
+moments and RAP per program; and a super_admin configure the global parameters of
+the system. It produces individual, group and comparative reports across
+semesters/years.
 
-## Por qué (factor diferenciador frente a AULAWEB)
+## Why (differentiating factor compared with AULAWEB)
 
-A diferencia de AULAWEB —genérico y no pensado para este flujo—, el sistema está
-diseñado específicamente alrededor del ciclo de vida de un RAP (momento → nivel
-→ programa → grupo → entrega → evaluación multi-rol → reporte), con
-configuración flexible por facultad/programa y generación automática de
-reportes comparativos, algo que hoy no existe.
+Unlike AULAWEB —generic and not designed for this flow— the system is designed
+specifically around the lifecycle of a RAP (moment → level → program → group →
+submission → multi-role evaluation → report), with flexible configuration per
+faculty/program and automatic generation of comparative reports, something that does
+not exist today.
 
-## Para qué
+## What for
 
-Reducir el desgaste operativo de docentes y estudiantes, dar trazabilidad real
-de entregas y calificaciones, y permitirle a la universidad tomar decisiones
-curriculares basadas en datos consolidados entre momentos y semestres.
+To reduce the operational burden on teachers and students, provide real
+traceability of submissions and grades, and allow the university to make
+curricular decisions based on data consolidated across moments and semesters.
 
-## Decisión de alcance tecnológico (más allá de la guía por defecto)
+## Technology scope decision (beyond the default guide)
 
-La guía oficial de la UPC pide, por defecto, una aplicación de consola/GUI
-simple con persistencia en archivos. **El docente autorizó explícitamente** que
-el proyecto se desarrolle como aplicación web con base de datos real, conociendo
-la experiencia previa de +2 años en desarrollo web de uno de los integrantes del
-equipo. El único requisito no negociable impuesto por el docente es que **el
-backend esté en Java**.
+The official UPC guide asks, by default, for a simple console/GUI application with
+file persistence. **The teacher explicitly authorized** the project to be built as a
+web application with a real database, knowing that one of the team members has 2+
+years of web development experience. The only non-negotiable requirement set by the
+teacher is that **the backend must be in Java**.
 
-## Stack tecnológico elegido
+## Chosen technology stack
 
-| Capa | Tecnología | Justificación |
+| Layer | Technology | Rationale |
 |---|---|---|
-| Backend | Java + Spring Boot (Spring Web, Spring Data JPA, Spring Security + JWT) | Estándar de facto para Java web; encaja con arquitectura por capas (controller/service/repository/entity) y POO completa (interfaces para roles/estrategias de evaluación, herencia Usuario→subtipos, manejo de excepciones con `@ControllerAdvice`) exigidas por la rúbrica. |
-| Base de datos | PostgreSQL | Más robusto que MySQL para relaciones jerárquicas (facultad→programa→momento→RAP) y mejor soporte de agregaciones para reportería. MySQL es alternativa válida. |
-| Frontend | React + TypeScript | Stack habitual del equipo, ya conocido y aprobado por el docente. |
+| Backend | Java + Spring Boot (Spring Web, Spring Data JPA, Spring Security + JWT) | De facto standard for Java web; fits the layered architecture (controller/service/repository/entity) and the full OOP required by the rubric (interfaces for roles/evaluation strategies, User→subtypes inheritance, exception handling with `@ControllerAdvice`). |
+| Database | PostgreSQL | More robust than MySQL for hierarchical relationships (faculty→program→moment→RAP) and better support for reporting aggregations. MySQL is a valid alternative. |
+| Frontend | React + TypeScript | The team's usual stack, already known and approved by the teacher. |
 
-Ver el detalle de esta decisión como ADR en
+See this decision as an ADR in
 [`05-decisiones-tecnicas.md`](05-decisiones-tecnicas.md).
 
-## Requerimientos funcionales
+## Functional requirements
 
-Ver el detalle completo, por rol, en
+See the full detail, by role, in
 [`04-requerimientos-funcionales.md`](04-requerimientos-funcionales.md).

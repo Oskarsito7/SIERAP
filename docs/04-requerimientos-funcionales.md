@@ -1,144 +1,143 @@
-# 04 — Requerimientos funcionales
+# 04 — Functional requirements
 
-> Formalización de los 12 requerimientos originales de la lluvia de ideas del
-> equipo, organizados por rol, con las reglas de configuración transversales que
-> aplican a todos. Ajustados el 2026-09-24 al flujo de un momento definido por el
-> responsable del proyecto (ver "Flujo de un momento" y "Decisiones del equipo").
+> Formalization of the 12 original requirements from the team's brainstorming,
+> organized by role, with the cross-cutting configuration rules that apply to all of
+> them. Adjusted on 2026-09-24 to the flow of a moment defined by the project lead
+> (see "Flow of a moment" and "Team decisions").
 
-## Estudiante
+## Student
 
-1. Puede iniciar sesión en el sistema (con su correo).
-2. Puede ver los grupos que habilitaron **todos** los docentes en un momento de su
-   programa e inscribirse en el que haya acordado con sus compañeros, aunque sea de
-   un docente distinto al suyo. Solo puede estar en un grupo por momento, y el
-   grupo respeta el mínimo y el máximo de integrantes que definió el admin para ese
-   momento.
-3. Puede hacer entregas del proyecto de aula de su grupo (archivo `.zip`), con
-   versionamiento/registro histórico de todas las entregas realizadas (dentro de la
-   ventana de entregas y antes de la fecha límite de su grupo), y subir también su
-   presentación (`.pdf` o `.docx`).
-4. Puede conocer su calificación final y su desempeño individual por cada RAP.
+1. Can log in to the system (with their email).
+2. Can see the groups that **all** the teachers enabled in a moment of their program
+   and join the one agreed with their classmates, even if it belongs to a teacher
+   other than theirs. They can only be in one group per moment, and the group
+   respects the minimum and maximum number of members the admin set for that moment.
+3. Can upload the classroom project submissions of their group (`.zip` file), with
+   versioning/history of every submission made (within the submission window and
+   before their group's deadline), and also upload their presentation (`.pdf` or
+   `.docx`).
+4. Can see their final grade and their individual performance on each RAP.
 
-## Evaluadores externos (hoy empresarios y egresados)
+## External evaluators (today business people and alumni)
 
-5. Pueden iniciar sesión y ver todos los grupos para los que fueron designados.
-6. Pueden calificar esos grupos, únicamente en la fecha de evaluación que fijó el
-   docente, dentro de la ventana de calificación del momento.
+5. Can log in and see all the groups they were assigned to.
+6. Can grade those groups, only on the evaluation date set by the teacher, within the
+   grading window of the moment.
 
-Los tipos de evaluador externo ("Empresario", "Egresado" y los que se creen después)
-son un catálogo configurable, no roles fijos (ADR-011).
+External evaluator types ("Empresario", "Egresado" and any created later) are a
+configurable catalog, not fixed roles (ADR-011).
 
-## Docente
+## Teacher
 
-7. Puede iniciar sesión, **habilitar los grupos** de un momento en los que se van a
-   inscribir los estudiantes y fijar la fecha límite de entrega de cada uno (dentro
-   de la ventana de entregas). **El docente solo ve, gestiona y califica los grupos
-   que él habilitó.**
-8. Puede crear evaluadores externos (de cualquier tipo del catálogo) y designarlos
-   **solo** a los grupos que él habilitó.
-9. Puede definir la fecha en que se evalúa cada uno de sus grupos, **dentro de la
-   ventana de calificación del momento**, que a su vez termina a más tardar en la
-   fecha límite que fija la UPC para el periodo.
+7. Can log in, **enable the groups** of a moment that students will join, and set the
+   submission deadline of each one (within the submission window). **The teacher
+   only sees, manages and grades the groups they enabled.**
+8. Can create external evaluators (of any type in the catalog) and assign them
+   **only** to the groups they enabled.
+9. Can set the date on which each of their groups is evaluated, **within the grading
+   window of the moment**, which in turn ends no later than the deadline the UPC sets
+   for the period.
 
-## Admin (facultad / decano)
+## Admin (faculty / dean)
 
-10. Crea y configura los momentos de cada programa de su facultad, en cada periodo:
-    RAP, criterios de evaluación, niveles de desempeño con sus puntajes, mínimo y
-    máximo de integrantes por grupo y ventanas de fechas (conformación, entregas y
-    calificación). Cuando los grupos están armados, **lanza** el momento.
+10. Creates and configures the moments of each program of their faculty, in each
+    period: RAP, evaluation criteria, performance levels with their scores, minimum
+    and maximum members per group, and date windows (group formation, submissions and
+    grading). Once the groups are formed, **launches** the moment.
 
 ## Super Admin
 
-11. Inicia sesión y define los parámetros globales del sistema, las facultades y
-    programas, los periodos académicos (con la fecha límite de evaluación de la
-    UPC) y el catálogo de tipos de evaluador externo.
+11. Logs in and defines the global system parameters, the faculties and programs, the
+    academic periods (with the UPC evaluation deadline) and the external evaluator
+    type catalog.
 
-## Transversal — Reportería
+## Cross-cutting — Reporting
 
-12. Se pueden generar reportes/informes individuales, grupales y completos,
-    incluyendo comparativos (comparar semestre X con semestre Y, comparar por
-    años, etc.).
+12. Individual, group and full reports can be generated, including comparative ones
+    (compare semester X with semester Y, compare by years, etc.).
 
-## Flujo de un momento
+## Flow of a moment
 
-Así se ejecuta el Momento 1, y exactamente igual el Momento 2, el Momento 3 y los de
-cualquier programa (ADR-012):
+This is how Moment 1 runs, and exactly the same for Moment 2, Moment 3 and those of any
+program (ADR-012):
 
-| # | Fase | Quién | Qué hace |
+| # | Phase | Who | What they do |
 |---|---|---|---|
-| 1 | Configuración | Admin | Crea el momento (p. ej. "Momento 1") en el periodo y configura sus RAP, criterios (ítems de calificación), niveles con puntaje, integrantes por grupo y ventanas de fechas. |
-| 2 | Configuración | Docente | Habilita sus grupos en el momento, crea y designa a sus evaluadores externos y fija las fechas de entrega y evaluación de sus grupos. |
-| 3 | Conformación de grupos (ventana) | Estudiante | Entra a SIERAP, ve los grupos de todos los docentes del momento y se inscribe en el que acordó con sus compañeros ("yo voy con fulano y sutano"). |
-| 4 | Lanzamiento | Admin | Lanza el momento: se bloquean la configuración y la composición de los grupos. |
-| 5 | Entregas (ventana) | Estudiante | Su grupo sube versiones de la entrega (zip + presentación). |
-| 6 | Calificación (ventana) | Docente y evaluadores externos | Califican solo los grupos que les corresponden, eligiendo un nivel por criterio. |
-| 7 | Cierre | — | Pasada la ventana de calificación, las notas quedan definitivas y alimentan los reportes. |
+| 1 | Configuration | Admin | Creates the moment (e.g. "Momento 1") in the period and configures its RAP, criteria (grading items), levels with scores, members per group and date windows. |
+| 2 | Configuration | Teacher | Enables their groups in the moment, creates and assigns their external evaluators and sets the submission and evaluation dates of their groups. |
+| 3 | Group formation (window) | Student | Enters SIERAP, sees the groups of all the teachers of the moment and joins the one agreed with their classmates ("I'm going with so-and-so"). |
+| 4 | Launch | Admin | Launches the moment: configuration and group membership are locked. |
+| 5 | Submissions (window) | Student | Their group uploads submission versions (zip + presentation). |
+| 6 | Grading (window) | Teacher and external evaluators | Grade only the groups assigned to them, picking one level per criterion. |
+| 7 | Closing | — | After the grading window, grades become final and feed the reports. |
 
-## Reglas de configuración transversales (aplican a todos los roles anteriores)
+## Cross-cutting configuration rules (apply to all the roles above)
 
-- Los criterios de evaluación son diferentes por cada programa; incluso sus RAP
-  pueden ser distintos. El admin/super_admin de cada facultad y programa debe
-  poder definir sus propios RAP dentro del sistema.
-- Cada momento evalúa hasta un semestre distinto para un mismo programa (el
-  Momento 1 evalúa hasta cierto semestre con sus RAP; el Momento 2 hasta otro
-  semestre; y así hasta completar todos los momentos).
-- **Todo debe ser configurable:** los criterios de evaluación, la puntuación,
-  los momentos (desde/hasta qué semestre evalúa cada uno) y los RAP. Evitar
-  hardcodear estos valores de negocio en el código — deben vivir en base de
-  datos y ser editables desde el rol correspondiente.
-- **Nada estándar, y por periodo:** cada momento tiene sus propios RAP; cada RAP,
-  sus criterios; cada criterio, sus niveles de desempeño con su puntaje. El admin
-  los crea, modifica o elimina mientras el momento está en configuración. Esa
-  configuración se define por periodo académico (al empezar un semestre se copia la
-  del anterior y se ajusta), para que los semestres pasados no cambien y se puedan
-  comparar (ADR-010).
+- Evaluation criteria differ by program; even the RAP may differ. The
+  admin/super_admin of each faculty and program must be able to define their own RAP
+  in the system.
+- Each moment assesses up to a different semester for the same program (Moment 1
+  assesses up to a certain semester with its RAP; Moment 2 up to another semester;
+  and so on until all the moments are covered).
+- **Everything must be configurable:** evaluation criteria, scoring, moments (from/to
+  which semester each one assesses) and RAP. Avoid hard-coding these business values
+  in the code — they must live in the database and be editable from the
+  corresponding role.
+- **Nothing standard, and per period:** each moment has its own RAP; each RAP, its
+  criteria; each criterion, its performance levels with their scores. The admin
+  creates, modifies or deletes them while the moment is in configuration. That
+  configuration is defined per academic period (at the start of a semester the
+  previous one is copied and adjusted), so past semesters do not change and can be
+  compared (ADR-010).
 
-## Control de acceso — resumen por rol
+## Access control — summary by role
 
-| Rol | Puede ver | Puede modificar |
+| Role | Can see | Can modify |
 |---|---|---|
-| `super_admin` | Todo | Parámetros globales, facultades, programas, periodos, catálogo de tipos de evaluador |
-| `admin` | Su facultad completa | Momentos de los programas de su facultad (configuración y lanzamiento) |
-| `docente` | Solo los grupos que él habilitó | Sus grupos, sus fechas, los evaluadores externos de sus grupos, sus evaluaciones |
-| `estudiante` | Los grupos de los momentos de su programa; su grupo y sus notas | Su inscripción (durante la conformación) y las entregas de su grupo |
-| `evaluador_externo` | Solo los grupos para los que fue designado | Sus propias evaluaciones (en la fecha estipulada) |
+| `super_admin` | Everything | Global parameters, faculties, programs, periods, evaluator type catalog |
+| `admin` | Their whole faculty | Moments of the programs of their faculty (configuration and launch) |
+| `teacher` | Only the groups they enabled | Their groups, their dates, the external evaluators of their groups, their evaluations |
+| `student` | The groups of the moments of their program; their group and their grades | Their enrollment (during group formation) and their group's submissions |
+| `external_evaluator` | Only the groups they were assigned to | Their own evaluations (on the set date) |
 
-## Decisiones del equipo
+## Team decisions
 
-Definidas por el responsable del proyecto el 2026-09-24.
+Defined by the project lead on 2026-09-24.
 
-| Tema | Decisión |
+| Topic | Decision |
 |---|---|
-| Inicio de sesión | Todos los usuarios inician sesión con su **correo** (institucional, o personal en el caso de los evaluadores externos). Además se guarda tipo y número de documento de identidad. |
-| Estudiante y grupos | Un estudiante tiene **un grupo por momento**; puede pasar por varios grupos a lo largo de la carrera y se conserva el historial. |
-| Quién arma los grupos | El docente **habilita** grupos; los estudiantes del programa ven los grupos de **todos** los docentes del momento y se **inscriben** ellos mismos, aunque el grupo sea de otro docente. No hay lista previa de estudiantes por momento. |
-| Grupo y proyecto | Cada grupo tiene **un solo** proyecto de aula: `Grupo` y `ProyectoAula` son la misma entidad. |
-| Integrantes por grupo | El mínimo y el máximo los define el admin **en cada momento**. |
-| Autoevaluación | El estudiante **no** se autoevalúa. Evalúan el docente del grupo y los evaluadores externos designados. |
-| Tipos de evaluador | Hoy son empresario y egresado, pero se pueden crear más con otros nombres: catálogo de `TipoEvaluador` que mantiene el super_admin (ADR-011). |
-| Docentes por grupo | Cada grupo tiene **un solo** docente: el que lo habilitó, y solo él lo califica (junto con los evaluadores externos que designe). |
-| Docente y facultad | Cada docente pertenece a **una** facultad. Los docentes de materias de relleno que dictan en varias facultades no usan SIERAP. |
-| Estructura de la evaluación | Momento → RAP → criterios → niveles de desempeño con puntaje. El evaluador elige un nivel por criterio y la nota es la suma de los puntajes. |
-| Niveles | El nivel de exigencia del momento y los niveles de desempeño son configurables; no hay listas fijas. |
-| Configuración en el tiempo | Se define por periodo académico; al abrir un periodo se copia la del anterior (ADR-010). |
-| Ciclo del momento | Configuración (incluye conformación de grupos) → **Lanzar** (admin, con los grupos armados; bloquea configuración y grupos) → entregas → calificación → cierre (ADR-012). |
-| Fechas | El admin fija las ventanas del momento (conformación, entregas, calificación) dentro del límite de la UPC; cada docente fija la fecha de entrega y de evaluación de sus grupos dentro de esas ventanas. |
-| Herencia de `Usuario` | `JOINED`: tabla común `usuario` + una tabla por rol (ADR-009). |
-| Datos semilla | Facultad, Ing. de Sistemas, periodo actual y el Momento 1 completo (5 RAP con los criterios y niveles de la rúbrica oficial, `docs/00`), en estado de configuración y editable. El Momento 1 evalúa del semestre 1 al 3, en parejas (mínimo y máximo 2 integrantes), sin ventanas de fechas todavía. |
-| Puntajes | Se manejan como decimales exactos (`BigDecimal`), para que el Momento 1 sume exactamente 5.0 (ADR-013). |
-| Idioma del código | El código va en inglés; lo que ve el usuario final (interfaz, mensajes, datos) va en español (ADR-014). |
+| Login | Every user logs in with their **email** (institutional, or personal for external evaluators). The identity document type and number are also stored. |
+| Student and groups | A student has **one group per moment**; they may go through several groups during the program and the history is kept. |
+| Who forms the groups | The teacher **enables** groups; the program's students see the groups of **all** the teachers of the moment and **join** them themselves, even if the group belongs to another teacher. There is no prior list of students per moment. |
+| Group and project | Each group has **a single** classroom project: group and project are the same entity (`ProjectGroup`). |
+| Members per group | The minimum and maximum are defined by the admin **in each moment**. |
+| Self-assessment | The student does **not** self-assess. The group's teacher and the assigned external evaluators grade. |
+| Evaluator types | Today they are business person and alumnus, but more can be created with other names: an `EvaluatorType` catalog maintained by the super_admin (ADR-011). |
+| Teachers per group | Each group has **a single** teacher: the one who enabled it, and only they grade it (together with the external evaluators they assign). |
+| Teacher and faculty | Each teacher belongs to **one** faculty. Teachers of filler courses who teach in several faculties do not use SIERAP. |
+| Assessment structure | Moment → RAP → criteria → performance levels with scores. The evaluator picks one level per criterion and the grade is the sum of the scores. |
+| Levels | The requirement level of the moment and the performance levels are configurable; there are no fixed lists. |
+| Configuration over time | Defined per academic period; when a period opens, the previous one is copied (ADR-010). |
+| Moment lifecycle | Configuration (includes group formation) → **Launch** (admin, with the groups formed; locks configuration and groups) → submissions → grading → closing (ADR-012). |
+| Dates | The admin sets the windows of the moment (group formation, submissions, grading) within the UPC limit; each teacher sets the submission and evaluation dates of their groups within those windows. |
+| `User` inheritance | `JOINED`: common `app_user` table + one table per role (ADR-009). |
+| Faculty and program codes | `Faculty` and `Program` have an institutional `code` (unique, required): Facultad de Ingenierías y Tecnologías = `04`, Ingeniería de Sistemas = `108`. |
+| Seed data | Faculty, Ingeniería de Sistemas, current period and the complete Moment 1 (5 RAP with the criteria and levels of the official rubric, `docs/00`), in configuration status and editable. Moment 1 assesses semesters 1 to 3, with groups of 3 to 5 members, and has no date windows yet. The 2026-2 period dates are provisional and will be replaced with the official ones through a new migration. |
+| Scores | Handled as exact decimals (`BigDecimal`) so Moment 1 adds up to exactly 5.0 (ADR-013). |
+| Language | Code, documentation and commit messages in English; screens, API error messages, Javadoc and code comments in Spanish (ADR-014). |
+| Migrations | A Flyway migration that is already in `develop` is never edited: any fix goes in a new migration. |
 
-## Pendiente de definir con el equipo
+## Still to be defined with the team
 
-- ¿Qué pasa al lanzar un momento si hay grupos que no alcanzan el mínimo de
-  integrantes, o estudiantes que no se inscribieron?
-- ¿Un estudiante puede cambiarse de grupo durante la conformación?
-- ¿Cómo se combinan las evaluaciones del docente y de los evaluadores externos en la
-  nota final del grupo (promedio, pesos por tipo de evaluador configurables, otra
-  regla)?
-- ¿Quién crea las cuentas de docentes y estudiantes (super_admin, admin de
-  facultad, carga masiva, autorregistro)?
-- ¿Qué pasa si un docente necesita reasignar un grupo a otro docente a mitad de
-  momento?
-- ¿Los reportes comparativos requieren anonimizar datos de estudiantes o se
-  manejan siempre a nivel agregado?
+- What happens when a moment is launched if some groups do not reach the minimum
+  number of members, or some students did not join a group?
+- Can a student switch groups during group formation?
+- How are the evaluations of the teacher and the external evaluators combined into
+  the group's final grade (average, configurable weights per evaluator type, another
+  rule)?
+- Who creates teacher and student accounts (super_admin, faculty admin, bulk upload,
+  self-registration)?
+- What happens if a teacher needs to reassign a group to another teacher in the
+  middle of a moment?
+- Do comparative reports require anonymizing student data, or are they always
+  handled at an aggregate level?

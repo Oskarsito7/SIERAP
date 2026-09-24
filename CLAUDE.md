@@ -70,11 +70,14 @@ para el modelo completo y `docs/diagramas/diagrama_clases.md` para el UML vigent
 
 ## Convenciones de código
 
-- **Idioma (ADR-014): el código va en inglés** (clases, métodos, atributos, tablas,
-  columnas, rutas y campos JSON de la API, Javadoc, comentarios, logs, pruebas y
-  commits); **lo que ve el usuario final va en español** (textos de la interfaz,
-  mensajes de error de la API, datos semilla). La documentación de `/docs` sigue en
-  español, con los nombres de clases tal como están en el código.
+- **Idioma (ADR-014, aprobado por el líder):**
+  - **En inglés:** el código (clases, atributos, métodos, tablas, columnas, rutas y
+    campos JSON de la API, en backend y frontend), la documentación (`docs/`,
+    README, ADR) y los mensajes de commit.
+  - **En español:** todo texto que ve el usuario (pantallas del frontend y mensajes
+    de error de la API), el **Javadoc y los comentarios del código** (son para la
+    sustentación), `docs/00` (transcripción de la guía oficial) y `docs/entregas`.
+  - Equivalencias español → inglés del modelo: tabla en `docs/03-entidades-dominio.md`.
 - Nomenclatura de paquetes/clases/métodos/atributos siguiendo convención estándar
   de Java (paquetes en minúsculas, clases en PascalCase, métodos/atributos en
   camelCase) — esto es parte de la rúbrica de evaluación de la universidad.
@@ -86,6 +89,10 @@ para el modelo completo y `docs/diagramas/diagrama_clases.md` para el UML vigent
   `ForbiddenAccessException` 403) y `GlobalExceptionHandler` responde con
   `ErrorResponse`.
 - Sin Lombok; DTOs como `record`; inyección por constructor (ADR-008).
+- `config/`, `security/`, `exception/` y `pom.xml` son del D1: preguntar antes de
+  cambiarlos.
+- Una migración de Flyway que ya está en `develop` nunca se edita: cualquier
+  corrección va en una migración nueva.
 - Puntajes y notas como `BigDecimal`, nunca `double` (ADR-013).
 - Fechas: usar siempre el `Clock` inyectado (`LocalDate.now(clock)`), nunca
   `LocalDate.now()`, para poder probar reglas de fechas con `Clock.fixed`.
