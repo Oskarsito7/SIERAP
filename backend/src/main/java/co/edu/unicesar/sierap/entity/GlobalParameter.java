@@ -8,11 +8,11 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * Institutional key/value parameter defined by the super_admin (RF 11), so general
- * rules are not hard-coded.
+ * Parámetro global: valor institucional clave/valor que define el super_admin
+ * (RF 11), para no dejar reglas generales fijas en el código.
  *
- * <p>The columns are {@code param_key} and {@code param_value} because
- * {@code key} and {@code value} are reserved words in SQL.</p>
+ * <p>Las columnas se llaman {@code param_key} y {@code param_value} porque
+ * {@code key} y {@code value} son palabras reservadas en SQL.</p>
  */
 @Entity
 @Table(name = "global_parameter")
@@ -22,28 +22,28 @@ public class GlobalParameter {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Name of the parameter, unique in the system. */
+    /** Nombre del parámetro, único en el sistema. */
     @Column(name = "param_key", nullable = false, unique = true, length = 100)
     private String key;
 
-    /** Value of the parameter, stored as text. */
+    /** Valor del parámetro, guardado como texto. */
     @Column(name = "param_value", nullable = false, length = 500)
     private String value;
 
-    /** Explanation of the parameter for whoever manages it. */
+    /** Explicación del parámetro para quien lo administra. */
     @Column(length = 500)
     private String description;
 
-    /** Constructor required by JPA. */
+    /** Constructor requerido por JPA. */
     protected GlobalParameter() {
     }
 
     /**
-     * Creates a global parameter.
+     * Crea un parámetro global.
      *
-     * @param key         unique name of the parameter
-     * @param value       value of the parameter
-     * @param description explanation of the parameter
+     * @param key         nombre único del parámetro
+     * @param value       valor del parámetro
+     * @param description explicación del parámetro
      */
     public GlobalParameter(String key, String value, String description) {
         this.key = key;
@@ -51,37 +51,37 @@ public class GlobalParameter {
         this.description = description;
     }
 
-    /** @return identifier of the parameter */
+    /** @return identificador del parámetro */
     public Long getId() {
         return id;
     }
 
-    /** @return unique name of the parameter */
+    /** @return nombre único del parámetro */
     public String getKey() {
         return key;
     }
 
-    /** @param key new name of the parameter */
+    /** @param key nuevo nombre del parámetro */
     public void setKey(String key) {
         this.key = key;
     }
 
-    /** @return value of the parameter */
+    /** @return valor del parámetro */
     public String getValue() {
         return value;
     }
 
-    /** @param value new value of the parameter */
+    /** @param value nuevo valor del parámetro */
     public void setValue(String value) {
         this.value = value;
     }
 
-    /** @return explanation of the parameter */
+    /** @return explicación del parámetro */
     public String getDescription() {
         return description;
     }
 
-    /** @param description new explanation of the parameter */
+    /** @param description nueva explicación del parámetro */
     public void setDescription(String description) {
         this.description = description;
     }

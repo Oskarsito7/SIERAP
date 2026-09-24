@@ -20,12 +20,11 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 /**
- * Program learning outcome (RAP, Resultado de Aprendizaje del Programa) assessed in
- * a {@link Moment}.
+ * RAP (Resultado de Aprendizaje del Programa) evaluado en un {@link Moment}.
  *
- * <p>Each moment has its own learning outcomes, which the admin creates, edits or
- * deletes while the moment is in configuration. It has no fixed weight: it weighs
- * the sum of the maximum scores of its {@link EvaluationCriterion}s (ADR-010).</p>
+ * <p>Cada momento tiene sus propios RAP, que el admin crea, edita o elimina
+ * mientras el momento está en configuración. El RAP no tiene un peso fijo: pesa lo
+ * que sumen los puntajes máximos de sus {@link EvaluationCriterion} (ADR-010).</p>
  */
 @Entity
 @Table(name = "learning_outcome",
@@ -36,34 +35,34 @@ public class LearningOutcome {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Moment that owns the learning outcome. */
+    /** Momento dueño del RAP. */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "moment_id", nullable = false)
     private Moment moment;
 
-    /** Code of the learning outcome within the moment, e.g. {@code RAP1}. */
+    /** Código del RAP dentro del momento, p. ej. {@code RAP1}. */
     @Column(nullable = false, length = 20)
     private String code;
 
-    /** Statement of the learning outcome. */
+    /** Enunciado del resultado de aprendizaje. */
     @Column(nullable = false, length = 1000)
     private String description;
 
-    /** Criteria used to grade the learning outcome. */
+    /** Criterios con los que se califica el RAP. */
     @OneToMany(mappedBy = "learningOutcome", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("displayOrder")
     private List<EvaluationCriterion> criteria = new ArrayList<>();
 
-    /** Constructor required by JPA. */
+    /** Constructor requerido por JPA. */
     protected LearningOutcome() {
     }
 
     /**
-     * Creates a learning outcome without criteria; it is linked to its moment with
+     * Crea un RAP sin criterios; se asocia a su momento con
      * {@link Moment#addLearningOutcome(LearningOutcome)}.
      *
-     * @param code        code within the moment
-     * @param description statement of the learning outcome
+     * @param code        código del RAP dentro del momento
+     * @param description enunciado del resultado de aprendizaje
      */
     public LearningOutcome(String code, String description) {
         this.code = code;
@@ -71,11 +70,11 @@ public class LearningOutcome {
     }
 
     /**
-     * Maximum score that can be obtained in the learning outcome: the sum of the
-     * maximum scores of its criteria.
+     * Puntaje máximo que se puede obtener en el RAP: la suma de los puntajes
+     * máximos de sus criterios.
      *
-     * @return sum of {@link EvaluationCriterion#getMaxScore()}; zero if it has no
-     *         criteria
+     * @return suma de {@link EvaluationCriterion#getMaxScore()}; cero si no tiene
+     *         criterios
      */
     public BigDecimal getMaxScore() {
         return criteria.stream()
@@ -84,9 +83,9 @@ public class LearningOutcome {
     }
 
     /**
-     * Adds a criterion to the learning outcome and sets its learning outcome.
+     * Agrega un criterio al RAP y fija el RAP del criterio.
      *
-     * @param criterion criterion to add
+     * @param criterion criterio a agregar
      */
     public void addCriterion(EvaluationCriterion criterion) {
         criteria.add(criterion);
@@ -94,58 +93,56 @@ public class LearningOutcome {
     }
 
     /**
-     * Removes a criterion from the learning outcome; on save, it is deleted
-     * together with its levels.
+     * Quita un criterio del RAP; al guardar, el criterio se elimina con sus niveles.
      *
-     * @param criterion criterion to remove
+     * @param criterion criterio a quitar
      */
     public void removeCriterion(EvaluationCriterion criterion) {
         criteria.remove(criterion);
         criterion.setLearningOutcome(null);
     }
 
-    /** @return identifier of the learning outcome */
+    /** @return identificador del RAP */
     public Long getId() {
         return id;
     }
 
-    /** @return moment that owns the learning outcome */
+    /** @return momento dueño del RAP */
     public Moment getMoment() {
         return moment;
     }
 
     /**
-     * Sets the moment of the learning outcome. Use
-     * {@link Moment#addLearningOutcome(LearningOutcome)} to keep both sides of the
-     * relationship in sync.
+     * Fija el momento del RAP. Usar {@link Moment#addLearningOutcome(LearningOutcome)}
+     * para mantener sincronizados los dos lados de la relación.
      *
-     * @param moment moment that owns the learning outcome
+     * @param moment momento dueño del RAP
      */
     void setMoment(Moment moment) {
         this.moment = moment;
     }
 
-    /** @return code of the learning outcome */
+    /** @return código del RAP */
     public String getCode() {
         return code;
     }
 
-    /** @param code new code */
+    /** @param code nuevo código del RAP */
     public void setCode(String code) {
         this.code = code;
     }
 
-    /** @return statement of the learning outcome */
+    /** @return enunciado del resultado de aprendizaje */
     public String getDescription() {
         return description;
     }
 
-    /** @param description new statement */
+    /** @param description nuevo enunciado */
     public void setDescription(String description) {
         this.description = description;
     }
 
-    /** @return criteria of the learning outcome, read-only (use add/remove) */
+    /** @return criterios del RAP, en solo lectura (usar add/remove) */
     public List<EvaluationCriterion> getCriteria() {
         return Collections.unmodifiableList(criteria);
     }

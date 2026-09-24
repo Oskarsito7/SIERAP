@@ -3,8 +3,8 @@ import axios from 'axios'
 import type { ApiError } from '@/types/api'
 
 /**
- * Single HTTP client of the application: every call to the backend goes through here.
- * Stage 2 adds an interceptor that attaches the JWT token to each request.
+ * Cliente HTTP único de la aplicación: todas las llamadas al backend pasan por aquí.
+ * En la Etapa 2 se le agrega un interceptor que adjunta el token JWT a cada petición.
  */
 export const httpClient = axios.create({
   baseURL: import.meta.env.VITE_API_URL ?? '/api',
@@ -13,9 +13,9 @@ export const httpClient = axios.create({
 })
 
 /**
- * Extracts a user-facing message from an API error. If the backend answered with
- * its uniform error format, its `message` is used; if there was no response
- * (backend down, no network), a generic message is returned.
+ * Extrae un mensaje legible de un error de la API. Si el backend respondió con su
+ * formato uniforme de error se usa su `message`; si no hubo respuesta (backend
+ * caído, sin red), se devuelve un mensaje genérico.
  */
 export function getErrorMessage(error: unknown): string {
   if (axios.isAxiosError<ApiError>(error) && error.response?.data?.message) {

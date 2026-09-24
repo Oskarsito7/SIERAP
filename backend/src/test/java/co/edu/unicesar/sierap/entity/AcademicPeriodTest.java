@@ -7,7 +7,7 @@ import java.time.LocalDate;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests of {@link AcademicPeriod#contains(LocalDate)}.
+ * Pruebas unitarias de {@link AcademicPeriod#contains(LocalDate)}.
  */
 class AcademicPeriodTest {
 

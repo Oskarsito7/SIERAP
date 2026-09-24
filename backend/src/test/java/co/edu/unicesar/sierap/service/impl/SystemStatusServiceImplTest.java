@@ -23,13 +23,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.mock.env.MockEnvironment;
 
 /**
- * Unit tests of {@link SystemStatusServiceImpl}, with a mocked database (Mockito)
- * and a fixed clock.
+ * Pruebas unitarias de {@link SystemStatusServiceImpl}, con la base de datos
+ * simulada (Mockito) y el reloj fijo.
  */
 @ExtendWith(MockitoExtension.class)
 class SystemStatusServiceImplTest {
 
-    /** 14:30 UTC is 09:30 in Bogotá (UTC-5). */
+    /** 14:30 UTC equivale a las 09:30 en Bogotá (UTC-5). */
     private static final Clock FIXED_CLOCK =
             Clock.fixed(Instant.parse("2026-03-15T14:30:00Z"), ZoneId.of("America/Bogota"));
 

@@ -3,28 +3,28 @@ package co.edu.unicesar.sierap.exception;
 import org.springframework.http.HttpStatus;
 
 /**
- * Base exception of every SIERAP business error.
+ * Excepción base de todos los errores de negocio de SIERAP.
  *
- * <p>Each subclass states, through polymorphism, the HTTP status the API must
- * respond with. {@link GlobalExceptionHandler} translates it into a uniform
- * response, so neither controllers nor services need {@code try/catch}: throwing
- * the right subclass is enough.</p>
+ * <p>Cada subclase indica, por polimorfismo, el código HTTP con el que debe
+ * responder la API. {@link GlobalExceptionHandler} la traduce a una respuesta
+ * uniforme, de modo que ni los controllers ni los services necesitan
+ * {@code try/catch}: basta con lanzar la subclase adecuada.</p>
  */
 public abstract class SierapException extends RuntimeException {
 
     /**
-     * Creates the exception with a message for the end user.
+     * Crea la excepción con un mensaje legible por el usuario final.
      *
-     * @param message description of the error, in Spanish (it is shown to the user)
+     * @param message descripción del error, en español
      */
     protected SierapException(String message) {
         super(message);
     }
 
     /**
-     * Returns the HTTP status associated with this kind of error.
+     * Indica el código HTTP asociado a este tipo de error.
      *
-     * @return HTTP status the API responds with
+     * @return estado HTTP con el que responde la API
      */
     public abstract HttpStatus getHttpStatus();
 }

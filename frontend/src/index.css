@@ -3,8 +3,8 @@
 
 @custom-variant dark (&:is(.dark *));
 
-/* shadcn/ui theme (base color: neutral). Components use these variables,
-   so changing the SIERAP look only requires editing :root and .dark. */
+/* Tema de shadcn/ui (color base: neutral). Los componentes usan estas variables,
+   así que para cambiar la identidad visual de SIERAP basta con editar :root y .dark. */
 @theme inline {
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);

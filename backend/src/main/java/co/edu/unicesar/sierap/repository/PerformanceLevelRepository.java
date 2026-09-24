@@ -4,7 +4,7 @@ import co.edu.unicesar.sierap.entity.PerformanceLevel;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * Data access for {@link PerformanceLevel}.
+ * Acceso a datos de {@link PerformanceLevel}.
  */
 public interface PerformanceLevelRepository extends JpaRepository<PerformanceLevel, Long> {
 }

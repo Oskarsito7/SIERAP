@@ -13,12 +13,13 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 /**
- * Level the evaluator can pick in an {@link EvaluationCriterion} (e.g. Bajo 0 ·
- * Básico 0.36 · Alto 0.48 · Sobresaliente 0.6).
+ * Nivel de desempeño que el evaluador puede elegir en un
+ * {@link EvaluationCriterion} (p. ej. Bajo 0 · Básico 0.36 · Alto 0.48 ·
+ * Sobresaliente 0.6).
  *
- * <p>Names, number of levels and scores are defined by the admin for each
- * criterion; there are no standard levels in the code (ADR-010). The score is a
- * {@link BigDecimal} so grade sums are exact (ADR-013).</p>
+ * <p>Nombres, cantidad y puntajes los define el admin en cada criterio; no hay
+ * niveles estándar en el código (ADR-010). El puntaje es {@link BigDecimal} para
+ * que las sumas de la nota sean exactas (ADR-013).</p>
  */
 @Entity
 @Table(name = "performance_level")
@@ -28,39 +29,39 @@ public class PerformanceLevel {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Criterion that owns the level. */
+    /** Criterio dueño del nivel. */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "criterion_id", nullable = false)
     private EvaluationCriterion criterion;
 
-    /** Name of the level, e.g. "Sobresaliente". */
+    /** Nombre del nivel, p. ej. "Sobresaliente". */
     @Column(nullable = false, length = 50)
     private String name;
 
-    /** What the work must meet to get this level. */
+    /** Qué debe cumplir el trabajo para obtener este nivel. */
     @Column(length = 1000)
     private String description;
 
-    /** Points the level awards. */
+    /** Puntos que otorga el nivel. */
     @Column(nullable = false, precision = 5, scale = 2)
     private BigDecimal score;
 
-    /** Position of the level within the criterion, from lowest to highest. */
+    /** Posición del nivel dentro del criterio, del más bajo al más alto. */
     @Column(nullable = false)
     private int displayOrder;
 
-    /** Constructor required by JPA. */
+    /** Constructor requerido por JPA. */
     protected PerformanceLevel() {
     }
 
     /**
-     * Creates a performance level; it is linked to its criterion with
+     * Crea un nivel de desempeño; se asocia a su criterio con
      * {@link EvaluationCriterion#addLevel(PerformanceLevel)}.
      *
-     * @param name         name of the level
-     * @param description  what the work must meet to get it
-     * @param score        points it awards
-     * @param displayOrder position within the criterion
+     * @param name         nombre del nivel
+     * @param description  qué debe cumplir el trabajo para obtenerlo
+     * @param score        puntos que otorga
+     * @param displayOrder posición dentro del criterio
      */
     public PerformanceLevel(String name, String description, BigDecimal score, int displayOrder) {
         this.name = name;
@@ -69,63 +70,63 @@ public class PerformanceLevel {
         this.displayOrder = displayOrder;
     }
 
-    /** @return identifier of the level */
+    /** @return identificador del nivel */
     public Long getId() {
         return id;
     }
 
-    /** @return criterion that owns the level */
+    /** @return criterio dueño del nivel */
     public EvaluationCriterion getCriterion() {
         return criterion;
     }
 
     /**
-     * Sets the criterion of the level. Use
-     * {@link EvaluationCriterion#addLevel(PerformanceLevel)} to keep both sides of
-     * the relationship in sync.
+     * Fija el criterio del nivel. Usar
+     * {@link EvaluationCriterion#addLevel(PerformanceLevel)} para mantener
+     * sincronizados los dos lados de la relación.
      *
-     * @param criterion criterion that owns the level
+     * @param criterion criterio dueño del nivel
      */
     void setCriterion(EvaluationCriterion criterion) {
         this.criterion = criterion;
     }
 
-    /** @return name of the level */
+    /** @return nombre del nivel */
     public String getName() {
         return name;
     }
 
-    /** @param name new name */
+    /** @param name nuevo nombre del nivel */
     public void setName(String name) {
         this.name = name;
     }
 
-    /** @return what the work must meet to get the level */
+    /** @return qué debe cumplir el trabajo para obtener el nivel */
     public String getDescription() {
         return description;
     }
 
-    /** @param description new description */
+    /** @param description nueva descripción del nivel */
     public void setDescription(String description) {
         this.description = description;
     }
 
-    /** @return points the level awards */
+    /** @return puntos que otorga el nivel */
     public BigDecimal getScore() {
         return score;
     }
 
-    /** @param score new points */
+    /** @param score nuevos puntos del nivel */
     public void setScore(BigDecimal score) {
         this.score = score;
     }
 
-    /** @return position within the criterion */
+    /** @return posición dentro del criterio */
     public int getDisplayOrder() {
         return displayOrder;
     }
 
-    /** @param displayOrder new position */
+    /** @param displayOrder nueva posición dentro del criterio */
     public void setDisplayOrder(int displayOrder) {
         this.displayOrder = displayOrder;
     }

@@ -20,8 +20,8 @@ export default defineConfig([
     },
   },
   {
-    // shadcn/ui components also export their variants (buttonVariants…);
-    // that is the library's standard format, so this rule does not apply there.
+    // Los componentes de shadcn/ui exportan también sus variantes (buttonVariants…);
+    // es el formato estándar de la librería, así que no se aplica esta regla ahí.
     files: ['src/components/ui/**/*.{ts,tsx}'],
     rules: {
       'react-refresh/only-export-components': 'off',

@@ -1,7 +1,7 @@
 /**
- * Service implementations ({@code @Service}, {@code @Transactional}).
+ * Implementaciones de los servicios ({@code @Service}, {@code @Transactional}).
  *
- * <p>Rules that depend on the current date use the injected {@link java.time.Clock}
- * (see {@code config.ClockConfig}) so they can be tested with fixed dates.</p>
+ * <p>Las reglas que dependen de la fecha actual usan el {@link java.time.Clock}
+ * inyectado (ver {@code config.ClockConfig}) para poder probarse con fechas fijas.</p>
  */
 package co.edu.unicesar.sierap.service.impl;

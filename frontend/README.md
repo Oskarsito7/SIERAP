@@ -1,46 +1,49 @@
 # SIERAP — Frontend
 
-Cliente web de SIERAP: **React + TypeScript** con **Vite**, **Tailwind CSS v4** y
-componentes **shadcn/ui** (ver ADR-006 en `docs/05-decisiones-tecnicas.md`).
+SIERAP web client: **React + TypeScript** with **Vite**, **Tailwind CSS v4** and
+**shadcn/ui** components (see ADR-006 in `docs/05-decisiones-tecnicas.md`).
 
-## Comandos
+## Commands
 
 ```bash
-npm install          # instalar dependencias (la primera vez)
-npm run dev          # servidor de desarrollo en http://localhost:5173
+npm install          # install dependencies (the first time)
+npm run dev          # development server on http://localhost:5173
 npm run lint         # ESLint
-npm test             # pruebas (Vitest + React Testing Library)
-npm run test:watch   # pruebas en modo observador
-npm run build        # verificación de tipos + build de producción en dist/
+npm test             # tests (Vitest + React Testing Library)
+npm run test:watch   # tests in watch mode
+npm run build        # type checking + production build in dist/
 ```
 
-En desarrollo, Vite reenvía todo lo que empiece por `/api` a `http://localhost:8080`
-(el backend), así que el backend debe estar corriendo. Ver `vite.config.ts`.
+In development, Vite forwards everything starting with `/api` to `http://localhost:8080`
+(the backend), so the backend must be running. See `vite.config.ts`.
 
-## Estructura
+## Structure
 
 ```
 src/
 ├── components/
-│   ├── ui/          ← componentes de shadcn/ui (se agregan con el CLI, no a mano)
-│   └── layout/      ← estructura común de las páginas
-├── lib/             ← utilidades (cn de shadcn/ui)
-├── pages/           ← una página por vista; las de cada rol llegan en las etapas 2 a 7
-├── routes/          ← tabla de rutas (routes.tsx) y el router
-├── services/api/    ← cliente HTTP (axios) y un servicio por recurso del backend
-├── types/           ← tipos que reflejan los DTO del backend
-└── test/            ← configuración común de las pruebas
+│   ├── ui/          ← shadcn/ui components (added with the CLI, not by hand)
+│   └── layout/      ← common page structure
+├── lib/             ← utilities (shadcn/ui's cn)
+├── pages/           ← one page per view; each role's pages arrive in stages 2 to 7
+├── routes/          ← route table (routes.tsx) and the router
+├── services/api/    ← HTTP client (axios) and one service per backend resource
+├── types/           ← types that mirror the backend DTOs
+└── test/            ← common test setup
 ```
 
-- Los servicios de `services/api` son la **única** capa que habla con el backend;
-  las páginas nunca llaman a axios directamente.
-- Los tipos de `types/` deben coincidir con los DTO del backend (`dto.response`).
+- The `services/api` services are the **only** layer that talks to the backend; pages
+  never call axios directly.
+- The `types/` types must match the backend DTOs (`dto.response`): same routes and
+  same JSON field names.
+- Language (ADR-014): identifiers in English; texts on screen and code comments in
+  Spanish.
 
-## Agregar componentes de shadcn/ui
+## Adding shadcn/ui components
 
 ```bash
 npx shadcn@latest add input label table dialog
 ```
 
-El CLI copia el código del componente en `src/components/ui/` usando la configuración
-de `components.json`. Catálogo: <https://ui.shadcn.com/docs/components>.
+The CLI copies the component code into `src/components/ui/` using the `components.json`
+configuration. Catalog: <https://ui.shadcn.com/docs/components>.

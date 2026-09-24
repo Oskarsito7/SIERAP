@@ -6,15 +6,15 @@ import co.edu.unicesar.sierap.entity.GlobalParameter;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * Data access for {@link GlobalParameter}.
+ * Acceso a datos de {@link GlobalParameter}.
  */
 public interface GlobalParameterRepository extends JpaRepository<GlobalParameter, Long> {
 
     /**
-     * Finds a parameter by its key.
+     * Busca un parámetro por su clave.
      *
-     * @param key unique name of the parameter
-     * @return the parameter, if it exists
+     * @param key nombre único del parámetro
+     * @return el parámetro, si existe
      */
     Optional<GlobalParameter> findByKey(String key);
 }

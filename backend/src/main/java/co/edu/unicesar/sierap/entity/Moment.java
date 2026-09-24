@@ -24,18 +24,18 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 
 /**
- * Assessment stage (momento) of a {@link Program} in an {@link AcademicPeriod},
- * e.g. "Momento 1" of Ingeniería de Sistemas in 2026-2.
+ * Momento: etapa de evaluación de un {@link Program} en un {@link AcademicPeriod}
+ * (p. ej. "Momento 1" de Ingeniería de Sistemas en 2026-2).
  *
- * <p>It has a lifecycle (ADR-012): in {@link MomentStatus#CONFIGURATION} the admin
- * defines its {@link LearningOutcome}s, criteria, levels, members per group and
- * date windows, and students join groups; once launched
- * ({@link MomentStatus#LAUNCHED}) the configuration is locked and the windows tell
- * when work is submitted and when it is graded. The windows may be empty while the
- * moment is being configured.</p>
+ * <p>Tiene un ciclo de vida (ADR-012): en {@link MomentStatus#CONFIGURATION} el
+ * admin define sus RAP ({@link LearningOutcome}), criterios, niveles, integrantes
+ * por grupo y ventanas de fechas, y los estudiantes se inscriben en grupos; al
+ * lanzarlo ({@link MomentStatus#LAUNCHED}) la configuración queda bloqueada y las
+ * ventanas indican cuándo se entrega y cuándo se califica. Las ventanas pueden
+ * estar vacías mientras el momento se configura.</p>
  *
- * <p>It owns its learning outcomes (composition) and is associated with a period,
- * which exists independently of the moment.</p>
+ * <p>Es dueño de sus RAP (composición) y se asocia a un periodo, que existe
+ * independientemente del momento.</p>
  */
 @Entity
 @Table(name = "moment",
@@ -46,90 +46,90 @@ public class Moment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Program that owns the moment. */
+    /** Programa dueño del momento. */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "program_id", nullable = false)
     private Program program;
 
-    /** Academic period in which the moment is configured. */
+    /** Periodo académico en el que se configura el momento. */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "period_id", nullable = false)
     private AcademicPeriod period;
 
-    /** Number of the moment within the program and the period (1, 2, 3...). */
+    /** Número del momento dentro del programa y el periodo (1, 2, 3...). */
     @Column(nullable = false)
     private int number;
 
-    /** Display name of the moment, e.g. "Momento 1". */
+    /** Nombre visible del momento, p. ej. "Momento 1". */
     @Column(nullable = false, length = 100)
     private String name;
 
-    /** Course in which the moment is assessed. */
+    /** Asignatura en la que se evalúa el momento. */
     @Column(nullable = false, length = 150)
     private String subject;
 
-    /** First semester covered by the moment. */
+    /** Primer semestre que abarca el momento. */
     @Column(nullable = false)
     private int semesterFrom;
 
-    /** Last semester covered by the moment. */
+    /** Último semestre que abarca el momento. */
     @Column(nullable = false)
     private int semesterTo;
 
-    /** Requirement level as free text (ADR-010), e.g. "Bajo". */
+    /** Nivel de exigencia en texto libre (ADR-010), p. ej. "Bajo". */
     @Column(nullable = false, length = 100)
     private String requirementLevel;
 
-    /** Minimum number of students per group. */
+    /** Mínimo de estudiantes por grupo. */
     @Column(nullable = false)
     private int minMembers;
 
-    /** Maximum number of students per group. */
+    /** Máximo de estudiantes por grupo. */
     @Column(nullable = false)
     private int maxMembers;
 
-    /** Lifecycle status; every new moment starts in configuration. */
+    /** Estado del ciclo de vida; todo momento nuevo empieza en configuración. */
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     private MomentStatus status = MomentStatus.CONFIGURATION;
 
-    /** First day of the group formation window. */
+    /** Primer día de la ventana de conformación de grupos. */
     private LocalDate groupFormationStart;
 
-    /** Last day of the group formation window. */
+    /** Último día de la ventana de conformación de grupos. */
     private LocalDate groupFormationEnd;
 
-    /** First day of the submission window. */
+    /** Primer día de la ventana de entregas. */
     private LocalDate submissionStart;
 
-    /** Last day of the submission window. */
+    /** Último día de la ventana de entregas. */
     private LocalDate submissionEnd;
 
-    /** First day of the grading window. */
+    /** Primer día de la ventana de calificación. */
     private LocalDate gradingStart;
 
-    /** Last day of the grading window. */
+    /** Último día de la ventana de calificación. */
     private LocalDate gradingEnd;
 
-    /** Learning outcomes assessed in the moment. */
+    /** RAP evaluados en el momento. */
     @OneToMany(mappedBy = "moment", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("code")
     private List<LearningOutcome> learningOutcomes = new ArrayList<>();
 
     /**
-     * Creates an empty moment in {@link MomentStatus#CONFIGURATION}. Its data is
-     * filled in with the setters and it is linked to its program with
+     * Crea un momento vacío en estado {@link MomentStatus#CONFIGURATION}. Sus datos
+     * se completan con los setters y se asocia a su programa con
      * {@link Program#addMoment(Moment)}.
      */
     public Moment() {
     }
 
     /**
-     * Tells whether groups can be formed today: the moment is still in
-     * configuration and the date falls inside the group formation window.
+     * Indica si hoy se pueden conformar grupos: el momento sigue en configuración y
+     * la fecha cae dentro de la ventana de conformación.
      *
-     * @param today current date, taken from the {@code Clock} injected in the service
-     * @return {@code true} if the moment is in configuration and inside the window
+     * @param today fecha actual, obtenida del {@code Clock} inyectado en el service
+     * @return {@code true} si el momento está en configuración y dentro de la ventana
      */
     public boolean isInGroupFormation(LocalDate today) {
         return status == MomentStatus.CONFIGURATION
@@ -137,11 +137,11 @@ public class Moment {
     }
 
     /**
-     * Tells whether work can be submitted today: the moment is launched and the date
-     * falls inside the submission window.
+     * Indica si hoy se pueden subir entregas: el momento está lanzado y la fecha cae
+     * dentro de la ventana de entregas.
      *
-     * @param today current date, taken from the {@code Clock} injected in the service
-     * @return {@code true} if the moment is launched and inside the window
+     * @param today fecha actual, obtenida del {@code Clock} inyectado en el service
+     * @return {@code true} si el momento está lanzado y dentro de la ventana
      */
     public boolean isInSubmission(LocalDate today) {
         return status == MomentStatus.LAUNCHED
@@ -149,11 +149,11 @@ public class Moment {
     }
 
     /**
-     * Tells whether grading is allowed today: the moment is launched and the date
-     * falls inside the grading window.
+     * Indica si hoy se puede calificar: el momento está lanzado y la fecha cae dentro
+     * de la ventana de calificación.
      *
-     * @param today current date, taken from the {@code Clock} injected in the service
-     * @return {@code true} if the moment is launched and inside the window
+     * @param today fecha actual, obtenida del {@code Clock} inyectado en el service
+     * @return {@code true} si el momento está lanzado y dentro de la ventana
      */
     public boolean isInGrading(LocalDate today) {
         return status == MomentStatus.LAUNCHED
@@ -161,10 +161,10 @@ public class Moment {
     }
 
     /**
-     * Maximum score that can be obtained in the moment: the sum of the maximum
-     * scores of its learning outcomes.
+     * Puntaje máximo que se puede obtener en el momento: la suma de los puntajes
+     * máximos de sus RAP.
      *
-     * @return sum of {@link LearningOutcome#getMaxScore()}; zero if it has none
+     * @return suma de {@link LearningOutcome#getMaxScore()}; cero si no tiene RAP
      */
     public BigDecimal getMaxScore() {
         return learningOutcomes.stream()
@@ -173,9 +173,9 @@ public class Moment {
     }
 
     /**
-     * Adds a learning outcome to the moment and sets its moment.
+     * Agrega un RAP al momento y fija el momento del RAP.
      *
-     * @param learningOutcome learning outcome to add
+     * @param learningOutcome RAP a agregar
      */
     public void addLearningOutcome(LearningOutcome learningOutcome) {
         learningOutcomes.add(learningOutcome);
@@ -183,10 +183,9 @@ public class Moment {
     }
 
     /**
-     * Removes a learning outcome from the moment; on save, it is deleted together
-     * with its criteria.
+     * Quita un RAP del momento; al guardar, el RAP se elimina con sus criterios.
      *
-     * @param learningOutcome learning outcome to remove
+     * @param learningOutcome RAP a quitar
      */
     public void removeLearningOutcome(LearningOutcome learningOutcome) {
         learningOutcomes.remove(learningOutcome);
@@ -194,195 +193,195 @@ public class Moment {
     }
 
     /**
-     * Tells whether a date falls inside a window, both ends included. A window
-     * without dates contains no date.
+     * Indica si una fecha cae dentro de una ventana, incluyendo sus extremos. Una
+     * ventana sin fechas definidas no contiene ninguna fecha.
      */
     private static boolean isWithin(LocalDate start, LocalDate end, LocalDate date) {
         return start != null && end != null
                 && !date.isBefore(start) && !date.isAfter(end);
     }
 
-    /** @return identifier of the moment */
+    /** @return identificador del momento */
     public Long getId() {
         return id;
     }
 
-    /** @return program that owns the moment */
+    /** @return programa dueño del momento */
     public Program getProgram() {
         return program;
     }
 
     /**
-     * Sets the program of the moment. Use {@link Program#addMoment(Moment)} to keep
-     * both sides of the relationship in sync.
+     * Fija el programa del momento. Usar {@link Program#addMoment(Moment)} para
+     * mantener sincronizados los dos lados de la relación.
      *
-     * @param program program that owns the moment
+     * @param program programa dueño del momento
      */
     void setProgram(Program program) {
         this.program = program;
     }
 
-    /** @return academic period of the moment */
+    /** @return periodo académico del momento */
     public AcademicPeriod getPeriod() {
         return period;
     }
 
-    /** @param period academic period in which the moment is configured */
+    /** @param period periodo académico en el que se configura el momento */
     public void setPeriod(AcademicPeriod period) {
         this.period = period;
     }
 
-    /** @return number of the moment */
+    /** @return número del momento */
     public int getNumber() {
         return number;
     }
 
-    /** @param number new number of the moment */
+    /** @param number nuevo número del momento */
     public void setNumber(int number) {
         this.number = number;
     }
 
-    /** @return display name of the moment */
+    /** @return nombre visible del momento */
     public String getName() {
         return name;
     }
 
-    /** @param name new display name */
+    /** @param name nuevo nombre visible */
     public void setName(String name) {
         this.name = name;
     }
 
-    /** @return course in which it is assessed */
+    /** @return asignatura en la que se evalúa */
     public String getSubject() {
         return subject;
     }
 
-    /** @param subject new course */
+    /** @param subject nueva asignatura */
     public void setSubject(String subject) {
         this.subject = subject;
     }
 
-    /** @return first semester covered */
+    /** @return primer semestre que abarca */
     public int getSemesterFrom() {
         return semesterFrom;
     }
 
-    /** @param semesterFrom new first semester */
+    /** @param semesterFrom nuevo primer semestre */
     public void setSemesterFrom(int semesterFrom) {
         this.semesterFrom = semesterFrom;
     }
 
-    /** @return last semester covered */
+    /** @return último semestre que abarca */
     public int getSemesterTo() {
         return semesterTo;
     }
 
-    /** @param semesterTo new last semester */
+    /** @param semesterTo nuevo último semestre */
     public void setSemesterTo(int semesterTo) {
         this.semesterTo = semesterTo;
     }
 
-    /** @return requirement level as free text */
+    /** @return nivel de exigencia en texto libre */
     public String getRequirementLevel() {
         return requirementLevel;
     }
 
-    /** @param requirementLevel new requirement level */
+    /** @param requirementLevel nuevo nivel de exigencia */
     public void setRequirementLevel(String requirementLevel) {
         this.requirementLevel = requirementLevel;
     }
 
-    /** @return minimum number of students per group */
+    /** @return mínimo de estudiantes por grupo */
     public int getMinMembers() {
         return minMembers;
     }
 
-    /** @param minMembers new minimum number of students per group */
+    /** @param minMembers nuevo mínimo de estudiantes por grupo */
     public void setMinMembers(int minMembers) {
         this.minMembers = minMembers;
     }
 
-    /** @return maximum number of students per group */
+    /** @return máximo de estudiantes por grupo */
     public int getMaxMembers() {
         return maxMembers;
     }
 
-    /** @param maxMembers new maximum number of students per group */
+    /** @param maxMembers nuevo máximo de estudiantes por grupo */
     public void setMaxMembers(int maxMembers) {
         this.maxMembers = maxMembers;
     }
 
-    /** @return lifecycle status */
+    /** @return estado del ciclo de vida */
     public MomentStatus getStatus() {
         return status;
     }
 
-    /** @param status new lifecycle status */
+    /** @param status nuevo estado del ciclo de vida */
     public void setStatus(MomentStatus status) {
         this.status = status;
     }
 
-    /** @return first day of the group formation window, or {@code null} */
+    /** @return primer día de la ventana de conformación, o {@code null} */
     public LocalDate getGroupFormationStart() {
         return groupFormationStart;
     }
 
-    /** @param groupFormationStart first day of the group formation window */
+    /** @param groupFormationStart primer día de la ventana de conformación */
     public void setGroupFormationStart(LocalDate groupFormationStart) {
         this.groupFormationStart = groupFormationStart;
     }
 
-    /** @return last day of the group formation window, or {@code null} */
+    /** @return último día de la ventana de conformación, o {@code null} */
     public LocalDate getGroupFormationEnd() {
         return groupFormationEnd;
     }
 
-    /** @param groupFormationEnd last day of the group formation window */
+    /** @param groupFormationEnd último día de la ventana de conformación */
     public void setGroupFormationEnd(LocalDate groupFormationEnd) {
         this.groupFormationEnd = groupFormationEnd;
     }
 
-    /** @return first day of the submission window, or {@code null} */
+    /** @return primer día de la ventana de entregas, o {@code null} */
     public LocalDate getSubmissionStart() {
         return submissionStart;
     }
 
-    /** @param submissionStart first day of the submission window */
+    /** @param submissionStart primer día de la ventana de entregas */
     public void setSubmissionStart(LocalDate submissionStart) {
         this.submissionStart = submissionStart;
     }
 
-    /** @return last day of the submission window, or {@code null} */
+    /** @return último día de la ventana de entregas, o {@code null} */
     public LocalDate getSubmissionEnd() {
         return submissionEnd;
     }
 
-    /** @param submissionEnd last day of the submission window */
+    /** @param submissionEnd último día de la ventana de entregas */
     public void setSubmissionEnd(LocalDate submissionEnd) {
         this.submissionEnd = submissionEnd;
     }
 
-    /** @return first day of the grading window, or {@code null} */
+    /** @return primer día de la ventana de calificación, o {@code null} */
     public LocalDate getGradingStart() {
         return gradingStart;
     }
 
-    /** @param gradingStart first day of the grading window */
+    /** @param gradingStart primer día de la ventana de calificación */
     public void setGradingStart(LocalDate gradingStart) {
         this.gradingStart = gradingStart;
     }
 
-    /** @return last day of the grading window, or {@code null} */
+    /** @return último día de la ventana de calificación, o {@code null} */
     public LocalDate getGradingEnd() {
         return gradingEnd;
     }
 
-    /** @param gradingEnd last day of the grading window */
+    /** @param gradingEnd último día de la ventana de calificación */
     public void setGradingEnd(LocalDate gradingEnd) {
         this.gradingEnd = gradingEnd;
     }
 
-    /** @return learning outcomes of the moment, read-only (use add/remove) */
+    /** @return RAP del momento, en solo lectura (usar add/remove) */
     public List<LearningOutcome> getLearningOutcomes() {
         return Collections.unmodifiableList(learningOutcomes);
     }

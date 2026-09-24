@@ -13,8 +13,8 @@ export default defineConfig({
     },
   },
   server: {
-    // In development, requests to /api are forwarded to the Spring Boot backend,
-    // so the browser does not need CORS.
+    // En desarrollo, las peticiones a /api se reenvían al backend de Spring Boot,
+    // así el navegador no necesita CORS.
     proxy: {
       '/api': 'http://localhost:8080',
     },

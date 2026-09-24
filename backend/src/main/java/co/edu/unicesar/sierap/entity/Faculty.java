@@ -15,11 +15,11 @@ import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
 /**
- * Top-level academic unit of the university (facultad); groups one or more
- * {@link Program}s.
+ * Facultad: unidad académica mayor de la universidad; agrupa uno o varios
+ * {@link Program}.
  *
- * <p>It owns its programs (composition): deleting the faculty deletes its programs,
- * and removing a program from the list deletes it from the database.</p>
+ * <p>Es dueña de sus programas (composición): al eliminar la facultad se eliminan
+ * sus programas, y quitar un programa de la lista lo elimina de la base de datos.</p>
  */
 @Entity
 @Table(name = "faculty")
@@ -29,32 +29,38 @@ public class Faculty {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Official name of the faculty. */
+    /** Código institucional de la facultad, único en el sistema (p. ej. {@code 04}). */
+    @Column(nullable = false, unique = true, length = 20)
+    private String code;
+
+    /** Nombre oficial de la facultad. */
     @Column(nullable = false, length = 150)
     private String name;
 
-    /** Academic programs of the faculty. */
+    /** Programas académicos de la facultad. */
     @OneToMany(mappedBy = "faculty", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("name")
     private List<Program> programs = new ArrayList<>();
 
-    /** Constructor required by JPA. */
+    /** Constructor requerido por JPA. */
     protected Faculty() {
     }
 
     /**
-     * Creates a faculty without programs.
+     * Crea una facultad sin programas.
      *
-     * @param name official name of the faculty
+     * @param code código institucional de la facultad
+     * @param name nombre oficial de la facultad
      */
-    public Faculty(String name) {
+    public Faculty(String code, String name) {
+        this.code = code;
         this.name = name;
     }
 
     /**
-     * Adds a program to the faculty and sets the faculty of the program.
+     * Agrega un programa a la facultad y fija la facultad del programa.
      *
-     * @param program program to add
+     * @param program programa a agregar
      */
     public void addProgram(Program program) {
         programs.add(program);
@@ -62,31 +68,41 @@ public class Faculty {
     }
 
     /**
-     * Removes a program from the faculty; on save, the program is deleted.
+     * Quita un programa de la facultad; al guardar, el programa se elimina.
      *
-     * @param program program to remove
+     * @param program programa a quitar
      */
     public void removeProgram(Program program) {
         programs.remove(program);
         program.setFaculty(null);
     }
 
-    /** @return identifier of the faculty */
+    /** @return identificador de la facultad */
     public Long getId() {
         return id;
     }
 
-    /** @return official name of the faculty */
+    /** @return código institucional de la facultad */
+    public String getCode() {
+        return code;
+    }
+
+    /** @param code nuevo código institucional */
+    public void setCode(String code) {
+        this.code = code;
+    }
+
+    /** @return nombre oficial de la facultad */
     public String getName() {
         return name;
     }
 
-    /** @param name new name of the faculty */
+    /** @param name nuevo nombre de la facultad */
     public void setName(String name) {
         this.name = name;
     }
 
-    /** @return programs of the faculty, read-only (use add/remove) */
+    /** @return programas de la facultad, en solo lectura (usar add/remove) */
     public List<Program> getPrograms() {
         return Collections.unmodifiableList(programs);
     }

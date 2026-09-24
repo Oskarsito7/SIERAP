@@ -17,11 +17,11 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
 /**
- * Academic program (e.g. Ingeniería de Sistemas) that belongs to a
+ * Programa académico (p. ej. Ingeniería de Sistemas), perteneciente a una
  * {@link Faculty}.
  *
- * <p>It owns its assessment moments (composition): each {@link Moment} belongs to
- * a program in an academic period.</p>
+ * <p>Es dueño de sus momentos de evaluación (composición): cada {@link Moment}
+ * pertenece a un programa en un periodo académico.</p>
  */
 @Entity
 @Table(name = "program")
@@ -31,33 +31,33 @@ public class Program {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Institutional code of the program, unique in the system. */
+    /** Código institucional del programa, único en el sistema (p. ej. {@code 108}). */
     @Column(nullable = false, unique = true, length = 20)
     private String code;
 
-    /** Name of the program. */
+    /** Nombre del programa. */
     @Column(nullable = false, length = 150)
     private String name;
 
-    /** Faculty the program belongs to. */
+    /** Facultad a la que pertenece el programa. */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "faculty_id", nullable = false)
     private Faculty faculty;
 
-    /** Assessment moments of the program, across all periods. */
+    /** Momentos de evaluación del programa, de todos los periodos. */
     @OneToMany(mappedBy = "program", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Moment> moments = new ArrayList<>();
 
-    /** Constructor required by JPA. */
+    /** Constructor requerido por JPA. */
     protected Program() {
     }
 
     /**
-     * Creates a program without moments; it is linked to its faculty with
+     * Crea un programa sin momentos; se asocia a su facultad con
      * {@link Faculty#addProgram(Program)}.
      *
-     * @param code institutional code of the program
-     * @param name name of the program
+     * @param code código institucional del programa
+     * @param name nombre del programa
      */
     public Program(String code, String name) {
         this.code = code;
@@ -65,9 +65,9 @@ public class Program {
     }
 
     /**
-     * Adds a moment to the program and sets the program of the moment.
+     * Agrega un momento al programa y fija el programa del momento.
      *
-     * @param moment moment to add
+     * @param moment momento a agregar
      */
     public void addMoment(Moment moment) {
         moments.add(moment);
@@ -75,56 +75,56 @@ public class Program {
     }
 
     /**
-     * Removes a moment from the program; on save, the moment is deleted.
+     * Quita un momento del programa; al guardar, el momento se elimina.
      *
-     * @param moment moment to remove
+     * @param moment momento a quitar
      */
     public void removeMoment(Moment moment) {
         moments.remove(moment);
         moment.setProgram(null);
     }
 
-    /** @return identifier of the program */
+    /** @return identificador del programa */
     public Long getId() {
         return id;
     }
 
-    /** @return institutional code of the program */
+    /** @return código institucional del programa */
     public String getCode() {
         return code;
     }
 
-    /** @param code new institutional code */
+    /** @param code nuevo código institucional */
     public void setCode(String code) {
         this.code = code;
     }
 
-    /** @return name of the program */
+    /** @return nombre del programa */
     public String getName() {
         return name;
     }
 
-    /** @param name new name of the program */
+    /** @param name nuevo nombre del programa */
     public void setName(String name) {
         this.name = name;
     }
 
-    /** @return faculty the program belongs to */
+    /** @return facultad a la que pertenece */
     public Faculty getFaculty() {
         return faculty;
     }
 
     /**
-     * Sets the faculty of the program. Use {@link Faculty#addProgram(Program)} to
-     * keep both sides of the relationship in sync.
+     * Fija la facultad del programa. Usar {@link Faculty#addProgram(Program)} para
+     * mantener sincronizados los dos lados de la relación.
      *
-     * @param faculty faculty that owns the program
+     * @param faculty facultad dueña del programa
      */
     void setFaculty(Faculty faculty) {
         this.faculty = faculty;
     }
 
-    /** @return moments of the program, read-only (use add/remove) */
+    /** @return momentos del programa, en solo lectura (usar add/remove) */
     public List<Moment> getMoments() {
         return Collections.unmodifiableList(moments);
     }

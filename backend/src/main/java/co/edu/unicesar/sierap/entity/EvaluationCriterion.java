@@ -19,11 +19,12 @@ import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
 /**
- * Grading item within a {@link LearningOutcome} (e.g. "Identificación del
- * problema" in the UPC rubric).
+ * Criterio de evaluación: ítem de calificación dentro de un RAP
+ * ({@link LearningOutcome}), p. ej. "Identificación del problema" en la rúbrica de
+ * la UPC.
  *
- * <p>The evaluator picks one of its {@link PerformanceLevel}s; the maximum score of
- * the criterion is that of its highest level.</p>
+ * <p>El evaluador elige uno de sus {@link PerformanceLevel}; el puntaje máximo del
+ * criterio es el del nivel más alto.</p>
  */
 @Entity
 @Table(name = "evaluation_criterion")
@@ -33,34 +34,34 @@ public class EvaluationCriterion {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Learning outcome that owns the criterion. */
+    /** RAP dueño del criterio. */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "learning_outcome_id", nullable = false)
     private LearningOutcome learningOutcome;
 
-    /** What the criterion assesses. */
+    /** Qué se evalúa en el criterio. */
     @Column(nullable = false, length = 500)
     private String description;
 
-    /** Position of the criterion within the learning outcome, to show them in order. */
+    /** Posición del criterio dentro del RAP, para mostrarlos en orden. */
     @Column(nullable = false)
     private int displayOrder;
 
-    /** Levels the evaluator can pick in the criterion. */
+    /** Niveles que el evaluador puede elegir en el criterio. */
     @OneToMany(mappedBy = "criterion", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("displayOrder")
     private List<PerformanceLevel> levels = new ArrayList<>();
 
-    /** Constructor required by JPA. */
+    /** Constructor requerido por JPA. */
     protected EvaluationCriterion() {
     }
 
     /**
-     * Creates a criterion without levels; it is linked to its learning outcome with
+     * Crea un criterio sin niveles; se asocia a su RAP con
      * {@link LearningOutcome#addCriterion(EvaluationCriterion)}.
      *
-     * @param description  what the criterion assesses
-     * @param displayOrder position within the learning outcome
+     * @param description  qué se evalúa en el criterio
+     * @param displayOrder posición del criterio dentro del RAP
      */
     public EvaluationCriterion(String description, int displayOrder) {
         this.description = description;
@@ -68,9 +69,9 @@ public class EvaluationCriterion {
     }
 
     /**
-     * Maximum score of the criterion: the highest score among its levels.
+     * Puntaje máximo del criterio: el mayor puntaje entre sus niveles.
      *
-     * @return the highest {@link PerformanceLevel#getScore()}; zero if it has no levels
+     * @return el mayor {@link PerformanceLevel#getScore()}; cero si no tiene niveles
      */
     public BigDecimal getMaxScore() {
         return levels.stream()
@@ -80,9 +81,9 @@ public class EvaluationCriterion {
     }
 
     /**
-     * Adds a level to the criterion and sets the criterion of the level.
+     * Agrega un nivel al criterio y fija el criterio del nivel.
      *
-     * @param level level to add
+     * @param level nivel a agregar
      */
     public void addLevel(PerformanceLevel level) {
         levels.add(level);
@@ -90,57 +91,57 @@ public class EvaluationCriterion {
     }
 
     /**
-     * Removes a level from the criterion; on save, the level is deleted.
+     * Quita un nivel del criterio; al guardar, el nivel se elimina.
      *
-     * @param level level to remove
+     * @param level nivel a quitar
      */
     public void removeLevel(PerformanceLevel level) {
         levels.remove(level);
         level.setCriterion(null);
     }
 
-    /** @return identifier of the criterion */
+    /** @return identificador del criterio */
     public Long getId() {
         return id;
     }
 
-    /** @return learning outcome that owns the criterion */
+    /** @return RAP dueño del criterio */
     public LearningOutcome getLearningOutcome() {
         return learningOutcome;
     }
 
     /**
-     * Sets the learning outcome of the criterion. Use
-     * {@link LearningOutcome#addCriterion(EvaluationCriterion)} to keep both sides
-     * of the relationship in sync.
+     * Fija el RAP del criterio. Usar
+     * {@link LearningOutcome#addCriterion(EvaluationCriterion)} para mantener
+     * sincronizados los dos lados de la relación.
      *
-     * @param learningOutcome learning outcome that owns the criterion
+     * @param learningOutcome RAP dueño del criterio
      */
     void setLearningOutcome(LearningOutcome learningOutcome) {
         this.learningOutcome = learningOutcome;
     }
 
-    /** @return what the criterion assesses */
+    /** @return qué se evalúa en el criterio */
     public String getDescription() {
         return description;
     }
 
-    /** @param description new description */
+    /** @param description nueva descripción del criterio */
     public void setDescription(String description) {
         this.description = description;
     }
 
-    /** @return position within the learning outcome */
+    /** @return posición del criterio dentro del RAP */
     public int getDisplayOrder() {
         return displayOrder;
     }
 
-    /** @param displayOrder new position */
+    /** @param displayOrder nueva posición del criterio */
     public void setDisplayOrder(int displayOrder) {
         this.displayOrder = displayOrder;
     }
 
-    /** @return levels of the criterion, read-only (use add/remove) */
+    /** @return niveles del criterio, en solo lectura (usar add/remove) */
     public List<PerformanceLevel> getLevels() {
         return Collections.unmodifiableList(levels);
     }

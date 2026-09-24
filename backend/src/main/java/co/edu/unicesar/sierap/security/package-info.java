@@ -1,5 +1,5 @@
 /**
- * Cross-cutting security components: Spring Security configuration, JWT issuing
- * and validation, and role-based authorization ({@code @PreAuthorize}).
+ * Componentes transversales de seguridad: configuración de Spring Security,
+ * emisión y validación de JWT, y autorización por rol ({@code @PreAuthorize}).
  */
 package co.edu.unicesar.sierap.security;

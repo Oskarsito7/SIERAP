@@ -1,6 +1,6 @@
-# SIERAP CI: validates backend and frontend on every Pull Request to develop/main
-# and on every push to those branches. Both jobs are the "status checks" that
-# branch protection must require (docs/06-plan-de-trabajo.md, section 3.7).
+# CI de SIERAP: valida backend y frontend en cada Pull Request hacia develop/main
+# y en cada push a esas ramas. Los dos jobs son los "status checks" que deben
+# exigirse en la protección de ramas (docs/06-plan-de-trabajo.md, sección 3.7).
 name: CI
 
 on:
@@ -32,9 +32,9 @@ jobs:
           java-version: '21'
           cache: maven
 
-      # Compiles, runs unit and integration tests (Testcontainers starts
-      # PostgreSQL in the runner's Docker) and packages the jar.
-      - name: Build and test
+      # Compila, corre las pruebas unitarias y las de integración (Testcontainers
+      # levanta PostgreSQL en el Docker del runner) y empaqueta el jar.
+      - name: Compilar y probar
         run: ./mvnw -B -ntp verify
 
   frontend:
@@ -52,14 +52,14 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
-      - name: Install dependencies
+      - name: Instalar dependencias
         run: npm ci
 
       - name: Lint
         run: npm run lint
 
-      - name: Tests
+      - name: Pruebas
         run: npm test
 
-      - name: Build (includes type checking)
+      - name: Build (incluye verificación de tipos)
         run: npm run build

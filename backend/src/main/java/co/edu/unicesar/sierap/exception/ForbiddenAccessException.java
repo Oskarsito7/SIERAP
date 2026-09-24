@@ -3,20 +3,20 @@ package co.edu.unicesar.sierap.exception;
 import org.springframework.http.HttpStatus;
 
 /**
- * Thrown when an authenticated user tries to reach a resource outside their scope,
- * e.g. a teacher reading a group they did not enable or an admin changing another
- * faculty. The API responds with {@code 403 Forbidden} (never with a {@code 200}
- * and an empty list).
+ * Se lanza cuando un usuario autenticado intenta acceder a un recurso fuera de
+ * su alcance, p. ej. un docente consultando un grupo que no tiene asignado o un
+ * admin modificando otra facultad. La API responde con {@code 403 Forbidden}
+ * (nunca con un {@code 200} y una lista vacía).
  *
- * <p>It is not called {@code AccessDeniedException} to avoid clashing with the
- * Spring Security class of that name (Stage 2).</p>
+ * <p>No se llama {@code AccessDeniedException} para no chocar con la clase de
+ * Spring Security del mismo nombre (Etapa 2).</p>
  */
 public class ForbiddenAccessException extends SierapException {
 
     /**
-     * Creates the exception with the reason access was denied.
+     * Crea la excepción con la explicación del acceso denegado.
      *
-     * @param message why the user cannot access the resource, for the end user
+     * @param message motivo por el que el usuario no puede acceder
      */
     public ForbiddenAccessException(String message) {
         super(message);

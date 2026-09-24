@@ -14,8 +14,8 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * End-to-end integration test of the backend: starts the whole application against
- * a real PostgreSQL (Testcontainers), with Flyway and JPA enabled.
+ * Prueba de integración de extremo a extremo del backend: arranca la aplicación
+ * completa contra un PostgreSQL real (Testcontainers), con Flyway y JPA activos.
  */
 @SpringBootTest
 @AutoConfigureMockMvc

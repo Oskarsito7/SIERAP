@@ -22,25 +22,22 @@ import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 /**
- * Centralized exception handling for the whole API.
+ * Manejo centralizado de excepciones de toda la API.
  *
- * <p>Translates every error into an {@link ErrorResponse} with the same format:</p>
+ * <p>Traduce cualquier error a un {@link ErrorResponse} con el mismo formato:</p>
  * <ul>
- *   <li>{@link SierapException} and subclasses → the HTTP status each subclass defines.</li>
- *   <li>{@code @Valid} validation errors → {@code 400} with the detail per field.</li>
- *   <li>Spring MVC errors (unknown path, method not allowed, malformed JSON…) →
- *       their standard HTTP status, inherited from
+ *   <li>{@link SierapException} y subclases → el código HTTP que define cada subclase.</li>
+ *   <li>Errores de validación de {@code @Valid} → {@code 400} con el detalle por campo.</li>
+ *   <li>Errores propios de Spring MVC (ruta inexistente, método no permitido, JSON
+ *       mal formado…) → su código HTTP estándar, heredado de
  *       {@link ResponseEntityExceptionHandler}.</li>
- *   <li>Any other exception → {@code 500}, without exposing internal details.</li>
+ *   <li>Cualquier otra excepción → {@code 500}, sin exponer detalles internos.</li>
  * </ul>
  *
- * <p>The messages in the responses are shown to the end user, so they are in
- * Spanish.</p>
- *
- * <p>Note for Stage 2: Spring Security exceptions thrown inside a controller (e.g.
- * {@code AccessDeniedException} from {@code @PreAuthorize}) need their own
- * {@code @ExceptionHandler}; otherwise they fall into the generic handler and
- * respond {@code 500} instead of {@code 403}.</p>
+ * <p>Nota para la Etapa 2: las excepciones de Spring Security lanzadas dentro de
+ * un controller (p. ej. {@code AccessDeniedException} por {@code @PreAuthorize})
+ * necesitan su propio {@code @ExceptionHandler}; si no, caen en el manejador
+ * genérico y responden {@code 500} en lugar de {@code 403}.</p>
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -50,20 +47,20 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     private final Clock clock;
 
     /**
-     * Creates the handler with the application clock.
+     * Crea el manejador con el reloj de la aplicación.
      *
-     * @param clock clock used to timestamp every error response
+     * @param clock reloj usado para fechar cada respuesta de error
      */
     public GlobalExceptionHandler(Clock clock) {
         this.clock = clock;
     }
 
     /**
-     * Handles SIERAP business errors.
+     * Maneja los errores de negocio propios de SIERAP.
      *
-     * @param exception error thrown by a service
-     * @param request   HTTP request that caused it
-     * @return response with the HTTP status defined by the subclass
+     * @param exception error lanzado por un service
+     * @param request   petición HTTP que lo originó
+     * @return respuesta con el código HTTP que define la subclase
      */
     @ExceptionHandler(SierapException.class)
     public ResponseEntity<ErrorResponse> handleSierapException(SierapException exception,
@@ -74,12 +71,12 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Last resort for unexpected errors: they are logged in full and the client
-     * only gets a generic message.
+     * Último recurso para errores no previstos: se registran completos en el log
+     * y al cliente solo se le devuelve un mensaje genérico.
      *
-     * @param exception unhandled error
-     * @param request   HTTP request that caused it
-     * @return {@code 500 Internal Server Error} response
+     * @param exception error no controlado
+     * @param request   petición HTTP que lo originó
+     * @return respuesta {@code 500 Internal Server Error}
      */
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleUnexpectedException(Exception exception,
@@ -92,7 +89,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Responds {@code 400} with the first validation message of each invalid field.
+     * Responde {@code 400} con el primer mensaje de validación de cada campo inválido.
      */
     @Override
     protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException exception,
@@ -108,8 +105,8 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     }
 
     /**
-     * Single point every other Spring MVC error goes through: replaces the default
-     * {@link ProblemDetail} with the SIERAP {@link ErrorResponse} format.
+     * Punto único por el que pasan los demás errores de Spring MVC: reemplaza el
+     * {@link ProblemDetail} por defecto por el formato {@link ErrorResponse} de SIERAP.
      */
     @Override
     protected ResponseEntity<Object> createResponseEntity(Object body,

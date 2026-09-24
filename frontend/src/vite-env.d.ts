@@ -1,8 +1,8 @@
 /// <reference types="vite/client" />
 
-/** SIERAP environment variables (defined in .env, see .env.example). */
+/** Variables de entorno propias de SIERAP (definidas en .env, ver .env.example). */
 interface ImportMetaEnv {
-  /** Base URL of the API. Defaults to `/api`, which Vite forwards to the backend in development. */
+  /** URL base de la API. Por defecto `/api`, que Vite reenvía al backend en desarrollo. */
   readonly VITE_API_URL?: string
 }
 

@@ -7,10 +7,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Exposes the overall API status at {@code GET /api/status}.
+ * Expone el estado general de la API en {@code GET /api/status}.
  *
- * <p>Serves as a quick check that the backend is up and connected to PostgreSQL,
- * and as a minimal example of the full trip through the layers
+ * <p>Sirve como verificación rápida de que el backend levantó y está conectado a
+ * PostgreSQL, y como ejemplo mínimo del recorrido completo por capas
  * ({@code controller → service → dto}).</p>
  */
 @RestController
@@ -20,18 +20,18 @@ public class SystemStatusController {
     private final SystemStatusService systemStatusService;
 
     /**
-     * Creates the controller with the service that resolves the query.
+     * Crea el controller con el servicio que resuelve la consulta.
      *
-     * @param systemStatusService system status service
+     * @param systemStatusService servicio de estado del sistema
      */
     public SystemStatusController(SystemStatusService systemStatusService) {
         this.systemStatusService = systemStatusService;
     }
 
     /**
-     * Returns the current API status.
+     * Devuelve el estado actual de la API.
      *
-     * @return version, active profiles, database connection and server time
+     * @return versión, perfiles activos, conexión con la base de datos y hora del servidor
      */
     @GetMapping
     public SystemStatusResponse getStatus() {

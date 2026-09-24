@@ -3,27 +3,27 @@ package co.edu.unicesar.sierap.exception;
 import org.springframework.http.HttpStatus;
 
 /**
- * Thrown when a resource that does not exist is requested (a faculty, a group, a
- * submission…). The API responds with {@code 404 Not Found}.
+ * Se lanza cuando se solicita un recurso que no existe (una facultad, un grupo,
+ * una entrega…). La API responde con {@code 404 Not Found}.
  */
 public class ResourceNotFoundException extends SierapException {
 
     /**
-     * Creates the exception with a free-form message.
+     * Crea la excepción con un mensaje libre.
      *
-     * @param message description of the missing resource, for the end user
+     * @param message descripción del recurso no encontrado
      */
     public ResourceNotFoundException(String message) {
         super(message);
     }
 
     /**
-     * Creates the exception from the resource type and its identifier, e.g.
-     * {@code new ResourceNotFoundException("Grupo", 7)} produces
+     * Crea la excepción a partir del tipo de recurso y su identificador,
+     * p. ej. {@code new ResourceNotFoundException("Grupo", 7)} produce
      * "No existe Grupo con id 7".
      *
-     * @param resource name of the resource as shown to the user (in Spanish)
-     * @param id       identifier that was not found
+     * @param resource nombre del recurso buscado, tal como lo ve el usuario
+     * @param id       identificador que no se encontró
      */
     public ResourceNotFoundException(String resource, Object id) {
         super("No existe " + resource + " con id " + id);

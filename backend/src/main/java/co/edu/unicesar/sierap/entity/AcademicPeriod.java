@@ -10,13 +10,13 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 
 /**
- * Academic semester (e.g. {@code 2026-2}) with the evaluation deadline set by the
- * UPC.
+ * Periodo académico: semestre (p. ej. {@code 2026-2}) con la fecha límite de
+ * evaluación que fija la UPC.
  *
- * <p>The assessment configuration is versioned per period (ADR-010): each
- * {@link Moment} belongs to a period, which allows comparing results across
- * semesters and years (RF 12) and checking that grading ends no later than the UPC
- * deadline (RF 9).</p>
+ * <p>La configuración de la evaluación se versiona por periodo (ADR-010): cada
+ * {@link Moment} pertenece a un periodo, lo que permite comparar resultados entre
+ * semestres y años (RF 12) y validar que la calificación termine a más tardar en
+ * la fecha límite de la UPC (RF 9).</p>
  */
 @Entity
 @Table(name = "academic_period")
@@ -26,33 +26,33 @@ public class AcademicPeriod {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    /** Code of the period, unique in the system (e.g. {@code 2026-2}). */
+    /** Código del periodo, único en el sistema (p. ej. {@code 2026-2}). */
     @Column(nullable = false, unique = true, length = 20)
     private String code;
 
-    /** First day of the period. */
+    /** Primer día del periodo. */
     @Column(nullable = false)
     private LocalDate startDate;
 
-    /** Last day of the period. */
+    /** Último día del periodo. */
     @Column(nullable = false)
     private LocalDate endDate;
 
-    /** Last day grading is allowed in the period, according to the UPC. */
+    /** Último día en que se puede calificar en el periodo, según la UPC. */
     @Column(nullable = false)
     private LocalDate upcEvaluationDeadline;
 
-    /** Constructor required by JPA. */
+    /** Constructor requerido por JPA. */
     protected AcademicPeriod() {
     }
 
     /**
-     * Creates an academic period.
+     * Crea un periodo académico.
      *
-     * @param code                  code of the period, e.g. {@code 2026-2}
-     * @param startDate             first day of the period
-     * @param endDate               last day of the period
-     * @param upcEvaluationDeadline last day to grade, set by the UPC
+     * @param code                  código del periodo, p. ej. {@code 2026-2}
+     * @param startDate             primer día del periodo
+     * @param endDate               último día del periodo
+     * @param upcEvaluationDeadline último día para calificar, fijado por la UPC
      */
     public AcademicPeriod(String code, LocalDate startDate, LocalDate endDate,
                           LocalDate upcEvaluationDeadline) {
@@ -63,57 +63,58 @@ public class AcademicPeriod {
     }
 
     /**
-     * Tells whether a date falls inside the period, first and last day included.
+     * Indica si una fecha cae dentro del periodo, incluyendo el primer y el último
+     * día.
      *
-     * @param date date to check (the current date comes from the {@code Clock}
-     *             injected in the service, never from here)
-     * @return {@code true} if {@code startDate <= date <= endDate}
+     * @param date fecha a comprobar (la fecha actual se obtiene del {@code Clock}
+     *             inyectado en el service, nunca aquí)
+     * @return {@code true} si {@code startDate <= date <= endDate}
      */
     public boolean contains(LocalDate date) {
         return !date.isBefore(startDate) && !date.isAfter(endDate);
     }
 
-    /** @return identifier of the period */
+    /** @return identificador del periodo */
     public Long getId() {
         return id;
     }
 
-    /** @return code of the period */
+    /** @return código del periodo */
     public String getCode() {
         return code;
     }
 
-    /** @param code new code of the period */
+    /** @param code nuevo código del periodo */
     public void setCode(String code) {
         this.code = code;
     }
 
-    /** @return first day of the period */
+    /** @return primer día del periodo */
     public LocalDate getStartDate() {
         return startDate;
     }
 
-    /** @param startDate new first day of the period */
+    /** @param startDate nuevo primer día del periodo */
     public void setStartDate(LocalDate startDate) {
         this.startDate = startDate;
     }
 
-    /** @return last day of the period */
+    /** @return último día del periodo */
     public LocalDate getEndDate() {
         return endDate;
     }
 
-    /** @param endDate new last day of the period */
+    /** @param endDate nuevo último día del periodo */
     public void setEndDate(LocalDate endDate) {
         this.endDate = endDate;
     }
 
-    /** @return last day to grade, set by the UPC */
+    /** @return último día para calificar, fijado por la UPC */
     public LocalDate getUpcEvaluationDeadline() {
         return upcEvaluationDeadline;
     }
 
-    /** @param upcEvaluationDeadline new UPC evaluation deadline */
+    /** @param upcEvaluationDeadline nueva fecha límite de evaluación de la UPC */
     public void setUpcEvaluationDeadline(LocalDate upcEvaluationDeadline) {
         this.upcEvaluationDeadline = upcEvaluationDeadline;
     }

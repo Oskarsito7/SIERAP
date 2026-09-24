@@ -3,16 +3,16 @@ package co.edu.unicesar.sierap.exception;
 import org.springframework.http.HttpStatus;
 
 /**
- * Thrown when an operation breaks a business rule, e.g. a group with more members
- * than allowed or a submission after the deadline. The API responds with
- * {@code 422 Unprocessable Entity}.
+ * Se lanza cuando una operación viola una regla de negocio, p. ej. un grupo con
+ * más integrantes de los permitidos o una entrega fuera de la fecha límite.
+ * La API responde con {@code 422 Unprocessable Entity}.
  */
 public class BusinessRuleException extends SierapException {
 
     /**
-     * Creates the exception with the description of the broken rule.
+     * Crea la excepción con la descripción de la regla violada.
      *
-     * @param message why the operation is not allowed, for the end user
+     * @param message explicación de por qué no se permite la operación
      */
     public BusinessRuleException(String message) {
         super(message);

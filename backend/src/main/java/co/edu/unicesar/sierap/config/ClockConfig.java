@@ -8,22 +8,23 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 /**
- * Exposes the system clock as an injectable bean.
+ * Expone el reloj del sistema como un bean inyectable.
  *
- * <p>Several business rules depend on the current date (submissions before the
- * deadline, grading inside the window set by the teacher and the UPC limit).
- * Services must use {@code LocalDate.now(clock)} instead of {@code LocalDate.now()}
- * so tests can pin "today" with {@link Clock#fixed} and the rules are always
- * evaluated in the configured time zone, not in the server one.</p>
+ * <p>Varias reglas de negocio dependen de la fecha actual (entregas dentro de la
+ * fecha límite, evaluación dentro de la ventana definida por el docente y del
+ * rango fijado por la UPC). Los servicios deben usar {@code LocalDate.now(clock)}
+ * en lugar de {@code LocalDate.now()}, para que las pruebas puedan fijar "hoy"
+ * con {@link Clock#fixed} y las reglas se evalúen siempre en la zona horaria
+ * configurada, no en la del servidor.</p>
  */
 @Configuration
 public class ClockConfig {
 
     /**
-     * Creates the application clock in the institutional time zone.
+     * Crea el reloj de la aplicación en la zona horaria institucional.
      *
-     * @param timeZone time zone identifier, e.g. {@code America/Bogota}
-     * @return system clock in that time zone
+     * @param timeZone identificador de zona horaria, p. ej. {@code America/Bogota}
+     * @return reloj del sistema en esa zona horaria
      */
     @Bean
     public Clock clock(@Value("${sierap.time-zone}") String timeZone) {

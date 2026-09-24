@@ -6,15 +6,15 @@ import co.edu.unicesar.sierap.entity.Program;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * Data access for {@link Program}.
+ * Acceso a datos de {@link Program}.
  */
 public interface ProgramRepository extends JpaRepository<Program, Long> {
 
     /**
-     * Finds a program by its institutional code.
+     * Busca un programa por su código institucional.
      *
-     * @param code code of the program
-     * @return the program, if it exists
+     * @param code código del programa
+     * @return el programa, si existe
      */
     Optional<Program> findByCode(String code);
 }

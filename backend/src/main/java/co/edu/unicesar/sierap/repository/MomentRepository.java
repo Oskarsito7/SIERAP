@@ -6,17 +6,17 @@ import co.edu.unicesar.sierap.entity.Moment;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**
- * Data access for {@link Moment}.
+ * Acceso a datos de {@link Moment}.
  */
 public interface MomentRepository extends JpaRepository<Moment, Long> {
 
     /**
-     * Finds a moment by its natural key: program, period and number.
+     * Busca un momento por su clave natural: programa, periodo y número.
      *
-     * @param programCode code of the program
-     * @param periodCode  code of the academic period
-     * @param number      number of the moment
-     * @return the moment, if it exists
+     * @param programCode código del programa
+     * @param periodCode  código del periodo académico
+     * @param number      número del momento
+     * @return el momento, si existe
      */
     Optional<Moment> findByProgramCodeAndPeriodCodeAndNumber(
             String programCode, String periodCode, int number);

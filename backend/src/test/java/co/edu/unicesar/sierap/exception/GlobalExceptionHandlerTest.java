@@ -28,9 +28,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Checks that {@link GlobalExceptionHandler} translates each kind of error into
- * the right HTTP status and the uniform
- * {@link co.edu.unicesar.sierap.dto.response.ErrorResponse} format.
+ * Verifica que {@link GlobalExceptionHandler} traduzca cada tipo de error al
+ * código HTTP correcto y al formato uniforme de
+ * {@link co.edu.unicesar.sierap.dto.response.ErrorResponse}.
  */
 @WebMvcTest(controllers = GlobalExceptionHandlerTest.TestController.class)
 @Import({GlobalExceptionHandlerTest.TestController.class, GlobalExceptionHandlerTest.TestClock.class})
@@ -89,7 +89,7 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.message", not(containsString("internal detail"))));
     }
 
-    /** Controller that exists only in this test, to trigger each kind of error. */
+    /** Controller que existe solo en esta prueba para provocar cada tipo de error. */
     @RestController
     @RequestMapping("/test")
     static class TestController {
@@ -111,7 +111,7 @@ class GlobalExceptionHandlerTest {
 
         @PostMapping("/validation")
         void validate(@Valid @RequestBody TestRequest request) {
-            // Nothing to do when validation passes.
+            // Si la validación pasa no hay nada que hacer.
         }
 
         @GetMapping("/unexpected")
@@ -121,14 +121,14 @@ class GlobalExceptionHandlerTest {
     }
 
     /**
-     * Input DTO used only to test validation.
+     * DTO de entrada usado solo para probar la validación.
      *
-     * @param name required field
+     * @param name campo obligatorio
      */
     record TestRequest(@NotBlank(message = "El nombre es obligatorio") String name) {
     }
 
-    /** Fixed clock so {@code timestamp} is predictable. */
+    /** Reloj fijo para que {@code timestamp} sea predecible. */
     @TestConfiguration
     static class TestClock {
 

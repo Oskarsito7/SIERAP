@@ -7,6 +7,7 @@ import java.util.List;
 import co.edu.unicesar.sierap.TestcontainersConfiguration;
 import co.edu.unicesar.sierap.entity.AcademicPeriod;
 import co.edu.unicesar.sierap.entity.EvaluationCriterion;
+import co.edu.unicesar.sierap.entity.Faculty;
 import co.edu.unicesar.sierap.entity.LearningOutcome;
 import co.edu.unicesar.sierap.entity.Moment;
 import co.edu.unicesar.sierap.entity.Program;
@@ -19,9 +20,9 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Integration test of migrations V1 and V2 against a real PostgreSQL
- * (Testcontainers): Flyway creates the schema, Hibernate validates it against the
- * entities and the seed leaves Momento 1 complete with the official rubric.
+ * Prueba de integración de las migraciones V1 y V2 contra PostgreSQL real
+ * (Testcontainers): Flyway crea el esquema, Hibernate lo valida contra las
+ * entidades y la semilla deja el Momento 1 completo de la rúbrica oficial.
  */
 @SpringBootTest
 @ActiveProfiles("test")
@@ -29,8 +30,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional
 class AcademicSeedIntegrationTest {
 
-    private static final String PROGRAM_CODE = "SIS";
+    private static final String FACULTY_CODE = "04";
+    private static final String PROGRAM_CODE = "108";
     private static final String PERIOD_CODE = "2026-2";
+
+    @Autowired
+    private FacultyRepository facultyRepository;
 
     @Autowired
     private ProgramRepository programRepository;
@@ -43,18 +48,24 @@ class AcademicSeedIntegrationTest {
 
     @Test
     void loadsTheProgramWithItsFacultyAndThePeriod() {
+        Faculty faculty = facultyRepository.findByCode(FACULTY_CODE).orElseThrow();
         Program program = programRepository.findByCode(PROGRAM_CODE).orElseThrow();
         AcademicPeriod period = academicPeriodRepository.findByCode(PERIOD_CODE).orElseThrow();
 
-        assertThat(program.getFaculty().getPrograms()).contains(program);
+        assertThat(faculty.getName()).isEqualTo("Facultad de Ingenierías y Tecnologías");
+        assertThat(program.getName()).isEqualTo("Ingeniería de Sistemas");
+        assertThat(program.getFaculty()).isSameAs(faculty);
+        assertThat(faculty.getPrograms()).contains(program);
         assertThat(period.contains(period.getUpcEvaluationDeadline())).isTrue();
     }
 
     @Test
-    void moment1IsInConfigurationWithoutDates() {
+    void moment1IsInConfigurationWithoutDatesAndGroupsOfThreeToFive() {
         Moment moment = moment1();
 
         assertThat(moment.getStatus()).isEqualTo(MomentStatus.CONFIGURATION);
+        assertThat(moment.getMinMembers()).isEqualTo(3);
+        assertThat(moment.getMaxMembers()).isEqualTo(5);
         assertThat(moment.getGroupFormationStart()).isNull();
         assertThat(moment.getGradingEnd()).isNull();
     }

@@ -1,4 +1,4 @@
-# Production profile: no defaults, everything comes from environment variables.
+# Perfil de producción: sin valores por defecto, todo llega por variables de entorno.
 spring:
   datasource:
     url: ${DB_URL}

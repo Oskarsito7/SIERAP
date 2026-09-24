@@ -14,8 +14,8 @@ type LoadState =
   | { kind: 'error'; message: string }
 
 /**
- * Temporary home page (Stage 0): introduces the system and checks that the
- * frontend reaches the backend and that the backend is connected to PostgreSQL.
+ * Página de inicio provisional (Etapa 0): presenta el sistema y verifica que el
+ * frontend se comunica con el backend y que este tiene conexión con PostgreSQL.
  */
 export function HomePage() {
   const [load, setLoad] = useState<LoadState>({ kind: 'loading' })

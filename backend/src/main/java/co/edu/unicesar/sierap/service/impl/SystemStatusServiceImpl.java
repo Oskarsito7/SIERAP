@@ -17,18 +17,18 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 /**
- * Implementation of {@link SystemStatusService}.
+ * Implementación de {@link SystemStatusService}.
  *
- * <p>The database check runs directly on the {@link DataSource} (not through a
- * repository) because what is checked is the infrastructure, not a domain
- * entity.</p>
+ * <p>La verificación de la base de datos se hace directamente sobre el
+ * {@link DataSource} (y no con un repository) porque lo que se comprueba es la
+ * infraestructura, no una entidad del dominio.</p>
  */
 @Service
 public class SystemStatusServiceImpl implements SystemStatusService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemStatusServiceImpl.class);
 
-    /** Maximum seconds to wait for PostgreSQL to answer the validation. */
+    /** Segundos máximos que se espera a que PostgreSQL responda la validación. */
     private static final int CONNECTION_TIMEOUT_SECONDS = 2;
 
     private final DataSource dataSource;
@@ -38,13 +38,13 @@ public class SystemStatusServiceImpl implements SystemStatusService {
     private final String version;
 
     /**
-     * Creates the service with its dependencies.
+     * Crea el servicio con sus dependencias.
      *
-     * @param dataSource      PostgreSQL connection source
-     * @param clock           application clock
-     * @param environment     Spring environment, to read the active profiles
-     * @param applicationName name configured in {@code spring.application.name}
-     * @param version         artifact version, configured in {@code sierap.version}
+     * @param dataSource      fuente de conexiones a PostgreSQL
+     * @param clock           reloj de la aplicación
+     * @param environment     entorno de Spring, para leer los perfiles activos
+     * @param applicationName nombre configurado en {@code spring.application.name}
+     * @param version         versión del artefacto, configurada en {@code sierap.version}
      */
     public SystemStatusServiceImpl(DataSource dataSource,
                                    Clock clock,
@@ -69,8 +69,8 @@ public class SystemStatusServiceImpl implements SystemStatusService {
     }
 
     /**
-     * Active profiles or, when none was activated, the default profiles
-     * ({@code spring.profiles.default}, which is {@code dev} in SIERAP).
+     * Perfiles activos o, si no se activó ninguno, los perfiles por defecto
+     * ({@code spring.profiles.default}, que en SIERAP es {@code dev}).
      */
     private List<String> profilesInUse() {
         String[] active = environment.getActiveProfiles();

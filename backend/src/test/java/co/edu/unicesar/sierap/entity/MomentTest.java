@@ -10,8 +10,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests of the date windows and the maximum score of {@link Moment}
- * (ADR-012).
+ * Pruebas unitarias de las ventanas de fechas y del puntaje máximo de
+ * {@link Moment} (ADR-012).
  */
 class MomentTest {
 

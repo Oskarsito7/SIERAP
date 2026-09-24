@@ -4,14 +4,14 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * Overall API status, used by the frontend and by the team to check that the
- * backend is up and connected to the database.
+ * Estado general de la API, usado por el frontend y por el equipo para verificar
+ * que el backend está arriba y conectado a la base de datos.
  *
- * @param application       application name
- * @param version           deployed version (taken from {@code pom.xml})
- * @param profiles          Spring profiles in use (e.g. {@code dev})
- * @param databaseAvailable {@code true} if there is a connection to PostgreSQL
- * @param timestamp         server date and time in the institutional time zone
+ * @param application       nombre de la aplicación
+ * @param version           versión desplegada (tomada del {@code pom.xml})
+ * @param profiles          perfiles de Spring en uso (p. ej. {@code dev})
+ * @param databaseAvailable {@code true} si hay conexión con PostgreSQL
+ * @param timestamp         fecha y hora del servidor en la zona horaria institucional
  */
 public record SystemStatusResponse(
         String application,

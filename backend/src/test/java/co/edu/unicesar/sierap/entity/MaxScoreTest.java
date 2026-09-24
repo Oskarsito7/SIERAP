@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 
 /**
- * Unit tests of {@link EvaluationCriterion#getMaxScore()} and
+ * Pruebas unitarias de {@link EvaluationCriterion#getMaxScore()} y
  * {@link LearningOutcome#getMaxScore()}.
  */
 class MaxScoreTest {
