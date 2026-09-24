@@ -6,7 +6,7 @@ GitHub renderiza este diagrama directamente a partir del código Mermaid.
 
 > **Este es el diagrama vigente** y el contrato de la Etapa 1: incorpora las
 > decisiones del 2026-09-24 (ver `docs/04`, sección "Decisiones del equipo", y los
-> ADR-009 a ADR-012). La versión con diseño detallado
+> ADR-009 a ADR-014). Clases y atributos en inglés (ADR-014). La versión con diseño detallado
 > ([`diagrama_clases_mejorado.png`](diagrama_clases_mejorado.png) · editable en
 > [`diagrama_clases_mejorado.drawio`](diagrama_clases_mejorado.drawio)) corresponde
 > a la Fase 2 y se regenera al cerrar la Etapa 1. El diagrama preliminar de la
@@ -16,262 +16,266 @@ GitHub renderiza este diagrama directamente a partir del código Mermaid.
 classDiagram
 direction TB
 
-%% ================= Usuarios y roles (D1) =================
-class Usuario {
+%% ================= Users and roles (D1) =================
+class User {
   <<abstract>>
   -id: Long
-  -nombres: String
-  -apellidos: String
-  -tipoDocumento: TipoDocumento
-  -numeroDocumento: String
-  -correo: String
+  -firstNames: String
+  -lastNames: String
+  -documentType: DocumentType
+  -documentNumber: String
+  -email: String
   -passwordHash: String
-  -activo: boolean
-  -fechaCreacion: LocalDateTime
-  +getRol()* RolUsuario
-  +getNombreCompleto() String
-  +estaActivo() boolean
+  -active: boolean
+  -createdAt: LocalDateTime
+  +getRole()* UserRole
+  +getFullName() String
+  +isActive() boolean
 }
-class Evaluador {
+class Evaluator {
   <<interface>>
-  +calificar(grupo: Grupo) Evaluacion
-  +getGruposAsignados() List~Grupo~
-  +puedeEvaluar(grupo: Grupo, hoy: LocalDate) boolean
+  +grade(group: ProjectGroup) Evaluation
+  +getAssignedGroups() List~ProjectGroup~
+  +canEvaluate(group: ProjectGroup, today: LocalDate) boolean
 }
-class RolUsuario {
+class UserRole {
   <<enumeration>>
   SUPER_ADMIN
   ADMIN
-  DOCENTE
-  ESTUDIANTE
-  EVALUADOR_EXTERNO
+  TEACHER
+  STUDENT
+  EXTERNAL_EVALUATOR
 }
-class TipoDocumento {
+class DocumentType {
   <<enumeration>>
   CC
   TI
   CE
-  PASAPORTE
+  PASSPORT
 }
 class SuperAdmin {
-  +getRol() RolUsuario
+  +getRole() UserRole
 }
 class Admin {
-  -facultad: Facultad
-  +getRol() RolUsuario
+  -faculty: Faculty
+  +getRole() UserRole
 }
-class Docente {
-  -facultad: Facultad
-  +getRol() RolUsuario
+class Teacher {
+  -faculty: Faculty
+  +getRole() UserRole
 }
-class Estudiante {
-  -codigoEstudiante: String
-  -semestreActual: int
-  -programa: Programa
-  +getRol() RolUsuario
+class Student {
+  -studentCode: String
+  -currentSemester: int
+  -program: Program
+  +getRole() UserRole
 }
-class EvaluadorExterno {
-  -tipoEvaluador: TipoEvaluador
-  -organizacion: String
-  -cargo: String
-  -anioGraduacion: Integer
-  -programaEgreso: Programa
-  +getRol() RolUsuario
+class ExternalEvaluator {
+  -evaluatorType: EvaluatorType
+  -organization: String
+  -position: String
+  -graduationYear: Integer
+  -graduationProgram: Program
+  +getRole() UserRole
 }
-class TipoEvaluador {
+class EvaluatorType {
   -id: Long
-  -nombre: String
-  -descripcion: String
-  -activo: boolean
+  -name: String
+  -description: String
+  -active: boolean
 }
 
-%% ================= Estructura académica y configuración (D2) =================
-class ParametroGlobal {
-  -clave: String
-  -valor: String
-  -descripcion: String
+%% ================= Academic structure and configuration (D2) =================
+class GlobalParameter {
+  -key: String
+  -value: String
+  -description: String
 }
-class Facultad {
+class Faculty {
   -id: Long
-  -nombre: String
-  -programas: List~Programa~
+  -name: String
+  -programs: List~Program~
 }
-class Programa {
+class Program {
   -id: Long
-  -codigo: String
-  -nombre: String
-  -facultad: Facultad
+  -code: String
+  -name: String
+  -faculty: Faculty
+  -moments: List~Moment~
 }
-class PeriodoAcademico {
+class AcademicPeriod {
   -id: Long
-  -codigo: String
-  -fechaInicio: LocalDate
-  -fechaFin: LocalDate
-  -fechaLimiteEvaluacionUPC: LocalDate
-  +contiene(fecha: LocalDate) boolean
+  -code: String
+  -startDate: LocalDate
+  -endDate: LocalDate
+  -upcEvaluationDeadline: LocalDate
+  +contains(date: LocalDate) boolean
 }
-class Momento {
+class Moment {
   -id: Long
-  -numero: int
-  -nombre: String
-  -asignatura: String
-  -semestreDesde: int
-  -semestreHasta: int
-  -nivelExigencia: String
-  -minIntegrantes: int
-  -maxIntegrantes: int
-  -estado: EstadoMomento
-  -inicioConformacion: LocalDate
-  -finConformacion: LocalDate
-  -inicioEntregas: LocalDate
-  -finEntregas: LocalDate
-  -inicioCalificacion: LocalDate
-  -finCalificacion: LocalDate
-  -programa: Programa
-  -periodo: PeriodoAcademico
-  -raps: List~RAP~
-  +lanzar() void
-  +estaEnConformacion(hoy: LocalDate) boolean
-  +estaEnEntregas(hoy: LocalDate) boolean
-  +estaEnCalificacion(hoy: LocalDate) boolean
+  -number: int
+  -name: String
+  -subject: String
+  -semesterFrom: int
+  -semesterTo: int
+  -requirementLevel: String
+  -minMembers: int
+  -maxMembers: int
+  -status: MomentStatus
+  -groupFormationStart: LocalDate
+  -groupFormationEnd: LocalDate
+  -submissionStart: LocalDate
+  -submissionEnd: LocalDate
+  -gradingStart: LocalDate
+  -gradingEnd: LocalDate
+  -program: Program
+  -period: AcademicPeriod
+  -learningOutcomes: List~LearningOutcome~
+  +launch() void
+  +isInGroupFormation(today: LocalDate) boolean
+  +isInSubmission(today: LocalDate) boolean
+  +isInGrading(today: LocalDate) boolean
+  +getMaxScore() BigDecimal
 }
-class EstadoMomento {
+class MomentStatus {
   <<enumeration>>
-  CONFIGURACION
-  LANZADO
+  CONFIGURATION
+  LAUNCHED
 }
-class RAP {
+class LearningOutcome {
   -id: Long
-  -codigo: String
-  -descripcion: String
-  -criterios: List~CriterioEvaluacion~
-  +getPuntajeMaximo() double
+  -code: String
+  -description: String
+  -criteria: List~EvaluationCriterion~
+  +getMaxScore() BigDecimal
 }
-class CriterioEvaluacion {
+class EvaluationCriterion {
   -id: Long
-  -descripcion: String
-  -orden: int
-  -niveles: List~NivelDesempeno~
-  +getPuntajeMaximo() double
+  -description: String
+  -displayOrder: int
+  -levels: List~PerformanceLevel~
+  +getMaxScore() BigDecimal
 }
-class NivelDesempeno {
+class PerformanceLevel {
   -id: Long
-  -nombre: String
-  -descripcion: String
-  -puntaje: double
-  -orden: int
+  -name: String
+  -description: String
+  -score: BigDecimal
+  -displayOrder: int
 }
 
-%% ================= Estructura operativa (D3) =================
-class Grupo {
+%% ================= Operations (D3) =================
+class ProjectGroup {
   -id: Long
-  -nombre: String
-  -tituloProyecto: String
-  -momento: Momento
-  -docente: Docente
-  -integrantes: List~Estudiante~
-  -evaluadores: List~EvaluadorExterno~
-  -fechaLimiteEntrega: LocalDate
-  -fechaEvaluacion: LocalDate
-  +inscribir(e: Estudiante) void
-  +estaCompleto() boolean
-  +getUltimaEntrega() Entrega
-  +getNotaFinal() double
+  -name: String
+  -projectTitle: String
+  -moment: Moment
+  -teacher: Teacher
+  -members: List~Student~
+  -evaluators: List~ExternalEvaluator~
+  -submissionDeadline: LocalDate
+  -evaluationDate: LocalDate
+  +enroll(s: Student) void
+  +isFull() boolean
+  +getLatestSubmission() Submission
+  +getFinalGrade() BigDecimal
 }
-class Entrega {
+class Submission {
   -id: Long
-  -numeroVersion: int
-  -rutaArchivoZip: String
-  -rutaPresentacion: String
-  -fechaSubida: LocalDateTime
-  +fueATiempo(limite: LocalDate) boolean
+  -versionNumber: int
+  -zipFilePath: String
+  -presentationPath: String
+  -submittedAt: LocalDateTime
+  +wasOnTime(deadline: LocalDate) boolean
 }
 
-%% ================= Evaluación y reportería (D3) =================
-class Evaluacion {
+%% ================= Evaluation and reporting (D3) =================
+class Evaluation {
   -id: Long
-  -fecha: LocalDateTime
-  -comentario: String
-  -calificaciones: List~CalificacionCriterio~
-  +calcularNotaTotal() double
-  +calcularNotaPorRAP(rap: RAP) double
+  -date: LocalDateTime
+  -comment: String
+  -grades: List~CriterionGrade~
+  +calculateTotalGrade() BigDecimal
+  +calculateGradeByOutcome(outcome: LearningOutcome) BigDecimal
 }
-class CalificacionCriterio {
+class CriterionGrade {
   -id: Long
-  -criterio: CriterioEvaluacion
-  -nivelElegido: NivelDesempeno
-  -puntaje: double
+  -criterion: EvaluationCriterion
+  -selectedLevel: PerformanceLevel
+  -score: BigDecimal
 }
-class Reporte {
+class Report {
   <<abstract>>
-  -fechaGeneracion: LocalDateTime
-  -periodo: PeriodoAcademico
-  +generar()* byte[]
+  -generatedAt: LocalDateTime
+  -period: AcademicPeriod
+  +generate()* byte[]
 }
-class ReporteIndividual {
-  -estudiante: Estudiante
-  +generar() byte[]
+class IndividualReport {
+  -student: Student
+  +generate() byte[]
 }
-class ReporteGrupal {
-  -grupo: Grupo
-  +generar() byte[]
+class GroupReport {
+  -group: ProjectGroup
+  +generate() byte[]
 }
-class ReporteComparativo {
-  -periodoA: PeriodoAcademico
-  -periodoB: PeriodoAcademico
-  +generar() byte[]
+class ComparativeReport {
+  -periodA: AcademicPeriod
+  -periodB: AcademicPeriod
+  +generate() byte[]
 }
 
-%% ================= Relaciones =================
-Usuario <|-- SuperAdmin
-Usuario <|-- Admin
-Usuario <|-- Docente
-Usuario <|-- Estudiante
-Usuario <|-- EvaluadorExterno
-Evaluador <|.. Docente
-Evaluador <|.. EvaluadorExterno
-Usuario ..> RolUsuario : «use»
-Usuario ..> TipoDocumento : «use»
+%% ================= Relationships =================
+User <|-- SuperAdmin
+User <|-- Admin
+User <|-- Teacher
+User <|-- Student
+User <|-- ExternalEvaluator
+Evaluator <|.. Teacher
+Evaluator <|.. ExternalEvaluator
+User ..> UserRole : «use»
+User ..> DocumentType : «use»
 
-SuperAdmin ..> ParametroGlobal : «gestiona»
-SuperAdmin ..> PeriodoAcademico : «gestiona»
-SuperAdmin ..> TipoEvaluador : «gestiona»
-Admin "1" -- "1" Facultad : administra
-Docente "*" -- "1" Facultad : pertenece a
-Estudiante "*" -- "1" Programa : cursa
-EvaluadorExterno "*" -- "1" TipoEvaluador : es de tipo
-EvaluadorExterno "*" -- "0..1" Programa : egresó de
+SuperAdmin ..> GlobalParameter : «manages»
+SuperAdmin ..> AcademicPeriod : «manages»
+SuperAdmin ..> EvaluatorType : «manages»
+Admin "1" -- "1" Faculty : administers
+Teacher "*" -- "1" Faculty : belongs to
+Student "*" -- "1" Program : studies
+ExternalEvaluator "*" -- "1" EvaluatorType : is of type
+ExternalEvaluator "*" -- "0..1" Program : graduated from
 
-Facultad "1" *-- "1..*" Programa
-Programa "1" *-- "*" Momento
-Momento "*" -- "1" PeriodoAcademico : se configura en
-Momento ..> EstadoMomento : «use»
-Momento "1" *-- "1..*" RAP
-RAP "1" *-- "1..*" CriterioEvaluacion
-CriterioEvaluacion "1" *-- "1..*" NivelDesempeno
+Faculty "1" *-- "1..*" Program
+Program "1" *-- "*" Moment
+Moment "*" -- "1" AcademicPeriod : configured in
+Moment ..> MomentStatus : «use»
+Moment "1" *-- "1..*" LearningOutcome
+LearningOutcome "1" *-- "1..*" EvaluationCriterion
+EvaluationCriterion "1" *-- "1..*" PerformanceLevel
 
-Momento "1" *-- "*" Grupo
-Docente "1" -- "*" Grupo : habilita
-Grupo "*" o-- "min..max" Estudiante : un grupo por momento
-Grupo "*" -- "*" EvaluadorExterno : designados
-Grupo "1" *-- "0..*" Entrega
+Moment "1" *-- "*" ProjectGroup
+Teacher "1" -- "*" ProjectGroup : enables
+ProjectGroup "*" o-- "min..max" Student : one group per moment
+ProjectGroup "*" -- "*" ExternalEvaluator : assigned
+ProjectGroup "1" *-- "0..*" Submission
 
-Grupo "1" *-- "0..*" Evaluacion
-Evaluacion "*" -- "1" Evaluador : realizada por
-Evaluacion "1" *-- "1..*" CalificacionCriterio
-CalificacionCriterio "*" -- "1" CriterioEvaluacion : califica
-CalificacionCriterio "*" -- "1" NivelDesempeno : nivel elegido
+ProjectGroup "1" *-- "0..*" Evaluation
+Evaluation "*" -- "1" Evaluator : made by
+Evaluation "1" *-- "1..*" CriterionGrade
+CriterionGrade "*" -- "1" EvaluationCriterion : grades
+CriterionGrade "*" -- "1" PerformanceLevel : selected level
 
-Reporte <|-- ReporteIndividual
-Reporte <|-- ReporteGrupal
-Reporte <|-- ReporteComparativo
-Reporte ..> Evaluacion : «use»
+Report <|-- IndividualReport
+Report <|-- GroupReport
+Report <|-- ComparativeReport
+Report ..> Evaluation : «use»
 ```
 
 ## Cambios de la Etapa 1 (decisiones del 2026-09-24)
 
 | Cambio | Motivo |
 |---|---|
+| Todas las clases, atributos y métodos pasan a inglés (`Facultad` → `Faculty`, `Momento` → `Moment`, `RAP` → `LearningOutcome`, `CriterioEvaluacion` → `EvaluationCriterion`, `NivelDesempeno` → `PerformanceLevel`, `Grupo` → `ProjectGroup`…); la tabla de equivalencias está en `docs/03` | El código se escribe en inglés y solo lo que ve el usuario final queda en español (ADR-014). |
+| Puntajes (`score`, `getMaxScore()`, notas) como `BigDecimal` en lugar de `double` | Sumas exactas: el Momento 1 debe dar 5.00, no 4.9999… (ADR-013). |
 | `Usuario`: `nombre` → `nombres` + `apellidos`; nuevos `tipoDocumento` y `numeroDocumento`; enum `TipoDocumento` | Guardar el documento de identidad además del correo, que es el dato de inicio de sesión. |
 | `Empresario` y `Egresado` → una sola subclase `EvaluadorExterno` con `TipoEvaluador` (catálogo) | Se deben poder crear más tipos de evaluador sin programar (ADR-011). |
 | `Docente` pertenece a una `Facultad` | Solo usan SIERAP los docentes con proyecto de aula, que dictan en su facultad. |

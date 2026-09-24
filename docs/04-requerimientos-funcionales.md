@@ -124,7 +124,9 @@ Definidas por el responsable del proyecto el 2026-09-24.
 | Ciclo del momento | Configuración (incluye conformación de grupos) → **Lanzar** (admin, con los grupos armados; bloquea configuración y grupos) → entregas → calificación → cierre (ADR-012). |
 | Fechas | El admin fija las ventanas del momento (conformación, entregas, calificación) dentro del límite de la UPC; cada docente fija la fecha de entrega y de evaluación de sus grupos dentro de esas ventanas. |
 | Herencia de `Usuario` | `JOINED`: tabla común `usuario` + una tabla por rol (ADR-009). |
-| Datos semilla | Facultad, Ing. de Sistemas, periodo actual y el Momento 1 completo (5 RAP con los criterios y niveles de la rúbrica oficial, `docs/00`), en estado de configuración y editable. |
+| Datos semilla | Facultad, Ing. de Sistemas, periodo actual y el Momento 1 completo (5 RAP con los criterios y niveles de la rúbrica oficial, `docs/00`), en estado de configuración y editable. El Momento 1 evalúa del semestre 1 al 3, en parejas (mínimo y máximo 2 integrantes), sin ventanas de fechas todavía. |
+| Puntajes | Se manejan como decimales exactos (`BigDecimal`), para que el Momento 1 sume exactamente 5.0 (ADR-013). |
+| Idioma del código | El código va en inglés; lo que ve el usuario final (interfaz, mensajes, datos) va en español (ADR-014). |
 
 ## Pendiente de definir con el equipo
 

@@ -189,11 +189,12 @@ varias reglas de negocio dependen de la fecha actual (RF 3, 6 y 9).
 - **DTOs como `record`** de Java (inmutables, sin código repetitivo).
 - **Inyección por constructor**, nunca `@Autowired` sobre atributos.
 - **Reloj inyectable:** los services obtienen la fecha con
-  `LocalDate.now(reloj)`, usando el `Clock` que expone `config.RelojConfig` en la zona
+  `LocalDate.now(clock)`, usando el `Clock` que expone `config.ClockConfig` en la zona
   `America/Bogota`, nunca con `LocalDate.now()`.
 - **Errores de negocio como subclases de `SierapException`**
-  (`RecursoNoEncontradoException` → 404, `ReglaNegocioException` → 422,
-  `AccesoDenegadoException` → 403); cada subclase define su código HTTP por
+  (`ResourceNotFoundException` → 404, `BusinessRuleException` → 422,
+  `ForbiddenAccessException` → 403; nombres en inglés desde el ADR-014); cada
+  subclase define su código HTTP por
   polimorfismo y `GlobalExceptionHandler` responde con el formato `ErrorResponse`.
 
 **Alternativas consideradas:** Lombok (menos código, pero el encapsulamiento deja de
@@ -367,6 +368,81 @@ negocio de la evaluación, así que no contradice el ADR-010. Cada operación va
 estado y fecha (p. ej. inscribirse solo en `CONFIGURACION` y dentro de la ventana de
 conformación; entregar solo en `LANZADO` y dentro de la ventana de entregas). Queda
 pendiente qué pasa al lanzar con grupos que no alcanzan el mínimo de integrantes.
+
+---
+
+## ADR-013 — Puntajes como `BigDecimal`
+
+**Fecha:** 2026-09-24 (Etapa 1).
+**Estado:** Aceptada.
+
+**Contexto:** el diagrama de clases tenía los puntajes de los niveles de desempeño
+como `double`. La nota del Momento 1 es una suma de 0.36, 0.48, 0.6 y 0.8, valores
+que no tienen representación exacta en binario: con `double` la suma puede dar
+`4.999999…` en lugar de `5.0`, y una nota así se muestra mal, se compara mal contra
+un umbral y descuadra los reportes.
+
+**Decisión:** los puntajes (`PerformanceLevel.score`, los `getMaxScore()` de
+`EvaluationCriterion`, `LearningOutcome` y `Moment`, y las notas que se calculen en la
+Etapa 6) usan `java.math.BigDecimal`, guardado en PostgreSQL como `NUMERIC(5,2)`. Las
+pruebas comparan con `isEqualByComparingTo` (la escala no importa: `5.0` = `5.00`).
+
+**Alternativas consideradas:** `double` con redondeo al mostrar (el error se acumula
+en promedios y comparaciones, y hay que acordarse de redondear en cada lugar);
+guardar centésimas como enteros (exacto, pero obliga a convertir en toda la
+aplicación y el código es menos legible en la sustentación).
+
+**Consecuencias:** las sumas son exactas. Sumar se escribe con `add` y no con `+`, y
+los DTO exponen el puntaje como número decimal en el JSON.
+
+---
+
+## ADR-014 — Código en inglés, textos para el usuario en español
+
+**Fecha:** 2026-09-24 (Etapa 1).
+**Estado:** Aceptada.
+
+**Contexto:** el código de la Etapa 0 y el modelo de la Etapa 1 se escribieron en
+español. El responsable del proyecto definió que el código se maneje en inglés,
+excepto lo que ve el usuario final.
+
+**Decisión:**
+
+- **En inglés:** nombres de clases, interfaces, enums y sus valores, métodos,
+  atributos, variables, tablas y columnas de la base de datos, rutas de la API
+  (`/api/status`), campos JSON de los DTO, claves de configuración
+  (`sierap.time-zone`), Javadoc, comentarios, mensajes de log, nombres de pruebas y
+  mensajes de commit. Aplica al backend y al frontend.
+- **En español:** todo lo que ve el usuario final: textos de la interfaz, mensajes
+  de error que devuelve la API (`ErrorResponse.message`), mensajes de validación y
+  datos de negocio (nombres de facultades, programas, RAP, criterios y niveles).
+- **Documentación (`/docs`, README):** sigue en español porque es entregable para la
+  universidad; los nombres de clases y atributos se escriben como están en el código,
+  con su concepto en español al lado (tabla de `docs/03`).
+- Equivalencias principales: `Facultad` → `Faculty`, `Programa` → `Program`,
+  `PeriodoAcademico` → `AcademicPeriod`, `ParametroGlobal` → `GlobalParameter`,
+  `Momento` → `Moment`, `RAP` → `LearningOutcome`, `CriterioEvaluacion` →
+  `EvaluationCriterion`, `NivelDesempeno` → `PerformanceLevel`, `EstadoMomento` →
+  `MomentStatus`, `Usuario` → `User`, `Docente` → `Teacher`, `Estudiante` →
+  `Student`, `EvaluadorExterno` → `ExternalEvaluator`, `TipoEvaluador` →
+  `EvaluatorType`, `Evaluador` → `Evaluator`, `Grupo` → `ProjectGroup`, `Entrega` →
+  `Submission`, `Evaluacion` → `Evaluation`, `CalificacionCriterio` →
+  `CriterionGrade`, `Reporte` → `Report`, `RolUsuario` → `UserRole`, `TipoDocumento`
+  → `DocumentType`.
+- Se evitan palabras reservadas de SQL como nombres de tabla o columna: `app_user`
+  en lugar de `user`, `ProjectGroup` en lugar de `Group`, `display_order` en lugar
+  de `order`, `param_key`/`param_value` en lugar de `key`/`value`.
+
+**Alternativas consideradas:** todo en español (era el estado anterior; el
+responsable pidió inglés); inglés solo en el código nuevo (el backend quedaría
+mezclado, con clases de la Etapa 0 en español y las de la Etapa 1 en inglés).
+
+**Consecuencias:** el código de la Etapa 0 se renombró en el mismo PR del modelo
+académico (`EstadoSistema*` → `SystemStatus*`, `RelojConfig` → `ClockConfig`, las
+excepciones, el endpoint `/api/estado` → `/api/status` y los campos JSON, con el
+frontend ajustado). Las ramas de D1 y D3 deben usar los nombres de la tabla
+anterior. La nomenclatura estándar de Java que exige la rúbrica se mantiene igual;
+solo cambia el idioma.
 
 ---
 

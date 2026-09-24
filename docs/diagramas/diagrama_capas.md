@@ -23,22 +23,22 @@ flowchart TB
     direction TB
     subgraph P["PRESENTACIÓN — API REST"]
       direction LR
-      controller["<b>controller</b><br/>@RestController<br/>GrupoController, EvaluacionController …"]
+      controller["<b>controller</b><br/>@RestController<br/>ProjectGroupController, EvaluationController …"]
       dto["<b>dto</b><br/>request / response<br/>validación con @Valid"]
       mapper["<b>mapper</b><br/>entidad ⇄ DTO"]
     end
     subgraph L["LÓGICA DE NEGOCIO"]
       direction LR
-      service["<b>service</b><br/>«interface» GrupoService,<br/>EvaluacionService, ReporteService …"]
-      impl["<b>service.impl</b><br/>@Service · @Transactional<br/>reglas: 3–5 integrantes, fechas UPC,<br/>alcance por rol"]
+      service["<b>service</b><br/>«interface» ProjectGroupService,<br/>EvaluationService, ReportService …"]
+      impl["<b>service.impl</b><br/>@Service · @Transactional<br/>reglas: integrantes por grupo, fechas UPC,<br/>alcance por rol"]
     end
     subgraph DA["DATOS"]
       repository["<b>repository</b><br/>extends JpaRepository&lt;T, Long&gt;<br/>consultas de reportería con @Query"]
     end
     subgraph EN["ENTIDADES"]
       direction LR
-      entity["<b>entity</b><br/>Usuario {abstract} + 5 roles, Facultad, Programa,<br/>Momento, RAP, Criterio, Nivel, Grupo, Evaluacion …"]
-      enums["<b>entity.enums</b><br/>RolUsuario · TipoDocumento<br/>EstadoMomento"]
+      entity["<b>entity</b><br/>User {abstract} + 5 roles, Faculty, Program,<br/>Moment, LearningOutcome, EvaluationCriterion,<br/>PerformanceLevel, ProjectGroup, Evaluation …"]
+      enums["<b>entity.enums</b><br/>UserRole · DocumentType<br/>MomentStatus"]
     end
     subgraph T["TRANSVERSALES"]
       direction TB
@@ -86,9 +86,10 @@ flowchart TB
 |---|---|
 | Cada capa solo usa la inmediatamente inferior (`controller → service → repository → entity`). | Es la arquitectura por capas completa que evalúa la rúbrica (RAP2). |
 | Las entidades JPA nunca salen de la API: el controller responde siempre con DTOs. | Evita exponer `passwordHash` o relaciones internas y desacopla la API del modelo. |
-| Sin lógica de negocio en los controllers. | Las reglas (3–5 integrantes, fechas dentro del rango UPC, alcance por rol) viven en `service.impl` y se prueban con JUnit + Mockito. |
+| Sin lógica de negocio en los controllers. | Las reglas (integrantes por grupo, fechas dentro del rango UPC, alcance por rol) viven en `service.impl` y se prueban con JUnit + Mockito. |
 | Sin `try/catch` disperso: los errores se lanzan como `SierapException` y los traduce `exception`. | Respuestas de error uniformes y manejo de excepciones centralizado (rúbrica RAP2). |
-| Nada de valores de negocio hardcodeados. | RAP, pesos y rangos de semestre se leen de la base de datos (`ParametroGlobal`, `Momento`, `RAP`). |
+| Nada de valores de negocio hardcodeados. | RAP, pesos y rangos de semestre se leen de la base de datos (`GlobalParameter`, `Moment`, `LearningOutcome`). |
+| Código en inglés; solo lo que ve el usuario final en español. | Convención del equipo (ADR-014). |
 
 ## Correspondencia con la rúbrica
 

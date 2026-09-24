@@ -14,45 +14,47 @@ Abstracción + herencia + interfaz: la base de la POO del proyecto.
 ```mermaid
 classDiagram
 direction BT
-class Usuario {
+class User {
   <<abstract>>
-  -nombres: String
-  -apellidos: String
-  -correo: String
-  -activo: boolean
-  +getRol()* RolUsuario
+  -firstNames: String
+  -lastNames: String
+  -email: String
+  -active: boolean
+  +getRole()* UserRole
 }
-class Evaluador {
+class Evaluator {
   <<interface>>
-  +calificar(grupo) Evaluacion
-  +getGruposAsignados() List~Grupo~
+  +grade(group) Evaluation
+  +getAssignedGroups() List~ProjectGroup~
 }
-class SuperAdmin { +getRol() RolUsuario }
-class Admin { +getRol() RolUsuario }
-class Estudiante { +getRol() RolUsuario }
-class Docente { +getRol() RolUsuario }
-class EvaluadorExterno {
-  -tipoEvaluador: TipoEvaluador
-  +getRol() RolUsuario
+class SuperAdmin { +getRole() UserRole }
+class Admin { +getRole() UserRole }
+class Student { +getRole() UserRole }
+class Teacher { +getRole() UserRole }
+class ExternalEvaluator {
+  -evaluatorType: EvaluatorType
+  +getRole() UserRole
 }
 
-SuperAdmin --|> Usuario
-Admin --|> Usuario
-Estudiante --|> Usuario
-Docente --|> Usuario
-EvaluadorExterno --|> Usuario
-Docente ..|> Evaluador
-EvaluadorExterno ..|> Evaluador
+SuperAdmin --|> User
+Admin --|> User
+Student --|> User
+Teacher --|> User
+ExternalEvaluator --|> User
+Teacher ..|> Evaluator
+ExternalEvaluator ..|> Evaluator
 ```
 
-- `Usuario` es abstracta: no existe un "usuario genérico", solo los cinco roles concretos.
-- `getRol()` es polimórfico: cada subclase lo sobrescribe y Spring Security decide los permisos con ese valor.
-- Docente y EvaluadorExterno califican grupos, pero no comparten un padre propio
-  para eso: el comportamiento común se expresa con la interfaz `Evaluador`.
+- `User` es abstracta: no existe un "usuario genérico", solo los cinco roles concretos.
+- `getRole()` es polimórfico: cada subclase lo sobrescribe y Spring Security decide los permisos con ese valor.
+- `Teacher` (docente) y `ExternalEvaluator` (evaluador externo) califican grupos, pero
+  no comparten un padre propio para eso: el comportamiento común se expresa con la
+  interfaz `Evaluator`.
 - Empresario, egresado y los tipos que se creen después no son clases: son valores del
-  catálogo `TipoEvaluador` de un `EvaluadorExterno` (ADR-011).
-- Estudiante, Admin y SuperAdmin no evalúan, por eso no implementan `Evaluador`.
-- En JPA la herencia se mapea con `@Inheritance(JOINED)`: tabla `usuario` + una tabla por rol (ADR-009).
+  catálogo `EvaluatorType` de un `ExternalEvaluator` (ADR-011).
+- `Student`, `Admin` y `SuperAdmin` no evalúan, por eso no implementan `Evaluator`.
+- En JPA la herencia se mapea con `@Inheritance(JOINED)`: tabla `app_user` + una tabla por rol (ADR-009).
+- Clases en inglés, textos para el usuario en español (ADR-014).
 
 ## 2. Jerarquías de herencia — Reportes y excepciones
 
@@ -61,22 +63,22 @@ Polimorfismo en la reportería y manejo centralizado de errores con `@Controller
 ```mermaid
 classDiagram
 direction BT
-class Reporte {
+class Report {
   <<abstract>>
-  +generar()* byte[]
+  +generate()* byte[]
 }
-class ReporteIndividual {
-  +generar() byte[]
+class IndividualReport {
+  +generate() byte[]
 }
-class ReporteGrupal {
-  +generar() byte[]
+class GroupReport {
+  +generate() byte[]
 }
-class ReporteComparativo {
-  +generar() byte[]
+class ComparativeReport {
+  +generate() byte[]
 }
-ReporteIndividual --|> Reporte : por estudiante y RAP
-ReporteGrupal --|> Reporte : por grupo
-ReporteComparativo --|> Reporte : semestre X vs. Y
+IndividualReport --|> Report : por estudiante y RAP
+GroupReport --|> Report : por grupo
+ComparativeReport --|> Report : semestre X vs. Y
 ```
 
 ```mermaid
@@ -87,30 +89,26 @@ class RuntimeException {
 }
 class SierapException {
   <<abstract>>
-  -codigo: String
+  +getHttpStatus()* HttpStatus
 }
 class GlobalExceptionHandler {
   <<ControllerAdvice>>
-  +manejar(ex: SierapException)
+  +handleSierapException(ex: SierapException)
 }
-class RecursoNoEncontradoException {
+class ResourceNotFoundException {
   HTTP 404
 }
-class AccesoDenegadoException {
+class ForbiddenAccessException {
   HTTP 403
 }
-class FueraDeFechaException {
+class BusinessRuleException {
   HTTP 422
 }
-class ReglaNegocioException {
-  HTTP 400
-}
 SierapException --|> RuntimeException
-RecursoNoEncontradoException --|> SierapException
-AccesoDenegadoException --|> SierapException
-FueraDeFechaException --|> SierapException
-ReglaNegocioException --|> SierapException
-GlobalExceptionHandler ..> SierapException : «maneja»
+ResourceNotFoundException --|> SierapException
+ForbiddenAccessException --|> SierapException
+BusinessRuleException --|> SierapException
+GlobalExceptionHandler ..> SierapException : «handles»
 ```
 
 ## 3. Jerarquía institucional y académica

@@ -76,10 +76,10 @@ parte anterior. Cada migración tiene su número reservado para que nadie choque
 
 | Orden | Tarea | Responsable | Migraciones |
 |---|---|---|---|
-| 1 | `Facultad`, `Programa`, `PeriodoAcademico`, `ParametroGlobal`, `Momento` (+ enum `EstadoMomento`), `RAP`, `CriterioEvaluacion`, `NivelDesempeno` + repositorios | D2 | `V1__esquema_academico.sql` |
-| 1 | Datos semilla: facultad, Ing. de Sistemas, periodo actual y el Momento 1 completo (5 RAP, criterios y niveles de la rúbrica de `docs/00`) | D2 | `V2__semilla_academica.sql` |
-| 2 | `Usuario` abstracta (JOINED, ADR-009) + `SuperAdmin`, `Admin`, `Docente`, `Estudiante`, `EvaluadorExterno` + `TipoEvaluador` + enums `RolUsuario` y `TipoDocumento` + repositorios | D1 | `V3__usuarios.sql` |
-| 3 | `Grupo` (proyecto de aula), `Entrega`, `Evaluacion`, `CalificacionCriterio` + repositorios, e interfaz `Evaluador` con sus implementaciones | D3 (+ D1 en `Evaluador`) | `V4__operacion.sql` |
+| 1 | `Faculty`, `Program`, `AcademicPeriod`, `GlobalParameter`, `Moment` (+ enum `MomentStatus`), `LearningOutcome`, `EvaluationCriterion`, `PerformanceLevel` + repositorios | D2 | `V1__academic_schema.sql` |
+| 1 | Datos semilla: facultad, Ing. de Sistemas, periodo actual y el Momento 1 completo (5 RAP, criterios y niveles de la rúbrica de `docs/00`) | D2 | `V2__academic_seed.sql` |
+| 2 | `User` abstracta (JOINED, ADR-009) + `SuperAdmin`, `Admin`, `Teacher`, `Student`, `ExternalEvaluator` + `EvaluatorType` + enums `UserRole` y `DocumentType` + repositorios | D1 | `V3__users.sql` |
+| 3 | `ProjectGroup` (grupo = proyecto de aula), `Submission`, `Evaluation`, `CriterionGrade` + repositorios, e interfaz `Evaluator` con sus implementaciones | D3 (+ D1 en `Evaluator`) | `V4__operations.sql` |
 | — | Javadoc en todas las clases de dominio (exigido por rúbrica) | cada quien en lo suyo | — |
 
 **Definition of done:** el esquema se crea solo al arrancar, hay datos semilla, y

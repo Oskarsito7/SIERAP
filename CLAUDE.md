@@ -44,8 +44,8 @@ facultad: crea, configura y lanza los momentos de sus programas), `docente` (hab
 grupos en un momento, designa evaluadores externos, fija fechas), `estudiante` (se
 inscribe en un grupo del momento, sube entregas versionadas, ve su calificación por
 RAP) y `evaluador_externo` (empresario, egresado u otro tipo del catálogo
-`TipoEvaluador`, ADR-011). `Docente` y `EvaluadorExterno` implementan la interfaz
-`Evaluador`; el estudiante **no** se autoevalúa. Todos inician sesión con su correo.
+`EvaluatorType`, ADR-011). `Teacher` y `ExternalEvaluator` implementan la interfaz
+`Evaluator`; el estudiante **no** se autoevalúa. Todos inician sesión con su correo.
 El flujo de un momento (configuración → conformación de grupos → lanzar → entregas →
 calificación) está en `docs/04` y en el ADR-012. Ver `docs/03-entidades-dominio.md`
 para el modelo completo y `docs/diagramas/diagrama_clases.md` para el UML vigente (el
@@ -70,6 +70,11 @@ para el modelo completo y `docs/diagramas/diagrama_clases.md` para el UML vigent
 
 ## Convenciones de código
 
+- **Idioma (ADR-014): el código va en inglés** (clases, métodos, atributos, tablas,
+  columnas, rutas y campos JSON de la API, Javadoc, comentarios, logs, pruebas y
+  commits); **lo que ve el usuario final va en español** (textos de la interfaz,
+  mensajes de error de la API, datos semilla). La documentación de `/docs` sigue en
+  español, con los nombres de clases tal como están en el código.
 - Nomenclatura de paquetes/clases/métodos/atributos siguiendo convención estándar
   de Java (paquetes en minúsculas, clases en PascalCase, métodos/atributos en
   camelCase) — esto es parte de la rúbrica de evaluación de la universidad.
@@ -77,11 +82,12 @@ para el modelo completo y `docs/diagramas/diagrama_clases.md` para el UML vigent
   dominio) — también es parte de la rúbrica.
 - Manejo de excepciones centralizado vía `@ControllerAdvice`, no try/catch
   disperso en controllers: los services lanzan subclases de `SierapException`
-  (`RecursoNoEncontradoException` 404, `ReglaNegocioException` 422,
-  `AccesoDenegadoException` 403) y `GlobalExceptionHandler` responde con
+  (`ResourceNotFoundException` 404, `BusinessRuleException` 422,
+  `ForbiddenAccessException` 403) y `GlobalExceptionHandler` responde con
   `ErrorResponse`.
 - Sin Lombok; DTOs como `record`; inyección por constructor (ADR-008).
-- Fechas: usar siempre el `Clock` inyectado (`LocalDate.now(reloj)`), nunca
+- Puntajes y notas como `BigDecimal`, nunca `double` (ADR-013).
+- Fechas: usar siempre el `Clock` inyectado (`LocalDate.now(clock)`), nunca
   `LocalDate.now()`, para poder probar reglas de fechas con `Clock.fixed`.
 - Frontend: las páginas nunca llaman a axios directo, siempre vía
   `src/services/api/*`; los tipos de `src/types/` reflejan los DTO del backend.
