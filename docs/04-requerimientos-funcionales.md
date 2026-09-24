@@ -60,6 +60,11 @@
   los momentos (desde/hasta qué semestre evalúa cada uno) y los RAP. Evitar
   hardcodear estos valores de negocio en el código — deben vivir en base de
   datos y ser editables desde el rol correspondiente.
+- **Nada estándar, y por periodo:** cada momento tiene sus propios RAP; cada RAP,
+  sus criterios; cada criterio, sus niveles de desempeño con su puntaje. El admin
+  los crea, modifica o elimina. Esa configuración se define por periodo académico
+  (al empezar un semestre se copia la del anterior y se ajusta), para que los
+  semestres pasados no cambien y se puedan comparar (ADR-010).
 
 ## Control de acceso — resumen por rol
 
@@ -71,11 +76,30 @@
 | `estudiante` | Su propio grupo y proyecto | Sus entregas, su grupo (mientras esté abierto) |
 | `empresario` / `egresado` | Solo los grupos que se le asignaron | Sus propias evaluaciones (dentro de la fecha estipulada) |
 
+## Decisiones del equipo
+
+Definidas por el responsable del proyecto el 2026-09-24.
+
+| Tema | Decisión |
+|---|---|
+| Inicio de sesión | Todos los usuarios inician sesión con su **correo** (institucional o personal en el caso de empresarios y egresados). Además se guarda tipo y número de documento de identidad. |
+| Estudiante y grupos | Un estudiante tiene **un grupo por momento**; puede pasar por varios grupos a lo largo de la carrera y se conserva el historial. |
+| Autoevaluación | El estudiante **no** se autoevalúa. Evalúan docente, empresario y egresado. |
+| Docentes por grupo | Cada grupo tiene **un solo** docente. |
+| Docente y facultad | Cada docente pertenece a **una** facultad. Los docentes de materias de relleno que dictan en varias facultades no usan SIERAP. |
+| Estructura de la evaluación | Momento → RAP → criterios → niveles de desempeño con puntaje. El evaluador elige un nivel por criterio y la nota es la suma de los puntajes. |
+| Niveles | El nivel de exigencia del momento y los niveles de desempeño son configurables; no hay listas fijas. |
+| Configuración en el tiempo | Se define por periodo académico; al abrir un periodo se copia la del anterior (ADR-010). |
+| Herencia de `Usuario` | `JOINED`: tabla común `usuario` + una tabla por rol (ADR-009). |
+
 ## Pendiente de definir con el equipo
 
-- ¿Un estudiante puede pertenecer a más de un grupo en simultáneo (distintos
-  momentos)?
 - ¿Qué pasa si un docente necesita reasignar un grupo a otro docente a mitad de
   momento?
 - ¿Los reportes comparativos requieren anonimizar datos de estudiantes o se
   manejan siempre a nivel agregado?
+- ¿Cómo se combinan las evaluaciones de docente, empresario y egresado en la nota
+  final del proyecto (promedio, pesos por tipo de evaluador configurables, otra
+  regla)?
+- ¿Quién crea las cuentas de docentes y estudiantes (super_admin, admin de
+  facultad, carga masiva, autorregistro)?

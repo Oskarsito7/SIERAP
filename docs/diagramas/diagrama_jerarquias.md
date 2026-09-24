@@ -16,7 +16,8 @@ classDiagram
 direction BT
 class Usuario {
   <<abstract>>
-  -nombre: String
+  -nombres: String
+  -apellidos: String
   -correo: String
   -activo: boolean
   +getRol()* RolUsuario
@@ -119,18 +120,20 @@ flowchart TD
   UPC["<b>Universidad Popular del Cesar</b><br/>institución · la configura el super_admin"]
   FAC["<b>Facultad</b><br/>la administra un admin (decano)"]
   PROG["<b>Programa</b><br/>ej. Ingeniería de Sistemas"]
-  OTROS["<b>Otros programas</b><br/>con sus propios RAP"]
-  M1["<b>Momento I</b><br/>3.er semestre · Programación II<br/>nivel de exigencia BAJO"]
-  M2["<b>Momento II</b><br/>Ingeniería de Software II<br/>nivel de exigencia MEDIO"]
-  M3["<b>Momento III</b><br/>Electiva de profundización III<br/>nivel de exigencia ALTO"]
-  R1["RAP1 · RAP2 · RAP3 · RAP4 · RAP5"]
-  R2["RAP1 · RAP2 · RAP3 · RAP4 · RAP5"]
-  R3["RAP1 · RAP2 · RAP3 · RAP4 · RAP5"]
+  OTROS["<b>Otros programas</b><br/>con su propia configuración"]
+  PER["<b>Periodo académico</b><br/>ej. 2026-2 · la configuración<br/>se define por periodo"]
+  M1["<b>Momento I</b><br/>ej. Programación II<br/>exigencia: la define el admin"]
+  M2["<b>Momento II</b><br/>ej. Ingeniería de Software II"]
+  M3["<b>Momento III</b><br/>ej. Electiva de profundización III"]
+  R1["<b>RAP</b> propios del momento<br/>el admin los crea, edita o elimina"]
+  R2["RAP propios del momento"]
+  R3["RAP propios del momento"]
+  CRI["<b>Criterios</b> de cada RAP<br/>→ <b>niveles</b> con su puntaje"]
 
-  UPC --> FAC --> PROG
+  UPC --> FAC --> PROG --> PER
   FAC -.-> OTROS
-  PROG --> M1 & M2 & M3
-  M1 --> R1
+  PER --> M1 & M2 & M3
+  M1 --> R1 --> CRI
   M2 --> R2
   M3 --> R3
 
@@ -139,24 +142,26 @@ flowchart TD
     GRP["<b>Grupo</b><br/>3 a 5 estudiantes"] --> PA["<b>Proyecto de aula</b><br/>uno por momento"]
     PA --> ENT["<b>Entregas</b><br/>v1, v2 … vn (historial)"]
     PA --> EV["<b>Evaluaciones</b><br/>docente · empresario · egresado"]
-    EV --> CAL["<b>Calificación por RAP</b><br/>nota y nivel de desempeño"]
+    EV --> CAL["<b>Calificación por criterio</b><br/>nivel elegido y su puntaje"]
   end
   M1 --> GRP
-  CAL -. contra los RAP .-> R1
+  CAL -. contra los criterios .-> CRI
 
   classDef acad fill:#DCFCE7,stroke:#2F855A,color:#1F2937
   classDef oper fill:#FEF3C7,stroke:#B7791F,color:#1F2937
   classDef eval fill:#EDE4FB,stroke:#7E57C2,color:#1F2937
   classDef rap fill:#FFFFFF,stroke:#2F855A,color:#1F2937
   classDef otro fill:#FFFFFF,stroke:#2F855A,color:#1F2937,stroke-dasharray:5 4
-  class UPC,FAC,PROG,M1,M2,M3 acad
-  class R1,R2,R3 rap
+  class UPC,FAC,PROG,PER,M1,M2,M3 acad
+  class R1,R2,R3,CRI rap
   class OTROS otro
   class GRP,PA,ENT oper
   class EV,CAL eval
 ```
 
-Los mismos 5 RAP se reevalúan en cada momento con mayor exigencia (evaluación acumulativa).
+Cada momento tiene sus propios RAP, criterios y niveles con puntaje, definidos por el
+admin en cada periodo académico; nada viene fijo en el código (ADR-010). La nota de una
+evaluación es la suma de los puntajes de los niveles elegidos en cada criterio.
 
 ## 4. Jerarquía de roles y alcance de acceso
 

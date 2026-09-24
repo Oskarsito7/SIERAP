@@ -207,6 +207,84 @@ necesitan `try/catch`.
 
 ---
 
+## ADR-009 — Herencia de `Usuario` en JPA con estrategia `JOINED`
+
+**Fecha:** 2026-09-24 (Etapa 1).
+**Estado:** Aceptada.
+
+**Contexto:** `Usuario` es abstracta y tiene seis subclases con atributos propios
+(`Admin` → facultad; `Docente` → facultad; `Estudiante` → código, semestre y
+programa; `Empresario` → empresa y cargo; `Egresado` → año de graduación y programa
+de egreso; `SuperAdmin` sin atributos propios). Había que elegir cómo se guarda esa
+jerarquía en PostgreSQL (`@Inheritance`).
+
+**Decisión:** `@Inheritance(strategy = InheritanceType.JOINED)`. La tabla `usuario`
+guarda los datos comunes (nombres, apellidos, documento, correo, contraseña, rol,
+estado, fecha de creación) y cada rol tiene su propia tabla (`super_admin`, `admin`,
+`docente`, `estudiante`, `empresario`, `egresado`) con su llave primaria como llave
+foránea a `usuario.id`. La columna `usuario.rol` actúa como discriminador
+(`@DiscriminatorColumn`) con los valores de `RolUsuario`, para conocer el rol sin
+hacer joins (útil en el login y en Spring Security).
+
+**Alternativas consideradas:**
+
+- `SINGLE_TABLE`: una sola tabla con todas las columnas de todos los roles. Es más
+  rápida, pero obliga a que las columnas propias de cada rol acepten `NULL` (no se
+  puede exigir `NOT NULL` en `codigo_estudiante`, por ejemplo) y la tabla no se
+  parece al diagrama de clases.
+- `TABLE_PER_CLASS`: una tabla completa por rol, sin tabla común. Complica que el
+  correo sea único entre todos los usuarios y las consultas sobre "cualquier usuario".
+
+**Consecuencias:** el esquema refleja la jerarquía del diagrama UML (útil para la
+sustentación: cada clase tiene su tabla), cada rol puede tener restricciones
+`NOT NULL` y llaves foráneas propias, y el correo es único en `usuario`. Leer un
+usuario concreto implica un join con la tabla de su rol, costo despreciable para el
+volumen de SIERAP.
+
+---
+
+## ADR-010 — Configuración de la evaluación por periodo académico, sin valores estándar
+
+**Fecha:** 2026-09-24 (Etapa 1).
+**Estado:** Aceptada.
+
+**Contexto:** los RAP, los criterios de evaluación, los niveles de desempeño y los
+puntajes varían por programa, por momento y en el tiempo; cada admin los crea,
+modifica o elimina según su criterio. Al mismo tiempo, la reportería (RF 12) debe
+comparar resultados entre semestres, así que editar la configuración de este
+semestre no puede alterar las evaluaciones de semestres anteriores.
+
+**Decisión:**
+
+- La configuración se versiona **por periodo académico**: `Momento` pertenece a un
+  `Programa` **y** a un `PeriodoAcademico`. Cada momento tiene sus propios `RAP`;
+  cada RAP, sus `CriterioEvaluacion`; y cada criterio, sus `NivelDesempeno` con su
+  puntaje.
+- Al abrir un periodo nuevo, la configuración del periodo anterior se **copia** como
+  punto de partida (momentos → RAP → criterios → niveles) y se edita. Los periodos
+  pasados quedan intactos.
+- **Nada estándar en el código:** no existen los enums `NivelExigencia` ni
+  `NivelDesempeno`. El nivel de exigencia del momento es texto libre, y los niveles
+  de desempeño (nombre, descripción, puntaje y orden) los define el admin en cada
+  criterio. El RAP no tiene "peso": pesa lo que sumen los puntajes máximos de sus
+  criterios.
+- El evaluador elige **un nivel por criterio**; la nota es la suma de los puntajes
+  elegidos, y el desempeño por RAP es la suma de los de sus criterios
+  (`CalificacionCriterio` reemplaza a `CalificacionRAP`).
+
+**Alternativas consideradas:** una sola configuración viva editable, desactivando
+(sin borrar) lo que se elimina: más simple, pero la configuración de semestres
+pasados se deforma con cada edición y los comparativos pierden sentido. Puntaje
+directo por RAP (sin criterios ni niveles): no refleja cómo evalúa hoy la UPC (ver la
+rúbrica en `00-guia-oficial-momento1.md`, donde cada ítem tiene niveles con puntos).
+
+**Consecuencias:** hay más entidades de configuración (`CriterioEvaluacion`,
+`NivelDesempeno`) y hace falta una operación de "copiar configuración del periodo
+anterior" (Etapa 3). A cambio, cada evaluación queda ligada a la configuración con
+la que se hizo, y los reportes comparativos entre periodos son confiables.
+
+---
+
 ## Plantilla para nuevas entradas
 
 ```

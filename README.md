@@ -33,8 +33,9 @@ evalúan de forma **acumulativa** en distintos momentos del programa:
 Cada momento reevalúa los mismos 5 RAP institucionales, subiendo el nivel de
 exigencia (bajo → medio → alto).
 
-Este proceso involucra **cuatro tipos de evaluadores**: docentes, estudiantes (como
-autoevaluados), empresarios y egresados. Hoy se gestiona a través de **AULAWEB**, un
+En SIERAP los proyectos de los estudiantes los califican **tres tipos de
+evaluadores**: docentes, empresarios y egresados (el estudiante no se autoevalúa).
+Hoy el proceso se gestiona a través de **AULAWEB**, un
 sistema propio (no externo) de la UPC que **no fue diseñado específicamente para
 este flujo**:
 
