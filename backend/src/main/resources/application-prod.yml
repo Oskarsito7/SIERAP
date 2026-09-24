@@ -1,0 +1,10 @@
+# Perfil de producción: sin valores por defecto, todo llega por variables de entorno.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+logging:
+  level:
+    root: INFO
