@@ -39,23 +39,30 @@ en los ADR de `docs/05`; no volver a preguntarlas.
 
 ## Roles del sistema (fundamentales para cualquier feature)
 
-`super_admin`, `admin` (por facultad, define momentos/RAP por programa),
-`docente` (define grupos/fechas, solo ve sus grupos asignados), `estudiante`
-(sube entregas versionadas, ve su calificación por RAP), `empresario` y
-`egresado` (evalúan grupos asignados). Docente/Empresario/Egresado implementan
-una interfaz común `Evaluador`; el estudiante **no** se autoevalúa. Todos inician
-sesión con su correo. Ver `docs/03-entidades-dominio.md` para el modelo de clases
-completo y `docs/diagramas/diagrama_clases.md` para el UML vigente (el `.drawio` se
-regenera al cerrar la Etapa 1).
+`super_admin` (parámetros, periodos, catálogo de tipos de evaluador), `admin` (por
+facultad: crea, configura y lanza los momentos de sus programas), `docente` (habilita
+grupos en un momento, designa evaluadores externos, fija fechas), `estudiante` (se
+inscribe en un grupo del momento, sube entregas versionadas, ve su calificación por
+RAP) y `evaluador_externo` (empresario, egresado u otro tipo del catálogo
+`TipoEvaluador`, ADR-011). `Docente` y `EvaluadorExterno` implementan la interfaz
+`Evaluador`; el estudiante **no** se autoevalúa. Todos inician sesión con su correo.
+El flujo de un momento (configuración → conformación de grupos → lanzar → entregas →
+calificación) está en `docs/04` y en el ADR-012. Ver `docs/03-entidades-dominio.md`
+para el modelo completo y `docs/diagramas/diagrama_clases.md` para el UML vigente (el
+`.drawio` se regenera al cerrar la Etapa 1).
 
 ## Reglas de control de acceso a tener siempre presentes
 
-- Un docente **solo** debe poder ver/gestionar los grupos que tiene asignados —
-  nunca todos los grupos del sistema.
+- Un docente **solo** debe poder ver/gestionar/calificar los grupos que él
+  habilitó — nunca todos los grupos del sistema. Los estudiantes, en cambio, ven los
+  grupos de todos los docentes del momento para poder inscribirse.
 - Un admin de facultad solo gestiona programas/momentos/RAP de **su** facultad.
-- Empresarios/egresados solo ven y califican los grupos que se les asignaron, y
-  solo dentro de la fecha de evaluación estipulada (que a su vez debe caer dentro
-  de la fecha límite que define la UPC).
+- Los evaluadores externos solo ven y califican los grupos para los que fueron
+  designados, y solo en la fecha de evaluación estipulada (dentro de la ventana de
+  calificación del momento, que termina a más tardar en el límite de la UPC).
+- Cada operación valida el estado y las ventanas del momento (ADR-012): la
+  configuración solo se edita antes de lanzar; se entrega y se califica solo dentro
+  de sus ventanas.
 - Todo lo de RAP/momentos/criterios/niveles/puntuación es **configurable** por
   admin/super_admin y se versiona **por periodo académico** (ADR-010) — nada de
   valores estándar en el código: ni nombres de RAP, ni niveles, ni puntajes, ni

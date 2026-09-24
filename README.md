@@ -33,8 +33,9 @@ evalúan de forma **acumulativa** en distintos momentos del programa:
 Cada momento reevalúa los mismos 5 RAP institucionales, subiendo el nivel de
 exigencia (bajo → medio → alto).
 
-En SIERAP los proyectos de los estudiantes los califican **tres tipos de
-evaluadores**: docentes, empresarios y egresados (el estudiante no se autoevalúa).
+En SIERAP los proyectos de los estudiantes los califican el **docente** del grupo y
+**evaluadores externos** (hoy empresarios y egresados; se pueden crear más tipos). El
+estudiante no se autoevalúa.
 Hoy el proceso se gestiona a través de **AULAWEB**, un
 sistema propio (no externo) de la UPC que **no fue diseñado específicamente para
 este flujo**:
@@ -57,16 +58,15 @@ Ver el planteamiento completo (causas/consecuencias/área de aplicación) en
 
 ## 3. La solución — qué hace SIERAP
 
-Sistema web con **6 roles**:
+Sistema web con **5 roles**:
 
 | Rol | Qué hace |
 |---|---|
-| `super_admin` | Configura los parámetros globales del sistema. |
-| `admin` | Uno por facultad (lo usa el decano). Define los momentos y RAP de cada programa de su facultad. |
-| `docente` | Define grupos, fechas de entrega y evaluación; crea usuarios empresario/egresado; solo ve los grupos que tiene asignados. |
-| `estudiante` | Se organiza en grupos, sube entregas versionadas (zip + presentación), consulta su calificación por RAP. |
-| `empresario` | Evalúa los proyectos de los grupos que tiene asignados. |
-| `egresado` | Evalúa los proyectos de los grupos que tiene asignados. |
+| `super_admin` | Configura los parámetros globales, los periodos académicos y el catálogo de tipos de evaluador. |
+| `admin` | Uno por facultad (lo usa el decano). Crea y configura los momentos de cada programa (RAP, criterios, puntajes, fechas) y los lanza. |
+| `docente` | Habilita grupos en un momento, crea y designa evaluadores externos, fija fechas y califica solo los grupos que habilitó. |
+| `estudiante` | Ve los grupos del momento, se inscribe en uno, sube entregas versionadas (zip + presentación) y consulta su calificación por RAP. |
+| `evaluador_externo` | Empresario, egresado u otro tipo del catálogo: califica los grupos para los que fue designado. |
 
 Genera **reportes individuales, grupales y comparativos** (entre semestres, momentos,
 programas o años) — la carencia más crítica de AULAWEB hoy.

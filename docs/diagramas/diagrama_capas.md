@@ -37,8 +37,8 @@ flowchart TB
     end
     subgraph EN["ENTIDADES"]
       direction LR
-      entity["<b>entity</b><br/>Usuario {abstract} + 6 roles, Facultad, Programa,<br/>Momento, RAP, Grupo, ProyectoAula, Evaluacion …"]
-      enums["<b>entity.enums</b><br/>RolUsuario · NivelExigencia<br/>NivelDesempeno"]
+      entity["<b>entity</b><br/>Usuario {abstract} + 5 roles, Facultad, Programa,<br/>Momento, RAP, Criterio, Nivel, Grupo, Evaluacion …"]
+      enums["<b>entity.enums</b><br/>RolUsuario · TipoDocumento<br/>EstadoMomento"]
     end
     subgraph T["TRANSVERSALES"]
       direction TB

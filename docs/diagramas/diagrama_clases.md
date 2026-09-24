@@ -6,7 +6,7 @@ GitHub renderiza este diagrama directamente a partir del código Mermaid.
 
 > **Este es el diagrama vigente** y el contrato de la Etapa 1: incorpora las
 > decisiones del 2026-09-24 (ver `docs/04`, sección "Decisiones del equipo", y los
-> ADR-009 y ADR-010). La versión con diseño detallado
+> ADR-009 a ADR-012). La versión con diseño detallado
 > ([`diagrama_clases_mejorado.png`](diagrama_clases_mejorado.png) · editable en
 > [`diagrama_clases_mejorado.drawio`](diagrama_clases_mejorado.drawio)) corresponde
 > a la Fase 2 y se regenera al cerrar la Etapa 1. El diagrama preliminar de la
@@ -16,7 +16,7 @@ GitHub renderiza este diagrama directamente a partir del código Mermaid.
 classDiagram
 direction TB
 
-%% ================= Usuarios y roles =================
+%% ================= Usuarios y roles (D1) =================
 class Usuario {
   <<abstract>>
   -id: Long
@@ -34,9 +34,9 @@ class Usuario {
 }
 class Evaluador {
   <<interface>>
-  +calificar(proyecto: ProyectoAula) Evaluacion
+  +calificar(grupo: Grupo) Evaluacion
   +getGruposAsignados() List~Grupo~
-  +puedeEvaluar(p: ProyectoAula, hoy: LocalDate) boolean
+  +puedeEvaluar(grupo: Grupo, hoy: LocalDate) boolean
 }
 class RolUsuario {
   <<enumeration>>
@@ -44,8 +44,7 @@ class RolUsuario {
   ADMIN
   DOCENTE
   ESTUDIANTE
-  EMPRESARIO
-  EGRESADO
+  EVALUADOR_EXTERNO
 }
 class TipoDocumento {
   <<enumeration>>
@@ -71,18 +70,22 @@ class Estudiante {
   -programa: Programa
   +getRol() RolUsuario
 }
-class Empresario {
-  -empresa: String
+class EvaluadorExterno {
+  -tipoEvaluador: TipoEvaluador
+  -organizacion: String
   -cargo: String
-  +getRol() RolUsuario
-}
-class Egresado {
-  -anioGraduacion: int
+  -anioGraduacion: Integer
   -programaEgreso: Programa
   +getRol() RolUsuario
 }
+class TipoEvaluador {
+  -id: Long
+  -nombre: String
+  -descripcion: String
+  -activo: boolean
+}
 
-%% ================= Estructura académica y configuración =================
+%% ================= Estructura académica y configuración (D2) =================
 class ParametroGlobal {
   -clave: String
   -valor: String
@@ -111,14 +114,31 @@ class Momento {
   -id: Long
   -numero: int
   -nombre: String
-  -nivelExigencia: String
   -asignatura: String
   -semestreDesde: int
   -semestreHasta: int
+  -nivelExigencia: String
+  -minIntegrantes: int
+  -maxIntegrantes: int
+  -estado: EstadoMomento
+  -inicioConformacion: LocalDate
+  -finConformacion: LocalDate
+  -inicioEntregas: LocalDate
+  -finEntregas: LocalDate
+  -inicioCalificacion: LocalDate
+  -finCalificacion: LocalDate
   -programa: Programa
   -periodo: PeriodoAcademico
   -raps: List~RAP~
-  +incluyeSemestre(semestre: int) boolean
+  +lanzar() void
+  +estaEnConformacion(hoy: LocalDate) boolean
+  +estaEnEntregas(hoy: LocalDate) boolean
+  +estaEnCalificacion(hoy: LocalDate) boolean
+}
+class EstadoMomento {
+  <<enumeration>>
+  CONFIGURACION
+  LANZADO
 }
 class RAP {
   -id: Long
@@ -142,22 +162,19 @@ class NivelDesempeno {
   -orden: int
 }
 
-%% ================= Estructura operativa (se detalla con D3) =================
+%% ================= Estructura operativa (D3) =================
 class Grupo {
   -id: Long
   -nombre: String
+  -tituloProyecto: String
+  -momento: Momento
   -docente: Docente
   -integrantes: List~Estudiante~
-  -abierto: boolean
-  +agregarIntegrante(e: Estudiante) void
-  +estaCompleto() boolean
-}
-class ProyectoAula {
-  -id: Long
-  -titulo: String
+  -evaluadores: List~EvaluadorExterno~
   -fechaLimiteEntrega: LocalDate
   -fechaEvaluacion: LocalDate
-  +registrarEntrega(e: Entrega) void
+  +inscribir(e: Estudiante) void
+  +estaCompleto() boolean
   +getUltimaEntrega() Entrega
   +getNotaFinal() double
 }
@@ -170,7 +187,7 @@ class Entrega {
   +fueATiempo(limite: LocalDate) boolean
 }
 
-%% ================= Evaluación y reportería =================
+%% ================= Evaluación y reportería (D3) =================
 class Evaluacion {
   -id: Long
   -fecha: LocalDateTime
@@ -208,38 +225,38 @@ class ReporteComparativo {
 %% ================= Relaciones =================
 Usuario <|-- SuperAdmin
 Usuario <|-- Admin
-Usuario <|-- Estudiante
 Usuario <|-- Docente
-Usuario <|-- Empresario
-Usuario <|-- Egresado
+Usuario <|-- Estudiante
+Usuario <|-- EvaluadorExterno
 Evaluador <|.. Docente
-Evaluador <|.. Empresario
-Evaluador <|.. Egresado
+Evaluador <|.. EvaluadorExterno
 Usuario ..> RolUsuario : «use»
 Usuario ..> TipoDocumento : «use»
 
 SuperAdmin ..> ParametroGlobal : «gestiona»
 SuperAdmin ..> PeriodoAcademico : «gestiona»
+SuperAdmin ..> TipoEvaluador : «gestiona»
 Admin "1" -- "1" Facultad : administra
 Docente "*" -- "1" Facultad : pertenece a
 Estudiante "*" -- "1" Programa : cursa
-Egresado "*" -- "1" Programa : egresó de
+EvaluadorExterno "*" -- "1" TipoEvaluador : es de tipo
+EvaluadorExterno "*" -- "0..1" Programa : egresó de
 
 Facultad "1" *-- "1..*" Programa
 Programa "1" *-- "*" Momento
 Momento "*" -- "1" PeriodoAcademico : se configura en
+Momento ..> EstadoMomento : «use»
 Momento "1" *-- "1..*" RAP
 RAP "1" *-- "1..*" CriterioEvaluacion
 CriterioEvaluacion "1" *-- "1..*" NivelDesempeno
 
-Grupo "*" o-- "3..5" Estudiante : un grupo por momento
-Docente "1" -- "*" Grupo : dicta
-Grupo "*" -- "1" Programa
-Grupo "1" *-- "1..*" ProyectoAula
-ProyectoAula "*" -- "1" Momento
-ProyectoAula "1" *-- "0..*" Entrega
+Momento "1" *-- "*" Grupo
+Docente "1" -- "*" Grupo : habilita
+Grupo "*" o-- "min..max" Estudiante : un grupo por momento
+Grupo "*" -- "*" EvaluadorExterno : designados
+Grupo "1" *-- "0..*" Entrega
 
-ProyectoAula "1" *-- "0..*" Evaluacion
+Grupo "1" *-- "0..*" Evaluacion
 Evaluacion "*" -- "1" Evaluador : realizada por
 Evaluacion "1" *-- "1..*" CalificacionCriterio
 CalificacionCriterio "*" -- "1" CriterioEvaluacion : califica
@@ -255,15 +272,18 @@ Reporte ..> Evaluacion : «use»
 
 | Cambio | Motivo |
 |---|---|
-| `Usuario`: `nombre` → `nombres` + `apellidos`; nuevos `tipoDocumento` y `numeroDocumento`; enum `TipoDocumento` | Decisión del equipo: guardar el documento de identidad además del correo, que es el dato de inicio de sesión. |
-| `Docente` pertenece a una `Facultad` | Solo usan SIERAP los docentes con proyecto de aula, que dictan en su facultad; así el admin gestiona los docentes de la suya. |
+| `Usuario`: `nombre` → `nombres` + `apellidos`; nuevos `tipoDocumento` y `numeroDocumento`; enum `TipoDocumento` | Guardar el documento de identidad además del correo, que es el dato de inicio de sesión. |
+| `Empresario` y `Egresado` → una sola subclase `EvaluadorExterno` con `TipoEvaluador` (catálogo) | Se deben poder crear más tipos de evaluador sin programar (ADR-011). |
+| `Docente` pertenece a una `Facultad` | Solo usan SIERAP los docentes con proyecto de aula, que dictan en su facultad. |
 | `Estudiante` pierde `grupo` y gana `programa` | Un estudiante tiene un grupo por momento con historial; la relación queda del lado de `Grupo`. |
 | `Momento` pertenece a un `PeriodoAcademico`; `nivelExigencia` pasa a texto libre | La configuración se versiona por periodo y no hay niveles estándar (ADR-010). |
+| `Momento` gana `estado` (`EstadoMomento`), integrantes mín./máx. y tres ventanas de fechas | Ciclo de vida del momento: configuración → lanzar → entregas → calificación (ADR-012). |
 | `RAP` pertenece a un `Momento` (composición) y pierde `pesoEvaluativo` | Cada momento tiene sus propios RAP; el peso lo dan los puntajes de sus criterios. |
 | Nuevas `CriterioEvaluacion` y `NivelDesempeno` (entidad) | Estructura de la rúbrica de la UPC: cada RAP tiene criterios y cada criterio niveles con puntaje, todo configurable. |
+| `Grupo` y `ProyectoAula` se fusionan; `Grupo` pertenece a un `Momento` | Cada grupo tiene un solo proyecto; el docente habilita grupos dentro de un momento. |
 | `CalificacionRAP` → `CalificacionCriterio` | El evaluador elige un nivel por criterio; el desempeño por RAP se calcula sumando. |
 | Se eliminan los enums `NivelExigencia` y `NivelDesempeno` | Nada estándar en el código (ADR-010). |
-| `Grupo`—`Docente` "1", sin autoevaluación del estudiante | Decisiones del equipo: un docente por grupo; `Estudiante` no implementa `Evaluador`. |
+| Sin autoevaluación del estudiante | `Estudiante` no implementa `Evaluador`. |
 
 ## Cambios frente al diagrama preliminar (Fase 1)
 
