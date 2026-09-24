@@ -18,16 +18,17 @@ pruebas), sobre una base común que se construye entre los tres al principio.
 
 | # | Rol | Responsable | Dueño de |
 |---|---|---|---|
-| **D1** | Arquitecto / plataforma | _(poner nombre)_ | Esqueleto del proyecto, seguridad y JWT, control de acceso por rol, manejo de excepciones, CI, revisión de PRs, integridad del diagrama de clases |
-| **D2** | Dominio académico y configuración | _(poner nombre)_ | Facultad, Programa, Momento, RAP, criterios y pesos configurables; pantallas de `admin` y `super_admin` |
-| **D3** | Operación y evaluación | _(poner nombre)_ | Grupos, entregas versionadas, evaluación multi-rol, reportería; pantallas de `docente`, `estudiante`, `empresario`, `egresado` |
+| **D1** | Arquitecto / plataforma | Líder del proyecto (con Claude Code) | Esqueleto del proyecto, seguridad y JWT, control de acceso por rol, manejo de excepciones, CI, revisión de PRs, integridad del diagrama de clases |
+| **D2** | Dominio académico y configuración | Desarrollador 1 | Facultad, Programa, PeriodoAcademico, Momento (ciclo de vida y ventanas), RAP, criterios y niveles con puntaje; pantallas de `admin` y `super_admin` |
+| **D3** | Operación y evaluación | Desarrollador 2 | Grupos (proyecto de aula), inscripción, entregas versionadas, evaluación, reportería; pantallas de `docente`, `estudiante` y `evaluador_externo` |
 
 **Reglas de convivencia:**
 
 - **D1 es el único que toca** `config/`, `security/`, `exception/` y el `pom.xml`.
   Si D2 o D3 necesitan un cambio ahí, lo piden en el PR — no lo hacen por su cuenta.
-- Las **entidades JPA se crean todas juntas en la Etapa 1** (sesión conjunta), para
-  que después nadie tenga que modificar el archivo de otro y generar conflictos.
+- Las **entidades JPA se crean en la Etapa 1, en secuencia D2 → D1 → D3** (cada una
+  depende de las anteriores), para que después nadie tenga que modificar el archivo
+  de otro y generar conflictos.
 - **Contrato antes que código:** antes de implementar una vertical se acuerda el
   contrato de la API (rutas, DTO de entrada/salida, códigos de error) y se anota en
   el PR. Así D3 puede escribir el frontend contra un contrato acordado sin esperar
@@ -66,18 +67,20 @@ levantan los tres servicios en cualquier máquina del equipo; el CI pasa en verd
 
 ---
 
-### Etapa 1 — Modelo de dominio y persistencia (Semana 2) · sesión conjunta + reparto
+### Etapa 1 — Modelo de dominio y persistencia (Semana 2) · en secuencia D2 → D1 → D3
 
-Objetivo: traducir `docs/03-entidades-dominio.md` a entidades JPA reales.
+Objetivo: traducir `docs/03-entidades-dominio.md` a entidades JPA reales. Va **en
+secuencia** porque cada parte referencia a la anterior (`Admin` apunta a `Facultad`,
+`Grupo` apunta a `Docente` y `Estudiante`): cada quien empieza cuando se mergea la
+parte anterior. Cada migración tiene su número reservado para que nadie choque.
 
-| Tarea | Responsable |
-|---|---|
-| Decidir estrategia de herencia de `Usuario` (`@Inheritance` JOINED vs SINGLE_TABLE) → ADR nuevo | D1 |
-| `Usuario` abstracta + 6 subclases + enum `RolUsuario` + interfaz `Evaluador` | D1 |
-| `Facultad`, `Programa`, `Momento`, `RAP` + sus repositorios | D2 |
-| `Grupo`, `ProyectoAula`, `Entrega`, `Evaluacion`, `CalificacionRAP` + repositorios | D3 |
-| Migraciones (Flyway) + datos semilla: 1 facultad, 1 programa, los 5 RAP institucionales | D2 |
-| Javadoc en todas las clases de dominio (exigido por rúbrica) | cada quien en lo suyo |
+| Orden | Tarea | Responsable | Migraciones |
+|---|---|---|---|
+| 1 | `Facultad`, `Programa`, `PeriodoAcademico`, `ParametroGlobal`, `Momento` (+ enum `EstadoMomento`), `RAP`, `CriterioEvaluacion`, `NivelDesempeno` + repositorios | D2 | `V1__esquema_academico.sql` |
+| 1 | Datos semilla: facultad, Ing. de Sistemas, periodo actual y el Momento 1 completo (5 RAP, criterios y niveles de la rúbrica de `docs/00`) | D2 | `V2__semilla_academica.sql` |
+| 2 | `Usuario` abstracta (JOINED, ADR-009) + `SuperAdmin`, `Admin`, `Docente`, `Estudiante`, `EvaluadorExterno` + `TipoEvaluador` + enums `RolUsuario` y `TipoDocumento` + repositorios | D1 | `V3__usuarios.sql` |
+| 3 | `Grupo` (proyecto de aula), `Entrega`, `Evaluacion`, `CalificacionCriterio` + repositorios, e interfaz `Evaluador` con sus implementaciones | D3 (+ D1 en `Evaluador`) | `V4__operacion.sql` |
+| — | Javadoc en todas las clases de dominio (exigido por rúbrica) | cada quien en lo suyo | — |
 
 **Definition of done:** el esquema se crea solo al arrancar, hay datos semilla, y
 las relaciones (herencia, composición, agregación, asociación) del diagrama UML
@@ -95,7 +98,7 @@ Objetivo: que el resto de etapas ya pueda asumir "hay un usuario autenticado con
 | Tarea | Responsable |
 |---|---|
 | Spring Security + JWT: login, emisión y validación de token | D1 |
-| Autorización por rol (`@PreAuthorize` / `SecurityFilterChain`) para los 6 roles | D1 |
+| Autorización por rol (`@PreAuthorize` / `SecurityFilterChain`) para los 5 roles | D1 |
 | **Reglas de alcance**: docente solo ve sus grupos, admin solo su facultad, evaluador solo lo asignado | D1 |
 | `@ControllerAdvice` global + jerarquía de excepciones propias del dominio | D1 |
 | Login + guardas de ruta + persistencia de sesión en el frontend | D3 |
@@ -116,10 +119,14 @@ Objetivo: que **nada de negocio esté hardcodeado** — es el factor diferenciad
 proyecto frente a AULAWEB.
 
 - CRUD de `Facultad` y `Programa` (`super_admin`).
-- CRUD de `Momento` por programa: rango de semestres desde/hasta, asignatura asociada.
-- CRUD de `RAP` por momento: descripción, peso evaluativo, nivel (bajo/medio/alto).
-- CRUD de criterios de evaluación y su puntuación, configurables por programa.
-- Validaciones: pesos que sumen lo esperado, rangos de semestre sin solaparse.
+- CRUD de `PeriodoAcademico` (`super_admin`) y catálogo de `TipoEvaluador`.
+- CRUD de `Momento` por programa y periodo: asignatura, semestres, nivel de exigencia,
+  integrantes mín./máx. y ventanas de fechas (conformación, entregas, calificación).
+- CRUD de `RAP`, `CriterioEvaluacion` y `NivelDesempeno` con su puntaje, solo mientras
+  el momento está en `CONFIGURACION`.
+- **Lanzar** el momento (valida configuración completa y la bloquea) y **copiar la
+  configuración** del periodo anterior (ADR-010, ADR-012).
+- Validaciones: ventanas ordenadas y dentro del límite UPC, rangos de semestre coherentes.
 - Pantallas de `admin` y `super_admin`.
 
 **Cubre RF:** 10, 11 y las reglas transversales de configuración.
@@ -128,11 +135,12 @@ proyecto frente a AULAWEB.
 
 ### Etapa 4 — Operación docente (Semanas 4–5, en paralelo con la 3) · D3
 
-- Creación y definición de grupos por parte del docente (3–5 integrantes).
-- Asignación docente ↔ grupo; el docente **solo ve los suyos**.
-- Definición de la fecha límite de entrega.
-- Definición de la fecha de evaluación, **validando que caiga dentro del rango UPC**.
-- Creación de usuarios `empresario` / `egresado` y asignación **solo a sus grupos**.
+- El docente **habilita** grupos en un momento (durante la configuración); **solo ve
+  los suyos**.
+- Definición de la fecha límite de entrega de cada grupo, dentro de la ventana de entregas.
+- Definición de la fecha de evaluación, **dentro de la ventana de calificación** (y por
+  tanto del límite UPC).
+- Creación de evaluadores externos (tipo del catálogo) y designación **solo a sus grupos**.
 
 **Cubre RF:** 7, 8, 9.
 
@@ -140,7 +148,8 @@ proyecto frente a AULAWEB.
 
 ### Etapa 5 — Estudiante y entregas versionadas (Semana 6) · D3, apoyo D2
 
-- Escoger o crear grupo (validando mín. 3 / máx. 5 integrantes).
+- Ver los grupos de todos los docentes del momento e **inscribirse** en uno (un grupo
+  por momento; mín./máx. de integrantes del momento; solo en la ventana de conformación).
 - Subida de entrega `.zip` + presentación `.pdf` / `.docx`.
 - **Versionamiento**: cada subida es una `Entrega` nueva, no reemplaza la anterior;
   historial consultable.
@@ -153,9 +162,9 @@ proyecto frente a AULAWEB.
 
 ### Etapa 6 — Evaluación multi-rol (Semana 7) · D2 + D3
 
-- Implementación real de la interfaz `Evaluador` para `Docente`, `Empresario` y
-  `Egresado` — es el punto donde el **polimorfismo** que pide la rúbrica se hace visible.
-- `Evaluacion` con sus `CalificacionRAP` (una por RAP configurado en el momento).
+- Implementación real de la interfaz `Evaluador` para `Docente` y `EvaluadorExterno`
+  — es el punto donde el **polimorfismo** que pide la rúbrica se hace visible.
+- `Evaluacion` con sus `CalificacionCriterio` (un nivel elegido por cada criterio del momento).
 - Ventana temporal: solo se puede calificar dentro de la fecha estipulada.
 - Cálculo de nota consolidada por grupo y desempeño individual por RAP.
 - Pantalla de calificación (evaluadores) y de resultados (estudiante).

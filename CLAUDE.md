@@ -17,6 +17,15 @@ de uno de los desarrolladores** — cualquier trabajo aquí debe poder sustentar
 también contra la rúbrica oficial de la UPC en
 `docs/00-guia-oficial-momento1.md`.
 
+## Regla de trabajo: preguntar antes de decidir
+
+El responsable del proyecto conoce las necesidades de la universidad y del proyecto.
+**No tomar decisiones por cuenta propia**: ante cualquier duda de dominio, de
+alcance, de modelo de datos o de organización del equipo, preguntar primero (con
+opciones concretas y una recomendación cuando la haya) y solo después implementar.
+Las decisiones ya tomadas quedan registradas en `docs/04` (sección de decisiones) y
+en los ADR de `docs/05`; no volver a preguntarlas.
+
 ## Stack (no negociable salvo discusión explícita)
 
 - **Backend:** Java 21 + Spring Boot 3.x — Spring Web, Spring Data JPA, Spring
@@ -30,24 +39,34 @@ también contra la rúbrica oficial de la UPC en
 
 ## Roles del sistema (fundamentales para cualquier feature)
 
-`super_admin`, `admin` (por facultad, define momentos/RAP por programa),
-`docente` (define grupos/fechas, solo ve sus grupos asignados), `estudiante`
-(sube entregas versionadas, ve su calificación por RAP), `empresario` y
-`egresado` (evalúan grupos asignados). Docente/Empresario/Egresado implementan
-una interfaz común `Evaluador`. Ver `docs/03-entidades-dominio.md` para el
-modelo de clases completo y `docs/diagramas/diagrama_clases.drawio` para el UML.
+`super_admin` (parámetros, periodos, catálogo de tipos de evaluador), `admin` (por
+facultad: crea, configura y lanza los momentos de sus programas), `docente` (habilita
+grupos en un momento, designa evaluadores externos, fija fechas), `estudiante` (se
+inscribe en un grupo del momento, sube entregas versionadas, ve su calificación por
+RAP) y `evaluador_externo` (empresario, egresado u otro tipo del catálogo
+`TipoEvaluador`, ADR-011). `Docente` y `EvaluadorExterno` implementan la interfaz
+`Evaluador`; el estudiante **no** se autoevalúa. Todos inician sesión con su correo.
+El flujo de un momento (configuración → conformación de grupos → lanzar → entregas →
+calificación) está en `docs/04` y en el ADR-012. Ver `docs/03-entidades-dominio.md`
+para el modelo completo y `docs/diagramas/diagrama_clases.md` para el UML vigente (el
+`.drawio` se regenera al cerrar la Etapa 1).
 
 ## Reglas de control de acceso a tener siempre presentes
 
-- Un docente **solo** debe poder ver/gestionar los grupos que tiene asignados —
-  nunca todos los grupos del sistema.
+- Un docente **solo** debe poder ver/gestionar/calificar los grupos que él
+  habilitó — nunca todos los grupos del sistema. Los estudiantes, en cambio, ven los
+  grupos de todos los docentes del momento para poder inscribirse.
 - Un admin de facultad solo gestiona programas/momentos/RAP de **su** facultad.
-- Empresarios/egresados solo ven y califican los grupos que se les asignaron, y
-  solo dentro de la fecha de evaluación estipulada (que a su vez debe caer dentro
-  de la fecha límite que define la UPC).
-- Todo lo de RAP/momentos/criterios/puntuación es **configurable** por
-  admin/super_admin — evitar hardcodear valores de negocio (nombres de RAP,
-  pesos, rangos de semestre) en el código.
+- Los evaluadores externos solo ven y califican los grupos para los que fueron
+  designados, y solo en la fecha de evaluación estipulada (dentro de la ventana de
+  calificación del momento, que termina a más tardar en el límite de la UPC).
+- Cada operación valida el estado y las ventanas del momento (ADR-012): la
+  configuración solo se edita antes de lanzar; se entrega y se califica solo dentro
+  de sus ventanas.
+- Todo lo de RAP/momentos/criterios/niveles/puntuación es **configurable** por
+  admin/super_admin y se versiona **por periodo académico** (ADR-010) — nada de
+  valores estándar en el código: ni nombres de RAP, ni niveles, ni puntajes, ni
+  rangos de semestre, ni enums de niveles.
 
 ## Convenciones de código
 

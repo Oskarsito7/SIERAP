@@ -124,7 +124,7 @@ protección de ramas en GitHub y un workflow de CI que valide cada PR.
 **Estado:** Aceptada.
 
 **Contexto:** el frontend necesita formularios, tablas, diálogos y (en reportería)
-gráficas para seis roles distintos, construido por un equipo con niveles de
+gráficas para cinco roles distintos, construido por un equipo con niveles de
 experiencia diferentes. El ADR-004 fijó React + TypeScript pero no la herramienta de
 build ni la librería de componentes.
 
@@ -204,6 +204,169 @@ depender del día en que se ejecuta la prueba).
 **Consecuencias:** las entidades tienen más líneas (el IDE genera getters/setters).
 Toda regla de fechas se puede probar con `Clock.fixed(...)`, y los controllers no
 necesitan `try/catch`.
+
+---
+
+## ADR-009 — Herencia de `Usuario` en JPA con estrategia `JOINED`
+
+**Fecha:** 2026-09-24 (Etapa 1).
+**Estado:** Aceptada.
+
+**Contexto:** `Usuario` es abstracta y tiene cinco subclases con atributos propios
+(`Admin` → facultad; `Docente` → facultad; `Estudiante` → código, semestre y
+programa; `EvaluadorExterno` → tipo de evaluador y datos opcionales, ver ADR-011;
+`SuperAdmin` sin atributos propios). Había que elegir cómo se guarda esa jerarquía
+en PostgreSQL (`@Inheritance`).
+
+**Decisión:** `@Inheritance(strategy = InheritanceType.JOINED)`. La tabla `usuario`
+guarda los datos comunes (nombres, apellidos, documento, correo, contraseña, rol,
+estado, fecha de creación) y cada rol tiene su propia tabla (`super_admin`, `admin`,
+`docente`, `estudiante`, `evaluador_externo`) con su llave primaria como llave
+foránea a `usuario.id`. La columna `usuario.rol` actúa como discriminador
+(`@DiscriminatorColumn`) con los valores de `RolUsuario`, para conocer el rol sin
+hacer joins (útil en el login y en Spring Security).
+
+**Alternativas consideradas:**
+
+- `SINGLE_TABLE`: una sola tabla con todas las columnas de todos los roles. Es más
+  rápida, pero obliga a que las columnas propias de cada rol acepten `NULL` (no se
+  puede exigir `NOT NULL` en `codigo_estudiante`, por ejemplo) y la tabla no se
+  parece al diagrama de clases.
+- `TABLE_PER_CLASS`: una tabla completa por rol, sin tabla común. Complica que el
+  correo sea único entre todos los usuarios y las consultas sobre "cualquier usuario".
+
+**Consecuencias:** el esquema refleja la jerarquía del diagrama UML (útil para la
+sustentación: cada clase tiene su tabla), cada rol puede tener restricciones
+`NOT NULL` y llaves foráneas propias, y el correo es único en `usuario`. Leer un
+usuario concreto implica un join con la tabla de su rol, costo despreciable para el
+volumen de SIERAP.
+
+---
+
+## ADR-010 — Configuración de la evaluación por periodo académico, sin valores estándar
+
+**Fecha:** 2026-09-24 (Etapa 1).
+**Estado:** Aceptada.
+
+**Contexto:** los RAP, los criterios de evaluación, los niveles de desempeño y los
+puntajes varían por programa, por momento y en el tiempo; cada admin los crea,
+modifica o elimina según su criterio. Al mismo tiempo, la reportería (RF 12) debe
+comparar resultados entre semestres, así que editar la configuración de este
+semestre no puede alterar las evaluaciones de semestres anteriores.
+
+**Decisión:**
+
+- La configuración se versiona **por periodo académico**: `Momento` pertenece a un
+  `Programa` **y** a un `PeriodoAcademico`. Cada momento tiene sus propios `RAP`;
+  cada RAP, sus `CriterioEvaluacion`; y cada criterio, sus `NivelDesempeno` con su
+  puntaje.
+- Al abrir un periodo nuevo, la configuración del periodo anterior se **copia** como
+  punto de partida (momentos → RAP → criterios → niveles) y se edita. Los periodos
+  pasados quedan intactos.
+- **Nada estándar en el código:** no existen los enums `NivelExigencia` ni
+  `NivelDesempeno`. El nivel de exigencia del momento es texto libre, y los niveles
+  de desempeño (nombre, descripción, puntaje y orden) los define el admin en cada
+  criterio. El RAP no tiene "peso": pesa lo que sumen los puntajes máximos de sus
+  criterios.
+- El evaluador elige **un nivel por criterio**; la nota es la suma de los puntajes
+  elegidos, y el desempeño por RAP es la suma de los de sus criterios
+  (`CalificacionCriterio` reemplaza a `CalificacionRAP`).
+
+**Alternativas consideradas:** una sola configuración viva editable, desactivando
+(sin borrar) lo que se elimina: más simple, pero la configuración de semestres
+pasados se deforma con cada edición y los comparativos pierden sentido. Puntaje
+directo por RAP (sin criterios ni niveles): no refleja cómo evalúa hoy la UPC (ver la
+rúbrica en `00-guia-oficial-momento1.md`, donde cada ítem tiene niveles con puntos).
+
+**Consecuencias:** hay más entidades de configuración (`CriterioEvaluacion`,
+`NivelDesempeno`) y hace falta una operación de "copiar configuración del periodo
+anterior" (Etapa 3). A cambio, cada evaluación queda ligada a la configuración con
+la que se hizo, y los reportes comparativos entre periodos son confiables.
+
+---
+
+## ADR-011 — Tipos de evaluador configurables (`EvaluadorExterno` + catálogo)
+
+**Fecha:** 2026-09-24 (Etapa 1).
+**Estado:** Aceptada.
+
+**Contexto:** hoy evalúan el docente, el empresario y el egresado, pero el
+responsable del proyecto indicó que pueden aparecer más tipos de evaluador con otros
+nombres, y que deben poder crearse sin programar. Con una subclase de `Usuario` por
+tipo (`Empresario`, `Egresado`), cada tipo nuevo exigiría código, una tabla y una
+migración.
+
+**Decisión:**
+
+- `Docente` sigue siendo un rol propio, porque además de evaluar habilita grupos,
+  designa evaluadores y fija fechas.
+- Todos los evaluadores que no son docentes son una sola subclase,
+  **`EvaluadorExterno`** (rol `EVALUADOR_EXTERNO`), con un `TipoEvaluador` tomado de
+  un **catálogo** que mantiene el super_admin. Los datos semilla del catálogo son
+  "Empresario" y "Egresado"; agregar un tipo es agregar una fila.
+- Los datos propios de cada tipo son opcionales en `EvaluadorExterno`: organización,
+  cargo, año de graduación y programa de egreso.
+- La interfaz `Evaluador` la implementan `Docente` y `EvaluadorExterno`.
+
+**Alternativas consideradas:** mantener `Empresario` y `Egresado` como subclases y
+agregar una genérica "Otro evaluador" (dos formas distintas de modelar lo mismo); una
+subclase por tipo (no es configurable desde la aplicación).
+
+**Consecuencias:** `RolUsuario` queda con `SUPER_ADMIN`, `ADMIN`, `DOCENTE`,
+`ESTUDIANTE` y `EVALUADOR_EXTERNO`. Los permisos se dan por rol, sin importar el tipo;
+el tipo se usa para mostrar, para los reportes y, si se decide, para ponderar la
+nota por tipo de evaluador (pendiente en `docs/04`). El polimorfismo que pide la
+rúbrica se mantiene: `getRol()` en cada subclase y la interfaz `Evaluador` con dos
+implementaciones.
+
+---
+
+## ADR-012 — Ciclo de vida del momento: configuración, conformación, lanzamiento y ventanas
+
+**Fecha:** 2026-09-24 (Etapa 1).
+**Estado:** Aceptada.
+
+**Contexto:** el responsable del proyecto describió cómo se ejecuta un momento, igual
+para cualquier momento y programa:
+
+1. El admin crea el momento (p. ej. "Momento 1") y configura sus RAP, criterios y
+   niveles con puntaje.
+2. Los docentes habilitan grupos y designan a sus evaluadores externos.
+3. Los estudiantes entran a SIERAP, ven los grupos de **todos** los docentes del
+   momento y se inscriben en el que acordaron con sus compañeros.
+4. El admin **lanza** el momento; se entrega y se califica.
+
+**Decisión:**
+
+- `Momento.estado` (enum `EstadoMomento`): `CONFIGURACION` → `LANZADO`.
+- El admin define en el momento el mínimo y el máximo de integrantes por grupo y tres
+  **ventanas de fechas**: conformación de grupos, entregas y calificación. Deben
+  estar ordenadas y sin solaparse, y la de calificación debe terminar a más tardar
+  en la `fechaLimiteEvaluacionUPC` del periodo. Mientras se configura pueden estar
+  vacías; son obligatorias para lanzar.
+- **En `CONFIGURACION`:** el admin edita todo. Dentro de la ventana de conformación,
+  los docentes habilitan grupos y los estudiantes del programa se inscriben (un grupo
+  por momento).
+- **"Lanzar"** lo hace el admin **después** de la conformación de grupos: valida que
+  la configuración esté completa y **bloquea** los RAP, criterios, niveles, puntajes y
+  la composición de los grupos.
+- **En `LANZADO`**, lo que se permite hacer lo dan las fechas, evaluadas con el
+  `Clock` inyectado: dentro de la ventana de entregas se entrega, dentro de la de
+  calificación se califica, y después de la calificación el momento queda cerrado.
+  Fuera de las ventanas no se entrega ni se califica.
+- Cada docente fija la fecha límite de entrega y la fecha de evaluación de **sus**
+  grupos, dentro de las ventanas del momento (RF 7 y 9).
+
+**Alternativas consideradas:** avanzar todas las fases con botones (más trabajo manual
+y fácil de olvidar); lanzar al terminar la configuración, antes de la conformación
+(el responsable prefirió lanzar con los grupos ya armados); activar el momento solo
+por fecha, sin botón.
+
+**Consecuencias:** `EstadoMomento` es un enum del **flujo del sistema**, no un valor de
+negocio de la evaluación, así que no contradice el ADR-010. Cada operación valida
+estado y fecha (p. ej. inscribirse solo en `CONFIGURACION` y dentro de la ventana de
+conformación; entregar solo en `LANZADO` y dentro de la ventana de entregas). Queda
+pendiente qué pasa al lanzar con grupos que no alcanzan el mínimo de integrantes.
 
 ---
 
