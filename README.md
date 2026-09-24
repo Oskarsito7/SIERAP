@@ -113,10 +113,17 @@ criterios de evaluación.
 - [x] Descripción de la solución (alcance, factor diferenciador, requerimientos)
 - [x] Identificación de entidades del dominio
 - [x] Diagrama de clases preliminar en notación UML
-- [ ] Diagrama de paquetes (arquitectura por capas, adaptado a Spring Boot)
-- [ ] Requerimientos funcionales formalizados por rol con control de acceso
+- [x] Diagrama de clases mejorado, de jerarquías y de paquetes (capas)
+- [x] Requerimientos funcionales formalizados por rol con control de acceso
 - [ ] Diseño preliminar de GUI (mockup/wireframe por rol)
 - [ ] Implementación de código (avance de clases del diagrama)
+
+Avance de la implementación, por etapas de [`docs/06-plan-de-trabajo.md`](docs/06-plan-de-trabajo.md):
+
+- [x] **Etapa 0 — Cimientos:** esqueleto backend y frontend, PostgreSQL en
+  `docker-compose`, CI en GitHub Actions.
+- [ ] Etapa 1 — Modelo de dominio y persistencia (entidades JPA + Flyway).
+- [ ] Etapa 2 — Autenticación y control de acceso.
 
 ## 7. Estructura de este repositorio
 
@@ -131,14 +138,58 @@ SIERAP/
 │   ├── 04-requerimientos-funcionales.md ← 12 requerimientos por rol (lluvia de ideas formalizada)
 │   ├── 05-decisiones-tecnicas.md      ← ADRs: por qué Java/Spring/Postgres/React
 │   ├── 06-plan-de-trabajo.md          ← etapas, reparto entre los 3 devs, ramas y pruebas
-│   ├── diagramas/
-│   │   └── diagrama_clases.drawio     ← diagrama UML de clases (abrir en app.diagrams.net)
+│   ├── diagramas/                     ← clases, jerarquías y capas (Mermaid + .drawio + PNG)
 │   └── entregas/                      ← documentos formales de entrega (incluye presentacion-sierap.pptx)
-├── backend/                           ← (por crear) API Java + Spring Boot
-└── frontend/                          ← (por crear) app React + TypeScript
+├── backend/                           ← API Java 21 + Spring Boot 3 (Maven)
+│   └── src/main/java/co/edu/unicesar/sierap/
+│       ├── controller/  dto/  mapper/          ← presentación (API REST)
+│       ├── service/  service/impl/             ← lógica de negocio
+│       ├── repository/                         ← datos (Spring Data JPA)
+│       ├── entity/  entity/enums/              ← entidades del dominio
+│       └── security/  exception/  config/      ← transversales
+├── frontend/                          ← app React + TypeScript (Vite, Tailwind, shadcn/ui)
+├── docker-compose.yml                 ← PostgreSQL para desarrollo local
+└── .github/workflows/ci.yml           ← CI: build y pruebas de backend y frontend
 ```
 
-## 8. Cómo usar este repositorio con Claude
+## 8. Cómo levantar el proyecto en local
+
+**Requisitos:** JDK 21, Node.js 22 o superior y Docker (Docker Desktop en
+Windows/macOS). No hace falta instalar Maven: el repo trae el Maven Wrapper
+(`mvnw`).
+
+```bash
+# 1. Base de datos (PostgreSQL 17 en localhost:5432, usuario/clave: sierap/sierap)
+docker compose up -d
+
+# 2. Backend — API en http://localhost:8080   (en Windows: mvnw.cmd spring-boot:run)
+cd backend
+./mvnw spring-boot:run
+
+# 3. Frontend — en otra terminal, app en http://localhost:5173
+cd frontend
+npm install
+npm run dev
+```
+
+Si todo está bien, la página de inicio muestra **"API conectada"** y **"Base de datos
+disponible"**. También se puede verificar con `curl http://localhost:8080/api/estado`.
+
+**Pruebas:**
+
+```bash
+cd backend && ./mvnw verify                       # unitarias + integración (requiere Docker)
+cd frontend && npm run lint && npm test && npm run build
+```
+
+**Configuración propia sin tocar archivos versionados:** el backend lee
+`DB_URL`, `DB_USERNAME` y `DB_PASSWORD` del entorno; también se puede crear un
+`backend/application-local.yml` (ignorado por git) y arrancar con
+`./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,local`. Si el puerto 5432 ya
+está ocupado por otro PostgreSQL: `DB_PORT=5433 docker compose up -d` y
+`DB_URL=jdbc:postgresql://localhost:5433/sierap`.
+
+## 9. Cómo usar este repositorio con Claude
 
 - **Claude Projects (planeación, discusión con el equipo):** sube todo el contenido
   de `/docs` como Project Knowledge. Cualquier miembro del equipo que abra una
@@ -147,7 +198,7 @@ SIERAP/
   raíz. El archivo `CLAUDE.md` en la raíz (ver siguiente) le da a Claude Code el
   mismo contexto de forma automática en cada sesión, sin que tengas que repetirlo.
 
-## 9. Reglas de documentación del equipo
+## 10. Reglas de documentación del equipo
 
 Según lo acordado, el equipo debe documentar:
 

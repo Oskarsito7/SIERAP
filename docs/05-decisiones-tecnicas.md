@@ -118,6 +118,95 @@ protección de ramas en GitHub y un workflow de CI que valide cada PR.
 
 ---
 
+## ADR-006 — Frontend con Vite, Tailwind CSS y shadcn/ui
+
+**Fecha:** 2026-09-24 (Etapa 0).
+**Estado:** Aceptada.
+
+**Contexto:** el frontend necesita formularios, tablas, diálogos y (en reportería)
+gráficas para seis roles distintos, construido por un equipo con niveles de
+experiencia diferentes. El ADR-004 fijó React + TypeScript pero no la herramienta de
+build ni la librería de componentes.
+
+**Decisión:** Vite como herramienta de build; Tailwind CSS v4 para estilos;
+shadcn/ui (estilo `new-york`, primitivas de Radix) como librería de componentes;
+React Router para el enrutamiento y axios como cliente HTTP (un único cliente en
+`services/api/httpClient.ts`). Pruebas con Vitest + React Testing Library.
+
+**Alternativas consideradas:** Material UI (componentes listos, pero con su propio
+sistema de estilos y un bundle más pesado); Ant Design (muy completo para paneles
+administrativos, pero pesado y costoso de adaptar a una identidad visual propia).
+
+**Consecuencias:** el código de cada componente queda dentro del repositorio
+(`frontend/src/components/ui/`), se agrega con `npx shadcn@latest add <componente>`
+y se puede modificar libremente. El tema visual se centraliza en las variables CSS de
+`src/index.css`. Nota de proceso: en la sesión de IA que creó el esqueleto no había
+acceso al registro de shadcn/ui, así que `components.json`, el tema y los componentes
+`Button`, `Card` y `Badge` se escribieron a mano con el mismo contenido que genera el
+CLI. En las máquinas del equipo el CLI funciona normalmente.
+
+---
+
+## ADR-007 — Pruebas de integración contra PostgreSQL real (Testcontainers)
+
+**Fecha:** 2026-09-24 (Etapa 0).
+**Estado:** Aceptada.
+
+**Contexto:** el plan de trabajo dejaba abierto "Testcontainers (o H2)" para las
+pruebas de integración del backend. Las migraciones de Flyway se escriben en SQL de
+PostgreSQL, y la reportería usará funciones de ventana y agregaciones propias de
+PostgreSQL (ver ADR-003).
+
+**Decisión:** las pruebas de integración (`@SpringBootTest`) corren contra un
+PostgreSQL real levantado con Testcontainers, con la misma imagen que
+`docker-compose.yml` (`postgres:17-alpine`), conectado con `@ServiceConnection` de
+Spring Boot (`TestcontainersConfiguration`).
+
+**Alternativas consideradas:** H2 en memoria (más rápida y sin Docker, pero con otro
+dialecto SQL: una prueba puede pasar en H2 y la misma consulta fallar en PostgreSQL,
+o al revés).
+
+**Consecuencias:** correr `./mvnw verify` completo requiere Docker (Docker Desktop en
+Windows/macOS). Las pruebas unitarias con Mockito y las de `@WebMvcTest` no lo
+necesitan. Los runners de GitHub Actions ya traen Docker, así que el CI no requiere
+configuración adicional.
+
+---
+
+## ADR-008 — Convenciones del backend: sin Lombok, DTOs como `record` y reloj inyectable
+
+**Fecha:** 2026-09-24 (Etapa 0).
+**Estado:** Aceptada.
+
+**Contexto:** la rúbrica evalúa encapsulamiento, polimorfismo, manejo de excepciones y
+documentación de cada clase, y la sustentación es individual sobre el código. Además,
+varias reglas de negocio dependen de la fecha actual (RF 3, 6 y 9).
+
+**Decisión:**
+
+- **Sin Lombok.** Las entidades declaran sus getters/setters explícitamente, con
+  Javadoc.
+- **DTOs como `record`** de Java (inmutables, sin código repetitivo).
+- **Inyección por constructor**, nunca `@Autowired` sobre atributos.
+- **Reloj inyectable:** los services obtienen la fecha con
+  `LocalDate.now(reloj)`, usando el `Clock` que expone `config.RelojConfig` en la zona
+  `America/Bogota`, nunca con `LocalDate.now()`.
+- **Errores de negocio como subclases de `SierapException`**
+  (`RecursoNoEncontradoException` → 404, `ReglaNegocioException` → 422,
+  `AccesoDenegadoException` → 403); cada subclase define su código HTTP por
+  polimorfismo y `GlobalExceptionHandler` responde con el formato `ErrorResponse`.
+
+**Alternativas consideradas:** Lombok (menos código, pero el encapsulamiento deja de
+verse en el código que se sustenta y agrega un procesador de anotaciones que falla en
+IDEs mal configurados); `LocalDate.now()` directo (impide probar reglas de fechas sin
+depender del día en que se ejecuta la prueba).
+
+**Consecuencias:** las entidades tienen más líneas (el IDE genera getters/setters).
+Toda regla de fechas se puede probar con `Clock.fixed(...)`, y los controllers no
+necesitan `try/catch`.
+
+---
+
 ## Plantilla para nuevas entradas
 
 ```
