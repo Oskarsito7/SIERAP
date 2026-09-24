@@ -2,7 +2,7 @@ import { Link } from 'react-router'
 
 import { Button } from '@/components/ui/button'
 
-/** Página que se muestra cuando la ruta no existe. */
+/** Page shown when the route does not exist. */
 export function NotFoundPage() {
   return (
     <div className="flex flex-col items-start gap-4">

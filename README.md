@@ -174,7 +174,7 @@ npm run dev
 ```
 
 Si todo está bien, la página de inicio muestra **"API conectada"** y **"Base de datos
-disponible"**. También se puede verificar con `curl http://localhost:8080/api/estado`.
+disponible"**. También se puede verificar con `curl http://localhost:8080/api/status`.
 
 **Pruebas:**
 

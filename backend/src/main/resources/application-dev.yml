@@ -1,6 +1,6 @@
-# Perfil de desarrollo local. Los valores por defecto coinciden con docker-compose.yml.
-# Para sobreescribirlos sin tocar este archivo: variables de entorno, o un
-# application-local.yml (ignorado por git) activando --spring.profiles.active=dev,local
+# Local development profile. The defaults match docker-compose.yml.
+# To override them without touching this file: environment variables, or an
+# application-local.yml (ignored by git) activated with --spring.profiles.active=dev,local
 spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/sierap}

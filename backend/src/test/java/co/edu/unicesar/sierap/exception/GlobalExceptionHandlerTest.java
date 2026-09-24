@@ -28,112 +28,112 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Verifica que {@link GlobalExceptionHandler} traduzca cada tipo de error al
- * código HTTP correcto y al formato uniforme de
- * {@link co.edu.unicesar.sierap.dto.response.ErrorResponse}.
+ * Checks that {@link GlobalExceptionHandler} translates each kind of error into
+ * the right HTTP status and the uniform
+ * {@link co.edu.unicesar.sierap.dto.response.ErrorResponse} format.
  */
-@WebMvcTest(controllers = GlobalExceptionHandlerTest.ControladorDePrueba.class)
-@Import({GlobalExceptionHandlerTest.ControladorDePrueba.class, GlobalExceptionHandlerTest.RelojDePrueba.class})
+@WebMvcTest(controllers = GlobalExceptionHandlerTest.TestController.class)
+@Import({GlobalExceptionHandlerTest.TestController.class, GlobalExceptionHandlerTest.TestClock.class})
 class GlobalExceptionHandlerTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
-    void recursoNoEncontradoResponde404ConMensajeYRuta() throws Exception {
-        mockMvc.perform(get("/prueba/no-encontrado"))
+    void resourceNotFoundResponds404WithMessageAndPath() throws Exception {
+        mockMvc.perform(get("/test/not-found"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.estado").value(404))
+                .andExpect(jsonPath("$.status").value(404))
                 .andExpect(jsonPath("$.error").value("Not Found"))
-                .andExpect(jsonPath("$.mensaje").value("No existe Grupo con id 7"))
-                .andExpect(jsonPath("$.ruta").value("/prueba/no-encontrado"))
-                .andExpect(jsonPath("$.fechaHora").value("2026-03-15T09:30:00"));
+                .andExpect(jsonPath("$.message").value("No existe Grupo con id 7"))
+                .andExpect(jsonPath("$.path").value("/test/not-found"))
+                .andExpect(jsonPath("$.timestamp").value("2026-03-15T09:30:00"));
     }
 
     @Test
-    void reglaDeNegocioResponde422() throws Exception {
-        mockMvc.perform(get("/prueba/regla-negocio"))
+    void businessRuleResponds422() throws Exception {
+        mockMvc.perform(get("/test/business-rule"))
                 .andExpect(status().isUnprocessableEntity())
-                .andExpect(jsonPath("$.mensaje").value("El grupo ya tiene el máximo de integrantes"));
+                .andExpect(jsonPath("$.message").value("El grupo ya tiene el máximo de integrantes"));
     }
 
     @Test
-    void accesoDenegadoResponde403() throws Exception {
-        mockMvc.perform(get("/prueba/acceso-denegado"))
+    void forbiddenAccessResponds403() throws Exception {
+        mockMvc.perform(get("/test/forbidden"))
                 .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.mensaje").value("El grupo no está asignado a este docente"));
+                .andExpect(jsonPath("$.message").value("El grupo no está asignado a este docente"));
     }
 
     @Test
-    void datosInvalidosResponden400ConElErrorDeCadaCampo() throws Exception {
-        mockMvc.perform(post("/prueba/validacion")
+    void invalidDataResponds400WithTheErrorOfEachField() throws Exception {
+        mockMvc.perform(post("/test/validation")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"nombre\": \"\"}"))
+                        .content("{\"name\": \"\"}"))
                 .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.mensaje").value("La solicitud tiene datos inválidos"))
-                .andExpect(jsonPath("$.errores.nombre").value("El nombre es obligatorio"));
+                .andExpect(jsonPath("$.message").value("La solicitud tiene datos inválidos"))
+                .andExpect(jsonPath("$.fieldErrors.name").value("El nombre es obligatorio"));
     }
 
     @Test
-    void metodoNoPermitidoResponde405ConElFormatoUniforme() throws Exception {
-        mockMvc.perform(post("/prueba/regla-negocio"))
+    void methodNotAllowedResponds405WithTheUniformFormat() throws Exception {
+        mockMvc.perform(post("/test/business-rule"))
                 .andExpect(status().isMethodNotAllowed())
-                .andExpect(jsonPath("$.mensaje").value("Método HTTP no permitido en esta ruta"))
-                .andExpect(jsonPath("$.ruta").value("/prueba/regla-negocio"));
+                .andExpect(jsonPath("$.message").value("Método HTTP no permitido en esta ruta"))
+                .andExpect(jsonPath("$.path").value("/test/business-rule"));
     }
 
     @Test
-    void errorInesperadoResponde500SinExponerDetallesInternos() throws Exception {
-        mockMvc.perform(get("/prueba/inesperado"))
+    void unexpectedErrorResponds500WithoutExposingInternalDetails() throws Exception {
+        mockMvc.perform(get("/test/unexpected"))
                 .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.mensaje", not(containsString("detalle interno"))));
+                .andExpect(jsonPath("$.message", not(containsString("internal detail"))));
     }
 
-    /** Controller que existe solo en esta prueba para provocar cada tipo de error. */
+    /** Controller that exists only in this test, to trigger each kind of error. */
     @RestController
-    @RequestMapping("/prueba")
-    static class ControladorDePrueba {
+    @RequestMapping("/test")
+    static class TestController {
 
-        @GetMapping("/no-encontrado")
-        void lanzarRecursoNoEncontrado() {
-            throw new RecursoNoEncontradoException("Grupo", 7);
+        @GetMapping("/not-found")
+        void throwResourceNotFound() {
+            throw new ResourceNotFoundException("Grupo", 7);
         }
 
-        @GetMapping("/regla-negocio")
-        void lanzarReglaNegocio() {
-            throw new ReglaNegocioException("El grupo ya tiene el máximo de integrantes");
+        @GetMapping("/business-rule")
+        void throwBusinessRule() {
+            throw new BusinessRuleException("El grupo ya tiene el máximo de integrantes");
         }
 
-        @GetMapping("/acceso-denegado")
-        void lanzarAccesoDenegado() {
-            throw new AccesoDenegadoException("El grupo no está asignado a este docente");
+        @GetMapping("/forbidden")
+        void throwForbiddenAccess() {
+            throw new ForbiddenAccessException("El grupo no está asignado a este docente");
         }
 
-        @PostMapping("/validacion")
-        void validar(@Valid @RequestBody SolicitudDePrueba solicitud) {
-            // Si la validación pasa no hay nada que hacer.
+        @PostMapping("/validation")
+        void validate(@Valid @RequestBody TestRequest request) {
+            // Nothing to do when validation passes.
         }
 
-        @GetMapping("/inesperado")
-        void lanzarErrorInesperado() {
-            throw new IllegalStateException("detalle interno que no debe llegar al cliente");
+        @GetMapping("/unexpected")
+        void throwUnexpectedError() {
+            throw new IllegalStateException("internal detail that must not reach the client");
         }
     }
 
     /**
-     * DTO de entrada usado solo para probar la validación.
+     * Input DTO used only to test validation.
      *
-     * @param nombre campo obligatorio
+     * @param name required field
      */
-    record SolicitudDePrueba(@NotBlank(message = "El nombre es obligatorio") String nombre) {
+    record TestRequest(@NotBlank(message = "El nombre es obligatorio") String name) {
     }
 
-    /** Reloj fijo para que {@code fechaHora} sea predecible. */
+    /** Fixed clock so {@code timestamp} is predictable. */
     @TestConfiguration
-    static class RelojDePrueba {
+    static class TestClock {
 
         @Bean
-        Clock reloj() {
+        Clock clock() {
             return Clock.fixed(Instant.parse("2026-03-15T14:30:00Z"), ZoneId.of("America/Bogota"));
         }
     }

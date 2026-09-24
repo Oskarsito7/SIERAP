@@ -1,9 +1,8 @@
 /**
- * Capa de lógica de negocio: interfaces de los servicios.
+ * Business logic layer: service interfaces.
  *
- * <p>Los controllers dependen de estas interfaces, no de sus implementaciones.
- * Aquí viven las reglas de negocio (integrantes por grupo, ventanas de fechas del
- * momento dentro del límite UPC, alcance por rol), implementadas en
- * {@code service.impl}.</p>
+ * <p>Controllers depend on these interfaces, not on their implementations. The
+ * business rules live here (members per group, moment date windows within the UPC
+ * limit, per-role scope), implemented in {@code service.impl}.</p>
  */
 package co.edu.unicesar.sierap.service;

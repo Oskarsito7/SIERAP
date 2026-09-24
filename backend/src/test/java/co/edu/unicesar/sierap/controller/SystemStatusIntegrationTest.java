@@ -14,34 +14,34 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 /**
- * Prueba de integración de extremo a extremo del backend: arranca la aplicación
- * completa contra un PostgreSQL real (Testcontainers), con Flyway y JPA activos.
+ * End-to-end integration test of the backend: starts the whole application against
+ * a real PostgreSQL (Testcontainers), with Flyway and JPA enabled.
  */
 @SpringBootTest
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 @Import(TestcontainersConfiguration.class)
-class EstadoSistemaIntegrationTest {
+class SystemStatusIntegrationTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @Test
-    void respondeEstadoConBaseDeDatosDisponible() throws Exception {
-        mockMvc.perform(get("/api/estado"))
+    void returnsStatusWithDatabaseAvailable() throws Exception {
+        mockMvc.perform(get("/api/status"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.aplicacion").value("sierap"))
-                .andExpect(jsonPath("$.perfiles[0]").value("test"))
-                .andExpect(jsonPath("$.baseDatosDisponible").value(true))
-                .andExpect(jsonPath("$.fechaHora").isNotEmpty());
+                .andExpect(jsonPath("$.application").value("sierap"))
+                .andExpect(jsonPath("$.profiles[0]").value("test"))
+                .andExpect(jsonPath("$.databaseAvailable").value(true))
+                .andExpect(jsonPath("$.timestamp").isNotEmpty());
     }
 
     @Test
-    void rutaInexistenteRespondeConElFormatoDeErrorUniforme() throws Exception {
-        mockMvc.perform(get("/api/ruta-que-no-existe"))
+    void unknownPathRespondsWithTheUniformErrorFormat() throws Exception {
+        mockMvc.perform(get("/api/path-that-does-not-exist"))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.estado").value(404))
-                .andExpect(jsonPath("$.mensaje").value("La ruta solicitada no existe"))
-                .andExpect(jsonPath("$.ruta").value("/api/ruta-que-no-existe"));
+                .andExpect(jsonPath("$.status").value(404))
+                .andExpect(jsonPath("$.message").value("La ruta solicitada no existe"))
+                .andExpect(jsonPath("$.path").value("/api/path-that-does-not-exist"));
     }
 }

@@ -26,7 +26,7 @@ src/
 │   └── layout/      ← estructura común de las páginas
 ├── lib/             ← utilidades (cn de shadcn/ui)
 ├── pages/           ← una página por vista; las de cada rol llegan en las etapas 2 a 7
-├── routes/          ← tabla de rutas (rutas.tsx) y el router
+├── routes/          ← tabla de rutas (routes.tsx) y el router
 ├── services/api/    ← cliente HTTP (axios) y un servicio por recurso del backend
 ├── types/           ← tipos que reflejan los DTO del backend
 └── test/            ← configuración común de las pruebas

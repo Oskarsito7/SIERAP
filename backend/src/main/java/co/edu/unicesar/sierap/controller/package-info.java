@@ -1,8 +1,9 @@
 /**
- * Capa de presentación: controllers REST ({@code @RestController}).
+ * Presentation layer: REST controllers ({@code @RestController}).
  *
- * <p>Reciben la petición HTTP, validan la entrada con {@code @Valid}, delegan en un
- * service y responden con DTOs. No contienen lógica de negocio ni {@code try/catch}:
- * los errores los traduce {@code exception.GlobalExceptionHandler}.</p>
+ * <p>They receive the HTTP request, validate the input with {@code @Valid},
+ * delegate to a service and respond with DTOs. They contain neither business logic
+ * nor {@code try/catch}: errors are translated by
+ * {@code exception.GlobalExceptionHandler}.</p>
  */
 package co.edu.unicesar.sierap.controller;

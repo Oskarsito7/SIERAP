@@ -4,21 +4,21 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
- * Punto de entrada de la API REST de SIERAP (Sistema Integral Evaluador de
- * Resultados de Aprendizajes por Programa).
+ * Entry point of the SIERAP REST API (Sistema Integral Evaluador de Resultados de
+ * Aprendizajes por Programa).
  *
- * <p>La aplicación sigue una arquitectura por capas:
- * {@code controller → service → repository → entity}, con DTOs en el borde de la
- * API y componentes transversales en {@code security}, {@code exception} y
- * {@code config}. Ver {@code docs/diagramas/diagrama_capas.md}.</p>
+ * <p>The application follows a layered architecture:
+ * {@code controller → service → repository → entity}, with DTOs at the API
+ * boundary and cross-cutting components in {@code security}, {@code exception} and
+ * {@code config}. See {@code docs/diagramas/diagrama_capas.md}.</p>
  */
 @SpringBootApplication
 public class SierapApplication {
 
     /**
-     * Arranca el contexto de Spring Boot.
+     * Starts the Spring Boot context.
      *
-     * @param args argumentos de línea de comandos (p. ej. {@code --spring.profiles.active=prod})
+     * @param args command-line arguments (e.g. {@code --spring.profiles.active=prod})
      */
     public static void main(String[] args) {
         SpringApplication.run(SierapApplication.class, args);

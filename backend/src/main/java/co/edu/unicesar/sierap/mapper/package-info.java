@@ -1,7 +1,7 @@
 /**
- * Conversión entre entidades JPA y DTOs (entidad ⇄ DTO).
+ * Conversion between JPA entities and DTOs (entity ⇄ DTO).
  *
- * <p>Centraliza el mapeo para que ni los controllers conozcan las entidades ni las
- * entidades conozcan los DTOs.</p>
+ * <p>Centralizes the mapping so controllers do not know the entities and entities
+ * do not know the DTOs.</p>
  */
 package co.edu.unicesar.sierap.mapper;

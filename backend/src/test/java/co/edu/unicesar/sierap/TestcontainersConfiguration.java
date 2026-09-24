@@ -7,27 +7,27 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
- * Levanta un PostgreSQL real en Docker para las pruebas de integración.
+ * Starts a real PostgreSQL in Docker for the integration tests.
  *
- * <p>Gracias a {@link ServiceConnection}, Spring Boot configura el datasource
- * apuntando al contenedor, sin propiedades adicionales. Las pruebas corren así
- * contra el mismo motor y las mismas migraciones de Flyway que producción (ver
- * ADR-007). Usar con {@code @Import(TestcontainersConfiguration.class)}.</p>
+ * <p>Thanks to {@link ServiceConnection}, Spring Boot points the datasource to the
+ * container without extra properties. Tests therefore run against the same engine
+ * and the same Flyway migrations as production (see ADR-007). Use with
+ * {@code @Import(TestcontainersConfiguration.class)}.</p>
  */
 @TestConfiguration(proxyBeanMethods = false)
 public class TestcontainersConfiguration {
 
-    /** Misma imagen que {@code docker-compose.yml}, para no probar contra otra versión. */
-    private static final String IMAGEN_POSTGRES = "postgres:17-alpine";
+    /** Same image as {@code docker-compose.yml}, so tests do not run on another version. */
+    private static final String POSTGRES_IMAGE = "postgres:17-alpine";
 
     /**
-     * Contenedor de PostgreSQL compartido por el contexto de pruebas.
+     * PostgreSQL container shared by the test context.
      *
-     * @return contenedor que Spring Boot arranca y conecta automáticamente
+     * @return container that Spring Boot starts and connects automatically
      */
     @Bean
     @ServiceConnection
-    public PostgreSQLContainer<?> contenedorPostgres() {
-        return new PostgreSQLContainer<>(DockerImageName.parse(IMAGEN_POSTGRES));
+    public PostgreSQLContainer<?> postgresContainer() {
+        return new PostgreSQLContainer<>(DockerImageName.parse(POSTGRES_IMAGE));
     }
 }

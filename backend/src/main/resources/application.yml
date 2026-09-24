@@ -1,13 +1,13 @@
-# Configuración común a todos los perfiles.
-# Perfil por defecto: dev. En producción: --spring.profiles.active=prod
+# Configuration shared by every profile.
+# Default profile: dev. In production: --spring.profiles.active=prod
 spring:
   application:
     name: sierap
   profiles:
     default: dev
   jpa:
-    # El esquema lo crean y versionan las migraciones de Flyway; Hibernate solo
-    # valida que las entidades coincidan con las tablas.
+    # The schema is created and versioned by the Flyway migrations; Hibernate only
+    # validates that the entities match the tables.
     hibernate:
       ddl-auto: validate
     open-in-view: false
@@ -19,5 +19,5 @@ server:
 
 sierap:
   version: '@project.version@'
-  # Las reglas de fechas (entregas, ventana de evaluación) se evalúan en esta zona.
-  zona-horaria: America/Bogota
+  # Date rules (submissions, grading window) are evaluated in this time zone.
+  time-zone: America/Bogota

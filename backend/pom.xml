@@ -16,7 +16,7 @@
     <version>0.1.0-SNAPSHOT</version>
     <name>SIERAP Backend</name>
     <description>
-        API REST de SIERAP — Sistema Integral Evaluador de Resultados de Aprendizajes por Programa
+        SIERAP REST API — Sistema Integral Evaluador de Resultados de Aprendizajes por Programa
         (Universidad Popular del Cesar).
     </description>
 
@@ -26,7 +26,7 @@
     </properties>
 
     <dependencies>
-        <!-- Presentación: API REST + validación de DTOs con @Valid -->
+        <!-- Presentation: REST API + DTO validation with @Valid -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -36,7 +36,7 @@
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
 
-        <!-- Datos: JPA + PostgreSQL + migraciones versionadas con Flyway -->
+        <!-- Data: JPA + PostgreSQL + versioned migrations with Flyway -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -55,7 +55,7 @@
             <scope>runtime</scope>
         </dependency>
 
-        <!-- Desarrollo: reinicio automático al recompilar (no se empaqueta en producción) -->
+        <!-- Development: automatic restart on recompile (not packaged for production) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-devtools</artifactId>
@@ -63,7 +63,7 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- Pruebas: JUnit 5 + Mockito + MockMvc, e integración contra PostgreSQL real (Testcontainers) -->
+        <!-- Tests: JUnit 5 + Mockito + MockMvc, and integration against a real PostgreSQL (Testcontainers) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

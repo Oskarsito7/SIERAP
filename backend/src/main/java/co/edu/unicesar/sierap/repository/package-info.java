@@ -1,7 +1,7 @@
 /**
- * Capa de datos: repositorios Spring Data JPA ({@code extends JpaRepository<T, Long>}).
+ * Data layer: Spring Data JPA repositories ({@code extends JpaRepository<T, Long>}).
  *
- * <p>Incluye las consultas de reportería con {@code @Query}. Solo los services
- * usan los repositorios.</p>
+ * <p>Includes the reporting queries with {@code @Query}. Only services use the
+ * repositories.</p>
  */
 package co.edu.unicesar.sierap.repository;

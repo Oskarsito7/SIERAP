@@ -1,10 +1,11 @@
-/** Formato uniforme de error de la API (espejo de `ErrorResponse` del backend). */
-export interface ErrorApi {
-  fechaHora: string
-  estado: number
+/** Uniform API error format (mirror of the backend `ErrorResponse`). */
+export interface ApiError {
+  timestamp: string
+  status: number
   error: string
-  mensaje: string
-  ruta: string
-  /** Errores de validación por campo; vacío si no aplica. */
-  errores: Record<string, string>
+  /** Message for the end user, in Spanish. */
+  message: string
+  path: string
+  /** Validation errors per field; empty when not applicable. */
+  fieldErrors: Record<string, string>
 }

@@ -1,8 +1,8 @@
 /**
- * Objetos de transferencia de datos (DTO) del borde de la API.
+ * Data transfer objects (DTOs) at the API boundary.
  *
- * <p>Las entidades JPA nunca salen de la API: cada endpoint recibe un DTO de
- * {@code dto.request} y responde con uno de {@code dto.response}. Se modelan como
- * {@code record} de Java (inmutables).</p>
+ * <p>JPA entities never leave the API: every endpoint receives a DTO from
+ * {@code dto.request} and responds with one from {@code dto.response}. They are
+ * modeled as Java {@code record}s (immutable).</p>
  */
 package co.edu.unicesar.sierap.dto;

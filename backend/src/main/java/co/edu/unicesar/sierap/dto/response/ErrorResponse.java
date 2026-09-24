@@ -4,33 +4,33 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 /**
- * Cuerpo uniforme de todas las respuestas de error de la API.
+ * Uniform body of every error response of the API.
  *
- * @param fechaHora momento en que ocurrió el error
- * @param estado    código HTTP numérico (p. ej. 404)
- * @param error     nombre del estado HTTP (p. ej. "Not Found")
- * @param mensaje   descripción legible del error
- * @param ruta      ruta de la petición que falló
- * @param errores   errores de validación por campo; vacío si no aplica
+ * @param timestamp   when the error happened
+ * @param status      numeric HTTP status code (e.g. 404)
+ * @param error       HTTP status reason phrase (e.g. "Not Found")
+ * @param message     human-readable description of the error, shown to the end user
+ * @param path        path of the request that failed
+ * @param fieldErrors validation errors per field; empty when not applicable
  */
 public record ErrorResponse(
-        LocalDateTime fechaHora,
-        int estado,
+        LocalDateTime timestamp,
+        int status,
         String error,
-        String mensaje,
-        String ruta,
-        Map<String, String> errores) {
+        String message,
+        String path,
+        Map<String, String> fieldErrors) {
 
     /**
-     * Crea una respuesta de error sin errores de validación por campo.
+     * Creates an error response without per-field validation errors.
      *
-     * @param fechaHora momento en que ocurrió el error
-     * @param estado    código HTTP numérico
-     * @param error     nombre del estado HTTP
-     * @param mensaje   descripción legible del error
-     * @param ruta      ruta de la petición que falló
+     * @param timestamp when the error happened
+     * @param status    numeric HTTP status code
+     * @param error     HTTP status reason phrase
+     * @param message   human-readable description of the error
+     * @param path      path of the request that failed
      */
-    public ErrorResponse(LocalDateTime fechaHora, int estado, String error, String mensaje, String ruta) {
-        this(fechaHora, estado, error, mensaje, ruta, Map.of());
+    public ErrorResponse(LocalDateTime timestamp, int status, String error, String message, String path) {
+        this(timestamp, status, error, message, path, Map.of());
     }
 }
