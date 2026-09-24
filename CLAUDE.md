@@ -23,8 +23,10 @@ también contra la rúbrica oficial de la UPC en
   Security + JWT. Arquitectura por capas: `controller → service → repository →
   entity`, con DTOs en el borde de la API.
 - **Base de datos:** PostgreSQL.
-- **Frontend:** React + TypeScript.
-- **Build backend:** Maven (a confirmar con el equipo si prefieren Gradle).
+- **Frontend:** React + TypeScript con Vite, Tailwind CSS v4 + shadcn/ui, React
+  Router y axios (ADR-006).
+- **Build backend:** Maven, vía Maven Wrapper (`backend/mvnw`). Paquete base
+  `co.edu.unicesar.sierap`.
 
 ## Roles del sistema (fundamentales para cualquier feature)
 
@@ -55,7 +57,15 @@ modelo de clases completo y `docs/diagramas/diagrama_clases.drawio` para el UML.
 - Cada clase debe llevar comentarios/documentación (Javadoc mínimo en clases de
   dominio) — también es parte de la rúbrica.
 - Manejo de excepciones centralizado vía `@ControllerAdvice`, no try/catch
-  disperso en controllers.
+  disperso en controllers: los services lanzan subclases de `SierapException`
+  (`RecursoNoEncontradoException` 404, `ReglaNegocioException` 422,
+  `AccesoDenegadoException` 403) y `GlobalExceptionHandler` responde con
+  `ErrorResponse`.
+- Sin Lombok; DTOs como `record`; inyección por constructor (ADR-008).
+- Fechas: usar siempre el `Clock` inyectado (`LocalDate.now(reloj)`), nunca
+  `LocalDate.now()`, para poder probar reglas de fechas con `Clock.fixed`.
+- Frontend: las páginas nunca llaman a axios directo, siempre vía
+  `src/services/api/*`; los tipos de `src/types/` reflejan los DTO del backend.
 
 ## Dónde está cada cosa
 
@@ -75,8 +85,18 @@ modelo de clases completo y `docs/diagramas/diagrama_clases.drawio` para el UML.
   integrantes, estrategia de ramas (`main`/`develop`/`feature/*`), convención de
   commits, checklist de PR y estrategia de pruebas. Consúltalo antes de abrir una
   rama o de proponer en qué orden implementar algo.
-- `backend/` y `frontend/` — código fuente (se crean cuando arranque la
-  implementación).
+- `backend/` — API Spring Boot; `frontend/` — app React (ver `frontend/README.md`);
+  `docker-compose.yml` — PostgreSQL local; `.github/workflows/ci.yml` — CI.
+
+## Comandos
+
+```bash
+docker compose up -d                                  # PostgreSQL local (sierap/sierap)
+cd backend && ./mvnw spring-boot:run                  # API en :8080 (perfil dev por defecto)
+cd backend && ./mvnw verify                           # pruebas; las de integración usan Testcontainers (Docker)
+cd frontend && npm run dev                            # app en :5173, proxy /api -> :8080
+cd frontend && npm run lint && npm test && npm run build
+```
 
 ## Al iniciar cualquier feature nueva
 

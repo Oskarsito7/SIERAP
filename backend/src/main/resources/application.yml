@@ -1,0 +1,23 @@
+# Configuración común a todos los perfiles.
+# Perfil por defecto: dev. En producción: --spring.profiles.active=prod
+spring:
+  application:
+    name: sierap
+  profiles:
+    default: dev
+  jpa:
+    # El esquema lo crean y versionan las migraciones de Flyway; Hibernate solo
+    # valida que las entidades coincidan con las tablas.
+    hibernate:
+      ddl-auto: validate
+    open-in-view: false
+  flyway:
+    locations: classpath:db/migration
+
+server:
+  port: ${SERVER_PORT:8080}
+
+sierap:
+  version: '@project.version@'
+  # Las reglas de fechas (entregas, ventana de evaluación) se evalúan en esta zona.
+  zona-horaria: America/Bogota
