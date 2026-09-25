@@ -19,6 +19,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -83,6 +84,15 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void dataIntegrityViolationResponds409WithoutExposingTheSqlError() throws Exception {
+        mockMvc.perform(get("/test/data-integrity"))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.status").value(409))
+                .andExpect(jsonPath("$.message", containsString("entra en conflicto")))
+                .andExpect(jsonPath("$.message", not(containsString("fk_teacher_faculty"))));
+    }
+
+    @Test
     void unexpectedErrorResponds500WithoutExposingInternalDetails() throws Exception {
         mockMvc.perform(get("/test/unexpected"))
                 .andExpect(status().isInternalServerError())
@@ -112,6 +122,12 @@ class GlobalExceptionHandlerTest {
         @PostMapping("/validation")
         void validate(@Valid @RequestBody TestRequest request) {
             // Si la validación pasa no hay nada que hacer.
+        }
+
+        @GetMapping("/data-integrity")
+        void throwDataIntegrityViolation() {
+            throw new DataIntegrityViolationException(
+                    "update or delete on table \"faculty\" violates foreign key constraint \"fk_teacher_faculty\"");
         }
 
         @GetMapping("/unexpected")

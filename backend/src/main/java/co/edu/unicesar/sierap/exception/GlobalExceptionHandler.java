@@ -9,6 +9,7 @@ import co.edu.unicesar.sierap.dto.response.ErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -27,6 +28,9 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  * <p>Traduce cualquier error a un {@link ErrorResponse} con el mismo formato:</p>
  * <ul>
  *   <li>{@link SierapException} y subclases → el código HTTP que define cada subclase.</li>
+ *   <li>{@link DataIntegrityViolationException} (la base de datos rechazó la operación
+ *       por una llave foránea {@code RESTRICT}, un único o un {@code CHECK}) →
+ *       {@code 409}, con un mensaje genérico en español (ADR-016).</li>
  *   <li>Errores de validación de {@code @Valid} → {@code 400} con el detalle por campo.</li>
  *   <li>Errores propios de Spring MVC (ruta inexistente, método no permitido, JSON
  *       mal formado…) → su código HTTP estándar, heredado de
@@ -68,6 +72,32 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         HttpStatus status = exception.getHttpStatus();
         return ResponseEntity.status(status)
                 .body(buildBody(status, exception.getMessage(), request.getRequestURI(), Map.of()));
+    }
+
+    /**
+     * Maneja las operaciones que PostgreSQL rechaza por integridad de datos: borrar
+     * configuración que ya tiene grupos o notas, registros duplicados o valores que
+     * violan un {@code CHECK} (ADR-016).
+     *
+     * <p>Es la última línea de defensa: los services deben validar antes las reglas
+     * de negocio y lanzar una {@link BusinessRuleException} con un mensaje preciso.
+     * El detalle técnico solo se registra en el log.</p>
+     *
+     * @param exception error de integridad traducido por Spring
+     * @param request   petición HTTP que lo originó
+     * @return respuesta {@code 409 Conflict}
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ErrorResponse> handleDataIntegrityViolation(DataIntegrityViolationException exception,
+                                                                      HttpServletRequest request) {
+        LOGGER.warn("Data integrity violation processing {}: {}", request.getRequestURI(),
+                exception.getMostSpecificCause().getMessage());
+        HttpStatus status = HttpStatus.CONFLICT;
+        return ResponseEntity.status(status)
+                .body(buildBody(status,
+                        "No se puede completar la operación porque entra en conflicto con información "
+                                + "existente (datos duplicados o relacionados).",
+                        request.getRequestURI(), Map.of()));
     }
 
     /**
