@@ -64,18 +64,26 @@ one table per role (ADR-009). Every user logs in with their **email**.
 |---|---|---|---|
 | `User` (abstract) | Usuario | firstNames, lastNames, documentType, documentNumber (unique), email (unique, login), passwordHash, role, active, createdAt | Data common to every user of the system. The five roles inherit from it. |
 | `SuperAdmin` | Super administrador | — | Global permissions: system parameters, academic periods, faculties and the evaluator type catalog. |
-| `Admin` | Administrador (decano) | faculty | User of a `Faculty` (dean role). Creates and configures the `Moment`s of the programs of their faculty and **launches** them. |
+| `Admin` | Administrador (decano) | faculty | User of a `Faculty` (dean role); a faculty can have **several** admins, all with the same permissions. Creates and configures the `Moment`s of the programs of their faculty and **launches** them. |
 | `Teacher` | Docente | faculty | Belongs to **one** `Faculty` (SIERAP only includes teachers with a classroom project, and they teach in their faculty). **Enables** groups in a moment, creates and assigns external evaluators to them, sets their dates and grades **only the groups they enabled**. |
 | `Student` | Estudiante | studentCode (unique), currentSemester, program | Belongs to a `Program`. Sees the groups of **all** the teachers of a moment of their program and joins one (**one group per moment**, with history). Uploads submissions and checks their performance per RAP. |
 | `ExternalEvaluator` | Evaluador externo | evaluatorType, organization, position, graduationYear, graduationProgram (the last four optional) | Evaluator who is not a teacher (today business people and alumni). Created by a teacher; grades only the groups they were assigned to (ADR-011). |
 | `EvaluatorType` | Tipo de evaluador | name, description, active | Catalog of external evaluator types maintained by the super_admin (seed data: "Empresario" and "Egresado"). Creating a new type requires no programming. |
 
 **`Evaluator` interface:** common contract implemented by `Teacher` and
-`ExternalEvaluator`: both grade groups and query the groups assigned to them, even
-though they do not share a parent of their own for that (both inherit from `User`,
-but "evaluating" is a behavior that cuts across different roles: a natural case for
-an interface). `Student` does **not** implement `Evaluator`: there is no
-self-assessment in SIERAP.
+`ExternalEvaluator`: both grade groups, even though they do not share a parent of
+their own for that (both inherit from `User`, but "evaluating" is a behavior that cuts
+across different roles: a natural case for an interface). `Student` does **not**
+implement `Evaluator`: there is no self-assessment in SIERAP.
+
+- `canEvaluate(ProjectGroup)` is **abstract** and each class implements its own rule
+  (polymorphism): a `Teacher` can evaluate the groups they enabled; an
+  `ExternalEvaluator`, the groups they were assigned to. Entities are compared by id,
+  because lazy relations may be Hibernate proxies.
+- Dates are not part of the interface: the service checks the grading window and the
+  evaluation date with the injected `Clock`.
+- `Evaluation.evaluator` is typed as `User`, because JPA cannot map an interface; the
+  service checks that the user is an `Evaluator` that can evaluate the group.
 
 ## Academic structure and assessment configuration · D2
 
@@ -99,16 +107,24 @@ opened, the configuration of the previous period is copied as a starting point.
 | Class | Spanish name | Attributes | Description |
 |---|---|---|---|
 | `ProjectGroup` | Grupo (= proyecto de aula) | moment, teacher, name, projectTitle, members, evaluators, submissionDeadline, evaluationDate | Group **and** classroom project at the same time (each group has a single project). A `Teacher` enables it in a moment; students join it (between the minimum and maximum of the moment). The teacher assigns external evaluators to it and sets its dates within the moment windows. |
-| `Submission` | Entrega | projectGroup, versionNumber, zipFilePath, presentationPath, submittedAt | Version of the group's submission (zip file + presentation). Each upload is a new version; history is kept. |
+| `Submission` | Entrega | projectGroup, versionNumber, zipFilePath, presentationPath, submittedAt, late | Version of the group's submission (zip file + presentation). Each upload is a new version; history is kept. Uploads are accepted while the submission window is open; those after the group's deadline are marked `late`. Files are stored on the server disk (ADR-015). |
 
 ## Evaluation and reporting · D3
 
 | Class | Spanish name | Description |
 |---|---|---|
-| `Evaluation` | Evaluación | Grade that an `Evaluator` (the group's teacher or an assigned external evaluator) gives a `ProjectGroup`; groups one `CriterionGrade` per criterion of the moment. |
-| `CriterionGrade` | Calificación por criterio | Performance level the evaluator picked in an `EvaluationCriterion`, with its score. Performance per RAP is the sum of that RAP's criteria, and the evaluation grade is the sum of all of them. |
+| `Evaluation` | Evaluación | Grade that an `Evaluator` (the group's teacher or an assigned external evaluator) gives a `ProjectGroup`; groups one `CriterionGrade` per criterion of the moment. It has a `status` (`DRAFT` → `SUBMITTED`): the evaluator can save it half done and submit it later; only submitted evaluations count, and they can be corrected while the grading window is open. One evaluation per evaluator per group. |
+| `CriterionGrade` | Calificación por criterio | Performance level the evaluator picked in an `EvaluationCriterion`, with a **copy of its score** taken when grading. Performance per RAP is the sum of that RAP's criteria, and the evaluation grade is the sum of all of them. |
 | `Report` (abstract) | Reporte | Report generated from the recorded `Evaluation`s, filterable by semester, moment, program or year. Defines an abstract `generate()`. |
 | `IndividualReport` / `GroupReport` / `ComparativeReport` | Reporte individual / grupal / comparativo | Subclasses of `Report`: each implements its own `generate()` (per student and RAP, per group, or comparing two periods). |
+
+**Group final grade:** weighted average by kind of evaluator (the teacher and each
+`EvaluatorType`), with weights the admin sets in each moment (to be modeled by D2 in
+Stage 3, together with the rest of the moment configuration). Several evaluators of
+the same kind are averaged within that kind; if a kind has no submitted evaluation,
+its weight is redistributed among the present kinds in proportion to their weights.
+The graded submission is the last on-time version, or the last late one if there is
+none on time.
 
 ## Enumerations
 
@@ -117,6 +133,7 @@ opened, the configuration of the previous period is copied as a starting point.
 | `UserRole` | `SUPER_ADMIN`, `ADMIN`, `TEACHER`, `STUDENT`, `EXTERNAL_EVALUATOR` | Role of the user; it is also the discriminator of the JOINED inheritance and the basis of access control (Spring Security). |
 | `DocumentType` | `CC`, `TI`, `CE`, `PASSPORT` | Identity document type of the user (citizenship ID, identity card, foreigner ID, passport). |
 | `MomentStatus` | `CONFIGURATION`, `LAUNCHED` | Lifecycle status of the moment (ADR-012). It is system flow, not an assessment business value. |
+| `EvaluationStatus` | `DRAFT`, `SUBMITTED` | Status of an evaluation: saved half done or submitted. System flow, like `MomentStatus`. |
 
 The Phase 2 enums `NivelExigencia` and `NivelDesempeno` **were removed** (the
 requirement level is free text in `Moment` and performance levels are the
@@ -134,7 +151,7 @@ configurable `PerformanceLevel` entity, ADR-010), and so were the `EMPRESARIO` a
   `Evaluation`—`CriterionGrade` (the whole controls the lifecycle of its parts).
 - **Aggregation:** `ProjectGroup`—`Student` (the student exists without the group
   and goes through several groups during the program, one per moment).
-- **Association:** `Moment`—`AcademicPeriod`; `Admin`—`Faculty`; `Teacher`—`Faculty`;
+- **Association:** `Moment`—`AcademicPeriod`; `Admin`—`Faculty` (several admins per faculty); `Teacher`—`Faculty`;
   `Teacher`—`ProjectGroup` (the teacher who enabled it);
   `ProjectGroup`—`ExternalEvaluator` (assigned evaluators);
   `ExternalEvaluator`—`EvaluatorType`; `Student`—`Program`;

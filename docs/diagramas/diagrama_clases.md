@@ -35,9 +35,8 @@ class User {
 }
 class Evaluator {
   <<interface>>
-  +grade(group: ProjectGroup) Evaluation
-  +getAssignedGroups() List~ProjectGroup~
-  +canEvaluate(group: ProjectGroup, today: LocalDate) boolean
+  +getId() Long
+  +canEvaluate(group: ProjectGroup)* boolean
 }
 class UserRole {
   <<enumeration>>
@@ -144,6 +143,11 @@ class MomentStatus {
   CONFIGURATION
   LAUNCHED
 }
+class EvaluationStatus {
+  <<enumeration>>
+  DRAFT
+  SUBMITTED
+}
 class LearningOutcome {
   -id: Long
   -code: String
@@ -188,12 +192,14 @@ class Submission {
   -zipFilePath: String
   -presentationPath: String
   -submittedAt: LocalDateTime
-  +wasOnTime(deadline: LocalDate) boolean
+  -late: boolean
+  +isLate() boolean
 }
 
 %% ================= Evaluation and reporting (D3) =================
 class Evaluation {
   -id: Long
+  -status: EvaluationStatus
   -date: LocalDateTime
   -comment: String
   -grades: List~CriterionGrade~
@@ -240,7 +246,7 @@ User ..> DocumentType : «use»
 SuperAdmin ..> GlobalParameter : «manages»
 SuperAdmin ..> AcademicPeriod : «manages»
 SuperAdmin ..> EvaluatorType : «manages»
-Admin "1" -- "1" Faculty : administers
+Admin "*" -- "1" Faculty : administers
 Teacher "*" -- "1" Faculty : belongs to
 Student "*" -- "1" Program : studies
 ExternalEvaluator "*" -- "1" EvaluatorType : is of type
@@ -262,6 +268,7 @@ ProjectGroup "1" *-- "0..*" Submission
 
 ProjectGroup "1" *-- "0..*" Evaluation
 Evaluation "*" -- "1" Evaluator : made by
+Evaluation ..> EvaluationStatus : «use»
 Evaluation "1" *-- "1..*" CriterionGrade
 CriterionGrade "*" -- "1" EvaluationCriterion : grades
 CriterionGrade "*" -- "1" PerformanceLevel : selected level
