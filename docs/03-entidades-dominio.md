@@ -52,8 +52,10 @@ moment" and "Team decisions" sections) and in ADR-009 to ADR-014 of
 | CalificacionCriterio | `CriterionGrade` | `criterion_grade` |
 | Reporte (Individual / Grupal / Comparativo) | `Report` (`IndividualReport` / `GroupReport` / `ComparativeReport`) | — |
 
-The D2 names are already in the code. The D1 and D3 names are the proposal for their
-branches and should be confirmed by whoever implements them.
+The D1 and D2 names are already in the code. The D3 names are the proposal for its
+branch and should be confirmed by whoever implements it. The `ExternalEvaluator`
+attribute `position` is stored in the column `job_position`, because `position` is a
+reserved word in standard SQL (ADR-014).
 
 ## Users (inheritance hierarchy) · D1
 
