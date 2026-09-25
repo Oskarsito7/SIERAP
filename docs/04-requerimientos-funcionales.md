@@ -12,17 +12,22 @@
    and join the one agreed with their classmates, even if it belongs to a teacher
    other than theirs. They can only be in one group per moment, and the group
    respects the minimum and maximum number of members the admin set for that moment.
-3. Can upload the classroom project submissions of their group (`.zip` file), with
-   versioning/history of every submission made (within the submission window and
-   before their group's deadline), and also upload their presentation (`.pdf` or
-   `.docx`).
+   While the group formation window is open they can leave a group and join another
+   one with room.
+3. Can upload the classroom project submissions of their group (`.zip` file, up to
+   100 MB), with versioning/history of every submission made, and also upload their
+   presentation (`.pdf`, `.docx` or `.pptx`, up to 30 MB). Uploads are accepted while
+   the submission window is open; those after the group's deadline are marked as
+   **late**.
 4. Can see their final grade and their individual performance on each RAP.
 
 ## External evaluators (today business people and alumni)
 
 5. Can log in and see all the groups they were assigned to.
 6. Can grade those groups, only on the evaluation date set by the teacher, within the
-   grading window of the moment.
+   grading window of the moment. They can save an evaluation as a draft and submit it
+   later; only submitted evaluations count, and they can be corrected while the
+   grading window is open.
 
 External evaluator types ("Empresario", "Egresado" and any created later) are a
 configurable catalog, not fixed roles (ADR-011).
@@ -33,7 +38,9 @@ configurable catalog, not fixed roles (ADR-011).
    submission deadline of each one (within the submission window). **The teacher
    only sees, manages and grades the groups they enabled.**
 8. Can create external evaluators (of any type in the catalog) and assign them
-   **only** to the groups they enabled.
+   **only** to the groups they enabled. Can also add to one of their groups a student
+   who did not join any group, even after the formation window or the launch, and
+   even above the maximum.
 9. Can set the date on which each of their groups is evaluated, **within the grading
    window of the moment**, which in turn ends no later than the deadline the UPC sets
    for the period.
@@ -42,8 +49,11 @@ configurable catalog, not fixed roles (ADR-011).
 
 10. Creates and configures the moments of each program of their faculty, in each
     period: RAP, evaluation criteria, performance levels with their scores, minimum
-    and maximum members per group, and date windows (group formation, submissions and
-    grading). Once the groups are formed, **launches** the moment.
+    and maximum members per group, date windows (group formation, submissions and
+    grading) and the weight of each kind of evaluator in the final grade (the teacher
+    and each evaluator type). Once the groups are formed, **launches** the moment; if
+    some groups are below the minimum, the system warns and lets them launch after
+    confirming.
 
 ## Super Admin
 
@@ -96,7 +106,7 @@ program (ADR-012):
 |---|---|---|
 | `super_admin` | Everything | Global parameters, faculties, programs, periods, evaluator type catalog |
 | `admin` | Their whole faculty | Moments of the programs of their faculty (configuration and launch) |
-| `teacher` | Only the groups they enabled | Their groups, their dates, the external evaluators of their groups, their evaluations |
+| `teacher` | Only the groups they enabled | Their groups, their dates, the external evaluators of their groups, adding students without a group to their groups, their evaluations |
 | `student` | The groups of the moments of their program; their group and their grades | Their enrollment (during group formation) and their group's submissions |
 | `external_evaluator` | Only the groups they were assigned to | Their own evaluations (on the set date) |
 
@@ -126,18 +136,26 @@ Defined by the project lead on 2026-09-24.
 | Scores | Handled as exact decimals (`BigDecimal`) so Moment 1 adds up to exactly 5.0 (ADR-013). |
 | Language | Code, documentation and commit messages in English; screens, API error messages, Javadoc and code comments in Spanish (ADR-014). |
 | Migrations | A Flyway migration that is already in `develop` is never edited: any fix goes in a new migration. |
+| Admins per faculty | A faculty can have **several** admins (e.g. dean and coordinator), all with the same permissions. *(2026-09-25)* |
+| Deleting data | Configuration without groups or grades is deleted in cascade (faculty → program → moment → RAP → criteria → levels); once there are groups or grades the database blocks the deletion and the API answers 409 with a message in Spanish (ADR-016). *(2026-09-25)* |
+| Launch with incomplete groups | The system warns which groups are below the minimum and lets the admin launch after confirming; those groups stay as they are. *(2026-09-25)* |
+| Students without a group | A student who did not join a group can be added by a teacher to one of their groups, even after the formation window or the launch, and even above the maximum. *(2026-09-25)* |
+| Switching groups | Free while the group formation window is open (leave a group, join another one with room). *(2026-09-25)* |
+| Evaluation drafts | An evaluation can be saved as a draft (`DRAFT`) and submitted later (`SUBMITTED`). Only submitted evaluations count; they can be corrected while the grading window is open. *(2026-09-25)* |
+| Group final grade | Weighted by kind of evaluator (the teacher and each evaluator type), with weights the admin sets in each moment. Several evaluators of the same kind are averaged within that kind; if a kind has no submitted evaluation, its weight is redistributed among the present kinds in proportion to their weights. *(2026-09-25)* |
+| Late submissions | Accepted while the submission window is open, marked as late. The graded version is the last on-time one; if there is none, the last late one. The evaluator sees the late mark and decides the levels. *(2026-09-25)* |
+| Submission files | Stored on the server disk (ADR-015). `.zip` up to 100 MB; presentation `.pdf`, `.docx` or `.pptx` up to 30 MB. *(2026-09-25)* |
+| `Evaluator` interface | `canEvaluate(ProjectGroup)` is abstract and each class implements its own rule (teacher: the groups they enabled; external evaluator: the groups assigned to them). Dates are checked in the service with the `Clock`. *(2026-09-25)* |
+| Score in each grade | `CriterionGrade` stores a copy of the level score when grading. *(2026-09-25)* |
+| API contract | D1 drafts the routes and DTOs of groups, submissions and evaluation when Stage 1 closes; the lead approves them before the frontend work starts. *(2026-09-25)* |
+| Reviews | Review observations are left as comments on the PR. The GitHub branch protection of `develop` stays as it is; reviewing stays a team agreement. *(2026-09-25)* |
 
 ## Still to be defined with the team
 
-- What happens when a moment is launched if some groups do not reach the minimum
-  number of members, or some students did not join a group?
-- Can a student switch groups during group formation?
-- How are the evaluations of the teacher and the external evaluators combined into
-  the group's final grade (average, configurable weights per evaluator type, another
-  rule)?
 - Who creates teacher and student accounts (super_admin, faculty admin, bulk upload,
   self-registration)?
 - What happens if a teacher needs to reassign a group to another teacher in the
   middle of a moment?
 - Do comparative reports require anonymizing student data, or are they always
   handled at an aggregate level?
+- Do the evaluator weights of a moment have to add up to 100 %?
