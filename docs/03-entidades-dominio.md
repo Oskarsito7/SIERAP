@@ -115,8 +115,8 @@ opened, the configuration of the previous period is copied as a starting point.
 
 | Class | Spanish name | Description |
 |---|---|---|
-| `Evaluation` | Evaluación | Grade that an `Evaluator` (the group's teacher or an assigned external evaluator) gives a `ProjectGroup`; groups one `CriterionGrade` per criterion of the moment. It has a `status` (`DRAFT` → `SUBMITTED`): the evaluator can save it half done and submit it later; only submitted evaluations count, and they can be corrected while the grading window is open. One evaluation per evaluator per group. |
-| `CriterionGrade` | Calificación por criterio | Performance level the evaluator picked in an `EvaluationCriterion`, with a **copy of its score** taken when grading. Performance per RAP is the sum of that RAP's criteria, and the evaluation grade is the sum of all of them. |
+| `Evaluation` | Evaluación | Grade that an `Evaluator` (the group's teacher or an assigned external evaluator) gives a `ProjectGroup`; groups one `CriterionGrade` per criterion of the moment. It has a `status` (`DRAFT` → `SUBMITTED`): the evaluator can save it half done and submit it later; only submitted evaluations count, and they can be corrected while the grading window is open. One evaluation per evaluator per group. Attributes: projectGroup, evaluator (`User`: JPA cannot map the `Evaluator` interface), status, evaluatedAt, comment (optional). |
+| `CriterionGrade` | Calificación por criterio | Performance level the evaluator picked in an `EvaluationCriterion`, with a **copy of its score** taken when grading. Performance per RAP is the sum of that RAP's criteria, and the evaluation grade is the sum of all of them. Attributes: evaluation, criterion, level, score. One grade per criterion in each evaluation. |
 | `Report` (abstract) | Reporte | Report generated from the recorded `Evaluation`s, filterable by semester, moment, program or year. Defines an abstract `generate()`. |
 | `IndividualReport` / `GroupReport` / `ComparativeReport` | Reporte individual / grupal / comparativo | Subclasses of `Report`: each implements its own `generate()` (per student and RAP, per group, or comparing two periods). |
 

@@ -21,7 +21,7 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "teacher")
 @DiscriminatorValue("TEACHER")
-public class Teacher extends User {
+public class Teacher extends User implements Evaluator {
 
     /** Facultad a la que pertenece. */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -54,6 +54,17 @@ public class Teacher extends User {
     @Override
     public UserRole getRole() {
         return UserRole.TEACHER;
+    }
+
+    /**
+     * Un docente califica solo los grupos que él habilitó.
+     *
+     * @param group grupo que se quiere calificar
+     * @return {@code true} si este docente habilitó el grupo
+     */
+    @Override
+    public boolean canEvaluate(ProjectGroup group) {
+        return group.isEnabledBy(this);
     }
 
     /** @return facultad a la que pertenece */
