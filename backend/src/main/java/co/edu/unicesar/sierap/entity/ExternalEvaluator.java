@@ -23,7 +23,7 @@ import jakarta.persistence.Table;
 @Entity
 @Table(name = "external_evaluator")
 @DiscriminatorValue("EXTERNAL_EVALUATOR")
-public class ExternalEvaluator extends User {
+public class ExternalEvaluator extends User implements Evaluator {
 
     /** Tipo de evaluador del catálogo (p. ej. "Empresario"). */
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
@@ -73,6 +73,17 @@ public class ExternalEvaluator extends User {
     @Override
     public UserRole getRole() {
         return UserRole.EXTERNAL_EVALUATOR;
+    }
+
+    /**
+     * Un evaluador externo califica solo los grupos para los que fue designado.
+     *
+     * @param group grupo que se quiere calificar
+     * @return {@code true} si este evaluador está entre los designados del grupo
+     */
+    @Override
+    public boolean canEvaluate(ProjectGroup group) {
+        return group.hasEvaluator(this);
     }
 
     /** @return tipo de evaluador del catálogo */

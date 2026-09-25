@@ -177,13 +177,17 @@ class ProjectGroup {
   -projectTitle: String
   -moment: Moment
   -teacher: Teacher
-  -members: List~Student~
-  -evaluators: List~ExternalEvaluator~
+  -members: Set~Student~
+  -evaluators: Set~ExternalEvaluator~
   -submissionDeadline: LocalDate
   -evaluationDate: LocalDate
-  +enroll(s: Student) void
+  +addMember(s: Student) void
   +isFull() boolean
-  +getLatestSubmission() Submission
+  +hasMinimumMembers() boolean
+  +isEnabledBy(t: Teacher) boolean
+  +hasEvaluator(e: ExternalEvaluator) boolean
+  +nextSubmissionVersion() int
+  +getSubmissionToGrade() Submission
   +getFinalGrade() BigDecimal
 }
 class Submission {
@@ -199,17 +203,21 @@ class Submission {
 %% ================= Evaluation and reporting (D3) =================
 class Evaluation {
   -id: Long
+  -evaluator: User
   -status: EvaluationStatus
-  -date: LocalDateTime
+  -evaluatedAt: LocalDateTime
   -comment: String
   -grades: List~CriterionGrade~
-  +calculateTotalGrade() BigDecimal
-  +calculateGradeByOutcome(outcome: LearningOutcome) BigDecimal
+  +grade(level: PerformanceLevel) void
+  +submit() void
+  +isComplete() boolean
+  +getTotalScore() BigDecimal
+  +getScoreFor(outcome: LearningOutcome) BigDecimal
 }
 class CriterionGrade {
   -id: Long
   -criterion: EvaluationCriterion
-  -selectedLevel: PerformanceLevel
+  -level: PerformanceLevel
   -score: BigDecimal
 }
 class Report {
