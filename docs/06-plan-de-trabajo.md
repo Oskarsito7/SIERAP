@@ -1,338 +1,344 @@
-# 06 — Plan de trabajo: etapas, equipo y ramas
+# 06 — Work plan: stages, team and branches
 
-> Cómo se organiza el desarrollo de SIERAP entre **3 personas**: en qué etapas se
-> divide el trabajo, quién es responsable de qué, y qué convención de ramas se usa
-> para no pisarse. Trazabilidad: cada etapa referencia los requerimientos
-> funcionales de [`04-requerimientos-funcionales.md`](04-requerimientos-funcionales.md)
-> y los criterios de la rúbrica de [`00-guia-oficial-momento1.md`](00-guia-oficial-momento1.md).
+> How SIERAP development is organized among **3 people**: which stages the work is
+> split into, who is responsible for what, and which branching convention is used to
+> avoid stepping on each other. Traceability: each stage references the functional
+> requirements in [`04-requerimientos-funcionales.md`](04-requerimientos-funcionales.md)
+> and the rubric criteria in [`00-guia-oficial-momento1.md`](00-guia-oficial-momento1.md).
 
 ---
 
-## 1. El equipo — 3 roles, 3 verticales
+## 1. The team — 3 roles, 3 verticals
 
-La división **no es por capas** (uno backend, uno frontend, uno base de datos):
-eso genera bloqueos constantes ("no puedo avanzar hasta que el otro termine el
-endpoint"). Se divide por **vertical funcional**: cada quien lleva su feature de
-punta a punta (entidad → repository → service → controller → pantalla React →
-pruebas), sobre una base común que se construye entre los tres al principio.
+The split is **not by layers** (one backend, one frontend, one database): that causes
+constant blocking ("I can't move until the other one finishes the endpoint"). It is
+split by **functional vertical**: each person takes their feature end to end (entity
+→ repository → service → controller → React screen → tests), on top of a common base
+the three build together at the beginning.
 
-| # | Rol | Responsable | Dueño de |
+| # | Role | Owner | Owns |
 |---|---|---|---|
-| **D1** | Arquitecto / plataforma | Líder del proyecto (con Claude Code) | Esqueleto del proyecto, seguridad y JWT, control de acceso por rol, manejo de excepciones, CI, revisión de PRs, integridad del diagrama de clases |
-| **D2** | Dominio académico y configuración | Desarrollador 1 | Facultad, Programa, PeriodoAcademico, Momento (ciclo de vida y ventanas), RAP, criterios y niveles con puntaje; pantallas de `admin` y `super_admin` |
-| **D3** | Operación y evaluación | Desarrollador 2 | Grupos (proyecto de aula), inscripción, entregas versionadas, evaluación, reportería; pantallas de `docente`, `estudiante` y `evaluador_externo` |
+| **D1** | Architect / platform | Project lead (with Claude Code) | Project skeleton, security and JWT, role-based access control, exception handling, CI, PR reviews, integrity of the class diagram |
+| **D2** | Academic domain and configuration | Developer 1 | Faculty, Program, AcademicPeriod, Moment (lifecycle and windows), LearningOutcome (RAP), criteria and levels with scores; `admin` and `super_admin` screens |
+| **D3** | Operations and evaluation | Developer 2 | Groups (classroom project), enrollment, versioned submissions, evaluation, reporting; `teacher`, `student` and `external_evaluator` screens |
 
-**Reglas de convivencia:**
+**Working rules:**
 
-- **D1 es el único que toca** `config/`, `security/`, `exception/` y el `pom.xml`.
-  Si D2 o D3 necesitan un cambio ahí, lo piden en el PR — no lo hacen por su cuenta.
-- Las **entidades JPA se crean en la Etapa 1, en secuencia D2 → D1 → D3** (cada una
-  depende de las anteriores), para que después nadie tenga que modificar el archivo
-  de otro y generar conflictos.
-- **Contrato antes que código:** antes de implementar una vertical se acuerda el
-  contrato de la API (rutas, DTO de entrada/salida, códigos de error) y se anota en
-  el PR. Así D3 puede escribir el frontend contra un contrato acordado sin esperar
-  a que el backend esté listo.
-- **Nadie mergea su propio PR.** Cada PR lo aprueba al menos otra persona.
-- La **sustentación es individual** (rúbrica UPC): los tres deben poder explicar
-  todo el sistema, no solo su vertical. Por eso las revisiones de PR son
-  obligatorias — leer el código del otro es parte de estudiar para la sustentación.
+- **Only D1 touches** `config/`, `security/`, `exception/` and `pom.xml`. If D2 or D3
+  need a change there, they ask in the PR — they don't do it on their own.
+- **JPA entities are created in Stage 1, in sequence D2 → D1 → D3** (each depends on
+  the previous ones), so that afterwards nobody has to modify someone else's file and
+  cause conflicts.
+- **Flyway migrations already in `develop` are never edited:** any fix goes in a new
+  migration.
+- **Contract before code:** before implementing a vertical, the API contract (routes,
+  input/output DTOs, error codes) is agreed and written down in the PR. That way D3
+  can write the frontend against an agreed contract without waiting for the backend.
+- **Nobody merges their own PR.** Each PR is approved by at least one other person.
+- The **presentation is individual** (UPC rubric): all three must be able to explain
+  the whole system, not only their vertical. That is why PR reviews are mandatory —
+  reading the others' code is part of studying for the presentation.
 
 ---
 
-## 2. Etapas
+## 2. Stages
 
-Duración en semanas relativas; ajustar a la fecha real de entrega del Momento 1.
-Las etapas 0–2 son **secuenciales y bloqueantes**; de la 3 en adelante hay
-paralelismo real.
+Duration in relative weeks; adjust to the real Moment 1 delivery date. Stages 0–2 are
+**sequential and blocking**; from stage 3 onward there is real parallelism.
 
-### Etapa 0 — Cimientos (Semana 1) · los 3 juntos
+### Stage 0 — Foundations (Week 1) · all 3 together
 
-Objetivo: que cualquiera pueda clonar el repo y levantar todo con un comando.
+Goal: anyone can clone the repo and start everything with one command.
 
-| Tarea | Responsable |
+| Task | Owner |
 |---|---|
-| Crear `develop`, proteger `main` y `develop` en GitHub | D1 |
-| Esqueleto backend: Maven, Spring Boot 3.x, Java 21, estructura de paquetes por capas | D1 |
-| `docker-compose.yml` con PostgreSQL + perfiles `application-dev` / `application-prod` | D1 |
-| Esqueleto frontend: Vite + React + TypeScript, router, cliente HTTP, estructura de carpetas | D3 |
-| GitHub Actions: build backend + tests, build frontend + lint, en cada PR | D1 |
-| Diagrama de paquetes (pendiente de la Fase 2 de la rúbrica) | D2 |
-| `docs/entregas/` — armar el esqueleto del documento formal de entrega | D2 |
+| Create `develop`, protect `main` and `develop` on GitHub | D1 |
+| Backend skeleton: Maven, Spring Boot 3.x, Java 21, layered package structure | D1 |
+| `docker-compose.yml` with PostgreSQL + `application-dev` / `application-prod` profiles | D1 |
+| Frontend skeleton: Vite + React + TypeScript, router, HTTP client, folder structure | D3 |
+| GitHub Actions: backend build + tests, frontend build + lint, on every PR | D1 |
+| Package diagram (pending from Phase 2 of the rubric) | D2 |
+| `docs/entregas/` — skeleton of the formal delivery document | D2 |
 
 **Definition of done:** `docker compose up` + `mvn spring-boot:run` + `npm run dev`
-levantan los tres servicios en cualquier máquina del equipo; el CI pasa en verde.
+start the three services on any team machine; CI is green.
 
-**Rúbrica que cubre:** RAP2 (arquitectura por capas), RAP4 (buenas prácticas).
+**Rubric covered:** RAP2 (layered architecture), RAP4 (good practices).
 
 ---
 
-### Etapa 1 — Modelo de dominio y persistencia (Semana 2) · en secuencia D2 → D1 → D3
+### Stage 1 — Domain model and persistence (Week 2) · in sequence D2 → D1 → D3
 
-Objetivo: traducir `docs/03-entidades-dominio.md` a entidades JPA reales. Va **en
-secuencia** porque cada parte referencia a la anterior (`Admin` apunta a `Facultad`,
-`Grupo` apunta a `Docente` y `Estudiante`): cada quien empieza cuando se mergea la
-parte anterior. Cada migración tiene su número reservado para que nadie choque.
+Goal: turn `docs/03-entidades-dominio.md` into real JPA entities. It goes **in
+sequence** because each part references the previous one (`Admin` points to
+`Faculty`, `ProjectGroup` points to `Teacher` and `Student`): each person starts when
+the previous part is merged. Each migration has its number reserved so nobody
+collides.
 
-| Orden | Tarea | Responsable | Migraciones |
+| Order | Task | Owner | Migrations |
 |---|---|---|---|
-| 1 | `Facultad`, `Programa`, `PeriodoAcademico`, `ParametroGlobal`, `Momento` (+ enum `EstadoMomento`), `RAP`, `CriterioEvaluacion`, `NivelDesempeno` + repositorios | D2 | `V1__esquema_academico.sql` |
-| 1 | Datos semilla: facultad, Ing. de Sistemas, periodo actual y el Momento 1 completo (5 RAP, criterios y niveles de la rúbrica de `docs/00`) | D2 | `V2__semilla_academica.sql` |
-| 2 | `Usuario` abstracta (JOINED, ADR-009) + `SuperAdmin`, `Admin`, `Docente`, `Estudiante`, `EvaluadorExterno` + `TipoEvaluador` + enums `RolUsuario` y `TipoDocumento` + repositorios | D1 | `V3__usuarios.sql` |
-| 3 | `Grupo` (proyecto de aula), `Entrega`, `Evaluacion`, `CalificacionCriterio` + repositorios, e interfaz `Evaluador` con sus implementaciones | D3 (+ D1 en `Evaluador`) | `V4__operacion.sql` |
-| — | Javadoc en todas las clases de dominio (exigido por rúbrica) | cada quien en lo suyo | — |
+| 1 | `Faculty`, `Program`, `AcademicPeriod`, `GlobalParameter`, `Moment` (+ enum `MomentStatus`), `LearningOutcome`, `EvaluationCriterion`, `PerformanceLevel` + repositories | D2 | `V1__academic_schema.sql` |
+| 1 | Seed data: faculty, Ingeniería de Sistemas, current period and the complete Moment 1 (5 RAP, criteria and levels of the `docs/00` rubric) | D2 | `V2__academic_seed.sql` |
+| 2 | Abstract `User` (JOINED, ADR-009) + `SuperAdmin`, `Admin`, `Teacher`, `Student`, `ExternalEvaluator` + `EvaluatorType` + enums `UserRole` and `DocumentType` + repositories | D1 | `V3__users.sql` |
+| 3 | `ProjectGroup` (group = classroom project), `Submission`, `Evaluation`, `CriterionGrade` + repositories, and the `Evaluator` interface with its implementations | D3 (+ D1 on `Evaluator`) | `V4__operations.sql` |
+| — | Javadoc (in Spanish, ADR-014) on every domain class (required by the rubric) | each person on their part | — |
 
-**Definition of done:** el esquema se crea solo al arrancar, hay datos semilla, y
-las relaciones (herencia, composición, agregación, asociación) del diagrama UML
-están reflejadas en el código.
+**Definition of done:** the schema is created on startup, there is seed data, and
+the relationships (inheritance, composition, aggregation, association) of the UML
+diagram are reflected in the code.
 
-**Rúbrica que cubre:** RAP3 (diagrama de clases), RAP2 (POO: herencia, interfaces,
-encapsulamiento), RAP4 (documentación por comentarios).
+**Rubric covered:** RAP3 (class diagram), RAP2 (OOP: inheritance, interfaces,
+encapsulation), RAP4 (documentation through comments).
 
 ---
 
-### Etapa 2 — Autenticación y control de acceso (Semana 3) · D1 lidera
+### Stage 2 — Authentication and access control (Week 3) · led by D1
 
-Objetivo: que el resto de etapas ya pueda asumir "hay un usuario autenticado con un rol".
+Goal: the remaining stages can assume "there is an authenticated user with a role".
 
-| Tarea | Responsable |
+| Task | Owner |
 |---|---|
-| Spring Security + JWT: login, emisión y validación de token | D1 |
-| Autorización por rol (`@PreAuthorize` / `SecurityFilterChain`) para los 5 roles | D1 |
-| **Reglas de alcance**: docente solo ve sus grupos, admin solo su facultad, evaluador solo lo asignado | D1 |
-| `@ControllerAdvice` global + jerarquía de excepciones propias del dominio | D1 |
-| Login + guardas de ruta + persistencia de sesión en el frontend | D3 |
-| Layout base por rol (menú distinto según `RolUsuario`) | D3 |
+| Spring Security + JWT: login, token issuing and validation | D1 |
+| Role-based authorization (`@PreAuthorize` / `SecurityFilterChain`) for the 5 roles | D1 |
+| **Scope rules**: a teacher only sees their groups, an admin only their faculty, an evaluator only what was assigned | D1 |
+| Global `@ControllerAdvice` + hierarchy of domain exceptions | D1 |
+| Login + route guards + session persistence on the frontend | D3 |
+| Base layout per role (different menu for each `UserRole`) | D3 |
 
-**Definition of done:** existen pruebas que demuestran que un docente **no puede**
-leer un grupo ajeno y que un admin **no puede** tocar otra facultad (403, no un 200
-con lista vacía).
+**Definition of done:** there are tests proving that a teacher **cannot** read
+someone else's group and an admin **cannot** touch another faculty (403, not a 200
+with an empty list).
 
-**Cubre RF:** 1, 5, 7, 11 (la parte de inicio de sesión).
-**Rúbrica:** RAP2 (manejo de excepciones), RAP5 (requerimientos de control de acceso).
-
----
-
-### Etapa 3 — Configuración académica (Semanas 4–5) · D2
-
-Objetivo: que **nada de negocio esté hardcodeado** — es el factor diferenciador del
-proyecto frente a AULAWEB.
-
-- CRUD de `Facultad` y `Programa` (`super_admin`).
-- CRUD de `PeriodoAcademico` (`super_admin`) y catálogo de `TipoEvaluador`.
-- CRUD de `Momento` por programa y periodo: asignatura, semestres, nivel de exigencia,
-  integrantes mín./máx. y ventanas de fechas (conformación, entregas, calificación).
-- CRUD de `RAP`, `CriterioEvaluacion` y `NivelDesempeno` con su puntaje, solo mientras
-  el momento está en `CONFIGURACION`.
-- **Lanzar** el momento (valida configuración completa y la bloquea) y **copiar la
-  configuración** del periodo anterior (ADR-010, ADR-012).
-- Validaciones: ventanas ordenadas y dentro del límite UPC, rangos de semestre coherentes.
-- Pantallas de `admin` y `super_admin`.
-
-**Cubre RF:** 10, 11 y las reglas transversales de configuración.
+**Covers RF:** 1, 5, 7, 11 (the login part).
+**Rubric:** RAP2 (exception handling), RAP5 (access control requirements).
 
 ---
 
-### Etapa 4 — Operación docente (Semanas 4–5, en paralelo con la 3) · D3
+### Stage 3 — Academic configuration (Weeks 4–5) · D2
 
-- El docente **habilita** grupos en un momento (durante la configuración); **solo ve
-  los suyos**.
-- Definición de la fecha límite de entrega de cada grupo, dentro de la ventana de entregas.
-- Definición de la fecha de evaluación, **dentro de la ventana de calificación** (y por
-  tanto del límite UPC).
-- Creación de evaluadores externos (tipo del catálogo) y designación **solo a sus grupos**.
+Goal: **no business value hard-coded** — this is the project's differentiating
+factor compared with AULAWEB.
 
-**Cubre RF:** 7, 8, 9.
+- CRUD of `Faculty` and `Program` (`super_admin`).
+- CRUD of `AcademicPeriod` (`super_admin`) and the `EvaluatorType` catalog.
+- CRUD of `Moment` per program and period: subject, semesters, requirement level,
+  min./max. members and date windows (group formation, submissions, grading).
+- CRUD of `LearningOutcome`, `EvaluationCriterion` and `PerformanceLevel` with its
+  score, only while the moment is in `CONFIGURATION`.
+- **Launch** the moment (validates the configuration is complete and locks it) and
+  **copy the configuration** from the previous period (ADR-010, ADR-012).
+- Validations: ordered windows within the UPC limit, consistent semester ranges.
+- `admin` and `super_admin` screens.
 
----
-
-### Etapa 5 — Estudiante y entregas versionadas (Semana 6) · D3, apoyo D2
-
-- Ver los grupos de todos los docentes del momento e **inscribirse** en uno (un grupo
-  por momento; mín./máx. de integrantes del momento; solo en la ventana de conformación).
-- Subida de entrega `.zip` + presentación `.pdf` / `.docx`.
-- **Versionamiento**: cada subida es una `Entrega` nueva, no reemplaza la anterior;
-  historial consultable.
-- Rechazo de entregas fuera de la fecha límite.
-- Almacenamiento de archivos (definir en un ADR: sistema de archivos vs. columna binaria).
-
-**Cubre RF:** 2, 3.
+**Covers RF:** 10, 11 and the cross-cutting configuration rules.
 
 ---
 
-### Etapa 6 — Evaluación multi-rol (Semana 7) · D2 + D3
+### Stage 4 — Teacher operations (Weeks 4–5, in parallel with 3) · D3
 
-- Implementación real de la interfaz `Evaluador` para `Docente` y `EvaluadorExterno`
-  — es el punto donde el **polimorfismo** que pide la rúbrica se hace visible.
-- `Evaluacion` con sus `CalificacionCriterio` (un nivel elegido por cada criterio del momento).
-- Ventana temporal: solo se puede calificar dentro de la fecha estipulada.
-- Cálculo de nota consolidada por grupo y desempeño individual por RAP.
-- Pantalla de calificación (evaluadores) y de resultados (estudiante).
+- The teacher **enables** groups in a moment (during configuration); **they only see
+  their own**.
+- Setting the submission deadline of each group, within the submission window.
+- Setting the evaluation date, **within the grading window** (and therefore the UPC
+  limit).
+- Creating external evaluators (type from the catalog) and assigning them **only to
+  their groups**.
 
-**Cubre RF:** 4, 6. **Rúbrica:** RAP2 (polimorfismo/interfaces), RAP4 (funcionalidad
-de la solución).
-
----
-
-### Etapa 7 — Reportería (Semana 8) · D2, apoyo D3 en gráficas
-
-La carencia principal de AULAWEB, y por tanto lo que más peso tiene en la sustentación.
-
-- Reporte individual (desempeño de un estudiante por RAP).
-- Reporte grupal.
-- Reporte consolidado por programa/momento.
-- **Comparativos**: semestre X vs. semestre Y, por años, por programa.
-- Exportación (PDF/Excel — decidir alcance real según el tiempo restante).
-
-**Cubre RF:** 12.
+**Covers RF:** 7, 8, 9.
 
 ---
 
-### Etapa 8 — Estabilización y entrega (Semana 9) · los 3
+### Stage 5 — Student and versioned submissions (Week 6) · D3, with D2 support
 
-- Congelar features (`feature/*` deja de mergear a `develop`; se abre `release/*`).
-- Pruebas de extremo a extremo de los 12 RF.
-- Revisión de nomenclatura Java, indentación y Javadoc **contra la rúbrica**.
-- Actualizar `03-entidades-dominio.md` y el `.drawio` con lo que quedó realmente.
-- Documento formal de entrega en `docs/entregas/` + mockups + diagrama de paquetes.
-- Ensayo de sustentación: **cada quien debe poder explicar las tres verticales**.
+- See the groups of all the teachers of the moment and **join** one (one group per
+  moment; the moment's min./max. members; only within the group formation window).
+- Upload of a `.zip` submission + `.pdf` / `.docx` presentation.
+- **Versioning**: each upload is a new `Submission`, it does not replace the previous
+  one; the history can be queried.
+- Rejection of submissions after the deadline.
+- File storage (decide in an ADR: file system vs. binary column).
+
+**Covers RF:** 2, 3.
+
+---
+
+### Stage 6 — Multi-role evaluation (Week 7) · D2 + D3
+
+- Actual implementation of the `Evaluator` interface for `Teacher` and
+  `ExternalEvaluator` — this is where the **polymorphism** required by the rubric
+  becomes visible.
+- `Evaluation` with its `CriterionGrade`s (one picked level per criterion of the
+  moment).
+- Time window: grading is only possible within the set date.
+- Calculation of the consolidated group grade and individual performance per RAP.
+- Grading screen (evaluators) and results screen (student).
+
+**Covers RF:** 4, 6. **Rubric:** RAP2 (polymorphism/interfaces), RAP4 (functionality
+of the solution).
+
+---
+
+### Stage 7 — Reporting (Week 8) · D2, with D3 support on charts
+
+AULAWEB's main gap, and therefore what weighs the most in the presentation.
+
+- Individual report (a student's performance per RAP).
+- Group report.
+- Consolidated report per program/moment.
+- **Comparisons**: semester X vs. semester Y, by year, by program.
+- Export (PDF/Excel — decide the real scope based on the remaining time).
+
+**Covers RF:** 12.
+
+---
+
+### Stage 8 — Stabilization and delivery (Week 9) · all 3
+
+- Feature freeze (`feature/*` stops merging into `develop`; `release/*` is opened).
+- End-to-end tests of the 12 RF.
+- Review of Java naming, indentation and Javadoc **against the rubric**.
+- Update `03-entidades-dominio.md` and the `.drawio` with what was actually built.
+- Formal delivery document in `docs/entregas/` + mockups + package diagram.
+- Presentation rehearsal: **each person must be able to explain the three verticals**.
 - Merge `release/*` → `main` + tag `v1.0.0-momento1`.
 
 ---
 
-## 3. Estrategia de ramas
+## 3. Branching strategy
 
-### 3.1 Ramas permanentes
+### 3.1 Permanent branches
 
-| Rama | Propósito | Reglas |
+| Branch | Purpose | Rules |
 |---|---|---|
-| `main` | **Producción.** Solo código presentado/entregado y estable. | Protegida. Nadie hace push directo. Solo recibe merges de `release/*` y `hotfix/*`. Cada merge lleva un tag (`v1.0.0-momento1`). |
-| `develop` | **Integración.** El estado actual del desarrollo; siempre debe compilar y pasar el CI. | Protegida. Solo recibe merges vía Pull Request aprobado. |
+| `main` | **Production.** Only presented/delivered and stable code. | Protected. Nobody pushes directly. Only receives merges from `release/*` and `hotfix/*`. Each merge gets a tag (`v1.0.0-momento1`). |
+| `develop` | **Integration.** The current state of development; it must always compile and pass CI. | Protected. Only receives merges through an approved Pull Request. |
 
-### 3.2 Ramas temporales
+### 3.2 Temporary branches
 
-Se crean **desde `develop`** y se mergean **hacia `develop`** (excepto `hotfix/*`).
-Se borran después del merge.
+Created **from `develop`** and merged **into `develop`** (except `hotfix/*`). Deleted
+after the merge.
 
-| Prefijo | Para qué | Ejemplo |
+| Prefix | What for | Example |
 |---|---|---|
-| `feature/` | Funcionalidad nueva | `feature/d2-crud-rap` |
-| `fix/` | Corrección de un bug en desarrollo | `fix/d3-validacion-fecha-entrega` |
-| `test/` | Pruebas que se agregan de forma independiente a la feature | `test/d1-control-acceso-docente` |
-| `refactor/` | Reorganización sin cambio de comportamiento | `refactor/d1-extraer-service-evaluacion` |
-| `docs/` | Solo documentación o diagramas | `docs/d2-diagrama-paquetes` |
-| `chore/` | Configuración, dependencias, CI | `chore/d1-github-actions` |
-| `release/` | Congelamiento previo a una entrega | `release/momento1` |
-| `hotfix/` | Arreglo urgente sobre algo ya entregado | `hotfix/login-roto` |
+| `feature/` | New functionality | `feature/d2-rap-crud` |
+| `fix/` | Fix of a bug in development | `fix/d3-submission-deadline-validation` |
+| `test/` | Tests added independently from the feature | `test/d1-teacher-access-control` |
+| `refactor/` | Reorganization without behavior change | `refactor/d1-extract-evaluation-service` |
+| `docs/` | Documentation or diagrams only | `docs/d2-package-diagram` |
+| `chore/` | Configuration, dependencies, CI | `chore/d1-github-actions` |
+| `release/` | Freeze before a delivery | `release/momento1` |
+| `hotfix/` | Urgent fix on something already delivered | `hotfix/broken-login` |
 
-**Convención de nombre:** `<prefijo>/<dev>-<descripcion-en-kebab-case>`.
-El `<dev>` (`d1` / `d2` / `d3`, o las iniciales) hace obvio de un vistazo quién
-trabaja en qué.
+**Naming convention:** `<prefix>/<dev>-<kebab-case-description>`. The `<dev>` (`d1` /
+`d2` / `d3`, or initials) makes it obvious at a glance who is working on what.
 
-### 3.3 Reglas de release y hotfix
+### 3.3 Release and hotfix rules
 
-- `release/momento1` sale de `develop` cuando se congelan las features. Ahí solo
-  entran correcciones. Al terminar se mergea a **`main` y de vuelta a `develop`**.
-- `hotfix/*` sale de **`main`** (no de `develop`) y se mergea a **`main` y a
-  `develop`**. Es la única rama que puede saltarse `develop`.
+- `release/momento1` branches off `develop` when features are frozen. Only fixes go
+  in there. When finished it is merged into **`main` and back into `develop`**.
+- `hotfix/*` branches off **`main`** (not `develop`) and is merged into **`main` and
+  `develop`**. It is the only branch that may skip `develop`.
 
-### 3.4 Flujo diario de cada quien
+### 3.4 Everyone's daily flow
 
 ```bash
 git checkout develop
 git pull origin develop
-git checkout -b feature/d2-crud-rap
-# ... trabajar, commits pequeños y frecuentes ...
-git push -u origin feature/d2-crud-rap
-# abrir PR hacia develop y pedir revisión a otro del equipo
+git checkout -b feature/d2-rap-crud
+# ... work, small and frequent commits ...
+git push -u origin feature/d2-rap-crud
+# open a PR into develop and ask another team member for review
 ```
 
-Si la rama lleva varios días abierta, **traer `develop` seguido** para evitar
-conflictos grandes al final:
+If the branch has been open for several days, **bring `develop` in often** to avoid
+big conflicts at the end:
 
 ```bash
-git checkout feature/d2-crud-rap
+git checkout feature/d2-rap-crud
 git merge origin/develop
 ```
 
-### 3.5 Convención de commits
+### 3.5 Commit convention
 
-Formato Conventional Commits — hace el historial legible y sirve como evidencia de
-proceso ante el docente:
+Conventional Commits format, in English (ADR-014) — it keeps the history readable and
+serves as evidence of the process for the teacher:
 
 ```
-feat(rap): CRUD de RAP configurable por momento
-fix(entrega): rechazar subidas fuera de la fecha limite
-test(seguridad): docente no accede a grupos ajenos
-docs(entidades): actualizar diagrama con Evaluacion
-chore(ci): agregar workflow de build del backend
-refactor(evaluacion): extraer calculo de nota a EvaluacionService
+feat(rap): configurable RAP CRUD per moment
+fix(submission): reject uploads after the deadline
+test(security): teacher cannot access other teachers' groups
+docs(entities): update diagram with Evaluation
+chore(ci): add backend build workflow
+refactor(evaluation): extract grade calculation to EvaluationService
 ```
 
-Ámbitos sugeridos: `auth`, `usuario`, `facultad`, `programa`, `momento`, `rap`,
-`grupo`, `entrega`, `evaluacion`, `reporte`, `ui`, `ci`.
+Suggested scopes: `auth`, `user`, `faculty`, `program`, `moment`, `rap`, `group`,
+`submission`, `evaluation`, `report`, `ui`, `ci`.
 
-### 3.6 Checklist de Pull Request
+### 3.6 Pull Request checklist
 
-Un PR no se aprueba si no cumple:
+A PR is not approved unless it meets:
 
-- [ ] Compila y el CI está en verde.
-- [ ] Tiene pruebas de lo que agrega (ver sección 4).
-- [ ] Respeta la arquitectura por capas: nada de lógica de negocio en el controller,
-      ninguna entidad JPA cruzando el borde de la API (siempre DTO).
-- [ ] Nomenclatura Java estándar: paquetes en minúscula, clases en `PascalCase`,
-      métodos y atributos en `camelCase` — **es criterio de la rúbrica**.
-- [ ] Clases nuevas con Javadoc — **también es criterio de la rúbrica**.
-- [ ] Sin `try/catch` disperso: las excepciones se manejan en el `@ControllerAdvice`.
-- [ ] Sin valores de negocio hardcodeados (RAP, pesos y rangos de semestre van en BD).
-- [ ] Si cambió el dominio: `docs/03-entidades-dominio.md` y el `.drawio` actualizados.
-- [ ] Si fue una decisión técnica no trivial: ADR nuevo en `docs/05-decisiones-tecnicas.md`.
+- [ ] It compiles and CI is green.
+- [ ] It has tests for what it adds (see section 4).
+- [ ] It respects the layered architecture: no business logic in the controller, no
+      JPA entity crossing the API boundary (always DTOs).
+- [ ] Standard Java naming: lowercase packages, `PascalCase` classes, `camelCase`
+      methods and attributes — **it is a rubric criterion**.
+- [ ] New classes with Javadoc (in Spanish) — **also a rubric criterion**.
+- [ ] Language according to ADR-014: code in English; screens, error messages,
+      Javadoc and comments in Spanish.
+- [ ] No scattered `try/catch`: exceptions are handled in the `@ControllerAdvice`.
+- [ ] No hard-coded business values (RAP, weights and semester ranges go in the DB).
+- [ ] No edits to migrations already in `develop`.
+- [ ] If the domain changed: `docs/03-entidades-dominio.md` and the `.drawio` updated.
+- [ ] If it was a non-trivial technical decision: new ADR in `docs/05-decisiones-tecnicas.md`.
 
-### 3.7 Protecciones a configurar en GitHub
+### 3.7 Protections to configure on GitHub
 
-En `Settings → Branches`, para `main` y `develop`:
+In `Settings → Branches`, for `main` and `develop`:
 
-- Require a pull request before merging (mínimo **1 aprobación**).
-- Require status checks to pass (el workflow de CI).
+- Require a pull request before merging (at least **1 approval**).
+- Require status checks to pass (the CI workflow).
 - Require branches to be up to date before merging.
-- Bloquear force-push y borrado de la rama.
+- Block force-push and branch deletion.
 
 ---
 
-## 4. Pruebas — quién prueba qué
+## 4. Tests — who tests what
 
-Las pruebas **van en la misma rama de la feature**, no se dejan para el final. Una
-rama `test/*` aparte solo se usa cuando se agregan pruebas a algo ya mergeado.
+Tests **go in the same branch as the feature**, they are not left for the end. A
+separate `test/*` branch is only used when adding tests to something already merged.
 
-| Nivel | Herramienta | Qué se prueba | Responsable |
+| Level | Tool | What is tested | Owner |
 |---|---|---|---|
-| Unitarias backend | JUnit 5 + Mockito | Lógica de los `Service`: cálculo de notas, validación de fechas, regla de 3–5 integrantes | cada quien en su vertical |
-| Integración backend | `@SpringBootTest` + Testcontainers (o H2) | Repositorios, migraciones, consultas de reportería | D2 |
-| Seguridad | `spring-security-test` (`@WithMockUser`) | **Que cada rol solo vea lo suyo** — la prueba más importante del proyecto | D1 |
-| Frontend | Vitest + React Testing Library | Componentes de formulario, guardas de ruta por rol | D3 |
-| Extremo a extremo | Manual guiado por los 12 RF (o Playwright si sobra tiempo) | Flujo completo por rol antes de cada entrega | los 3, en la Etapa 8 |
+| Backend unit | JUnit 5 + Mockito | `Service` logic: grade calculation, date validation, members-per-group rule | each person on their vertical |
+| Backend integration | `@SpringBootTest` + Testcontainers (ADR-007) | Repositories, migrations, reporting queries | D2 |
+| Security | `spring-security-test` (`@WithMockUser`) | **That each role only sees its own** — the most important test of the project | D1 |
+| Frontend | Vitest + React Testing Library | Form components, route guards per role | D3 |
+| End to end | Manual, guided by the 12 RF (or Playwright if time allows) | Full flow per role before each delivery | all 3, in Stage 8 |
 
-**Mínimo exigible por PR:** toda regla de negocio y toda regla de control de acceso
-que se agregue debe tener al menos una prueba que falle si se rompe la regla.
-
----
-
-## 5. Cadencia de trabajo
-
-- **Lunes — planeación (30 min):** qué rama abre cada quien esta semana.
-- **A mitad de semana — sincronización (15 min):** bloqueos y cambios de contrato de API.
-- **Viernes — integración:** todo lo terminado se mergea a `develop` y se verifica
-  que `develop` levanta completo. Nada se queda sin mergear el fin de semana.
-- **Fin de etapa:** demo interna de 10 min (ensayo directo de la sustentación).
+**Minimum required per PR:** every business rule and every access control rule added
+must have at least one test that fails if the rule is broken.
 
 ---
 
-## 6. Riesgos y mitigación
+## 5. Work cadence
 
-| Riesgo | Mitigación |
+- **Monday — planning (30 min):** which branch each person opens this week.
+- **Mid-week — sync (15 min):** blockers and API contract changes.
+- **Friday — integration:** everything finished is merged into `develop` and it is
+  checked that `develop` starts completely. Nothing stays unmerged over the weekend.
+- **End of stage:** 10-min internal demo (a direct rehearsal of the presentation).
+
+---
+
+## 6. Risks and mitigation
+
+| Risk | Mitigation |
 |---|---|
-| La única persona con experiencia web se vuelve cuello de botella | D1 no implementa verticales completas: construye la base y revisa. Las verticales las hacen D2 y D3. |
-| Conflictos constantes en las entidades JPA | Se crean todas de una vez en la Etapa 1 y después casi no se tocan. |
-| El alcance real (institucional) no cabe en el plazo del Momento 1 | Las Etapas 0–6 son el mínimo entregable. La 7 (reportería) se recorta a reportes básicos si el tiempo aprieta, dejando los comparativos para el Momento 2. |
-| Frontend bloqueado esperando endpoints | Contrato de API acordado antes de implementar; D3 trabaja contra datos simulados mientras tanto. |
-| Llegar a la sustentación sabiendo solo la parte propia | Revisión cruzada obligatoria de PRs + demo interna al cerrar cada etapa. |
+| The only person with web experience becomes a bottleneck | D1 does not implement full verticals: builds the base and reviews. D2 and D3 build the verticals. |
+| Constant conflicts in the JPA entities | They are all created at once in Stage 1 and barely touched afterwards. |
+| The real (institutional) scope does not fit in the Moment 1 deadline | Stages 0–6 are the minimum deliverable. Stage 7 (reporting) is cut down to basic reports if time runs short, leaving comparisons for Moment 2. |
+| Frontend blocked waiting for endpoints | API contract agreed before implementing; D3 works against mocked data meanwhile. |
+| Reaching the presentation knowing only one's own part | Mandatory cross-review of PRs + internal demo at the end of each stage. |

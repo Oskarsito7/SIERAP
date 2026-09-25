@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-import type { ErrorApi } from '@/types/api'
+import type { ApiError } from '@/types/api'
 
 /**
  * Cliente HTTP único de la aplicación: todas las llamadas al backend pasan por aquí.
@@ -14,12 +14,12 @@ export const httpClient = axios.create({
 
 /**
  * Extrae un mensaje legible de un error de la API. Si el backend respondió con su
- * formato uniforme de error se usa su `mensaje`; si no hubo respuesta (backend
+ * formato uniforme de error se usa su `message`; si no hubo respuesta (backend
  * caído, sin red), se devuelve un mensaje genérico.
  */
-export function obtenerMensajeError(error: unknown): string {
-  if (axios.isAxiosError<ErrorApi>(error) && error.response?.data?.mensaje) {
-    return error.response.data.mensaje
+export function getErrorMessage(error: unknown): string {
+  if (axios.isAxiosError<ApiError>(error) && error.response?.data?.message) {
+    return error.response.data.message
   }
   return 'No fue posible comunicarse con el servidor'
 }

@@ -7,20 +7,23 @@ import org.springframework.http.HttpStatus;
  * su alcance, p. ej. un docente consultando un grupo que no tiene asignado o un
  * admin modificando otra facultad. La API responde con {@code 403 Forbidden}
  * (nunca con un {@code 200} y una lista vacía).
+ *
+ * <p>No se llama {@code AccessDeniedException} para no chocar con la clase de
+ * Spring Security del mismo nombre (Etapa 2).</p>
  */
-public class AccesoDenegadoException extends SierapException {
+public class ForbiddenAccessException extends SierapException {
 
     /**
      * Crea la excepción con la explicación del acceso denegado.
      *
-     * @param mensaje motivo por el que el usuario no puede acceder
+     * @param message motivo por el que el usuario no puede acceder
      */
-    public AccesoDenegadoException(String mensaje) {
-        super(mensaje);
+    public ForbiddenAccessException(String message) {
+        super(message);
     }
 
     @Override
-    public HttpStatus getEstadoHttp() {
+    public HttpStatus getHttpStatus() {
         return HttpStatus.FORBIDDEN;
     }
 }

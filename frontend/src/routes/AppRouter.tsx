@@ -1,8 +1,8 @@
 import { createBrowserRouter, RouterProvider } from 'react-router'
 
-import { rutas } from './rutas'
+import { routes } from './routes'
 
-const router = createBrowserRouter(rutas)
+const router = createBrowserRouter(routes)
 
 /** Punto de entrada del enrutamiento de la aplicación. */
 export function AppRouter() {

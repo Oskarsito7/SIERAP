@@ -1,115 +1,149 @@
-# 03 — Entidades del dominio
+# 03 — Domain entities
 
-A continuación se listan las clases del dominio identificadas para la solución,
-agrupadas por área funcional. Diagramas:
+The domain classes identified for the solution are listed below, grouped by
+functional area. Diagrams:
 
-- **Diagrama de clases vigente (Etapa 1):** [`diagramas/diagrama_clases.md`](diagramas/diagrama_clases.md)
-  (Mermaid, se ve directo en GitHub). Es el contrato de la Etapa 1.
-- Diagrama de clases mejorado de la Fase 2: [PNG](diagramas/diagrama_clases_mejorado.png) ·
-  [editable .drawio](diagramas/diagrama_clases_mejorado.drawio). **Desactualizado**
-  frente a las decisiones del 2026-09-24: se regenera al cerrar la Etapa 1 con lo que
-  quede en el código.
-- **Diagrama de jerarquías:** [`diagramas/diagrama_jerarquias.md`](diagramas/diagrama_jerarquias.md).
-- **Diagrama de capas (paquetes):** [`diagramas/diagrama_capas.md`](diagramas/diagrama_capas.md).
-- Diagrama de clases preliminar (Fase 1): [`diagramas/diagrama_clases.drawio`](diagramas/diagrama_clases.drawio)
-  (ábrelo en [app.diagrams.net](https://app.diagrams.net)).
+- **Current class diagram (Stage 1):** [`diagramas/diagrama_clases.md`](diagramas/diagrama_clases.md)
+  (Mermaid, rendered directly on GitHub). It is the Stage 1 contract.
+- Improved class diagram from Phase 2: [PNG](diagramas/diagrama_clases_mejorado.png) ·
+  [editable .drawio](diagramas/diagrama_clases_mejorado.drawio). **Outdated**
+  relative to the 2026-09-24 decisions: it is regenerated when Stage 1 closes, from
+  what ends up in the code.
+- **Hierarchy diagram:** [`diagramas/diagrama_jerarquias.md`](diagramas/diagrama_jerarquias.md).
+- **Layer (package) diagram:** [`diagramas/diagrama_capas.md`](diagramas/diagrama_capas.md).
+- Preliminary class diagram (Phase 1): [`diagramas/diagrama_clases.drawio`](diagramas/diagrama_clases.drawio)
+  (open it in [app.diagrams.net](https://app.diagrams.net)).
 
-Las decisiones que dieron forma a este modelo están en
-[`04-requerimientos-funcionales.md`](04-requerimientos-funcionales.md) (secciones
-"Flujo de un momento" y "Decisiones del equipo") y en los ADR-009 a ADR-012 de
+The decisions that shaped this model are in
+[`04-requerimientos-funcionales.md`](04-requerimientos-funcionales.md) ("Flow of a
+moment" and "Team decisions" sections) and in ADR-009 to ADR-014 of
 [`05-decisiones-tecnicas.md`](05-decisiones-tecnicas.md).
 
-## Usuarios (jerarquía de herencia) · D1
+> **Language (ADR-014):** code and documentation are in English; what the end user
+> sees (screens, API error messages, data such as RAP names) and the Javadoc and code
+> comments are in Spanish. The "Spanish name" column gives the name of each concept
+> in the domain language of the university.
 
-Se persiste con `@Inheritance(JOINED)`: tabla `usuario` con los datos comunes y una
-tabla por rol (ADR-009). Todos los usuarios inician sesión con su **correo**.
+## Spanish → English names
 
-| Clase | Atributos | Descripción |
+| Spanish (domain) | English (code) | Table |
 |---|---|---|
-| `Usuario` (abstracta) | nombres, apellidos, tipoDocumento, numeroDocumento (único), correo (único, login), passwordHash, rol, activo, fechaCreacion | Datos comunes a todo usuario del sistema. De ella heredan los cinco roles. |
-| `SuperAdmin` | — | Permisos globales: parámetros del sistema, periodos académicos, facultades y catálogo de tipos de evaluador. |
-| `Admin` | facultad | Usuario de una `Facultad` (rol de decano). Crea y configura los `Momento` de los programas de su facultad y los **lanza**. |
-| `Docente` | facultad | Pertenece a **una** `Facultad` (en SIERAP solo están los docentes con proyecto de aula, y esos dictan en su facultad). **Habilita** grupos en un momento, crea y designa evaluadores externos para ellos, fija sus fechas y califica **solo los grupos que él habilitó**. |
-| `Estudiante` | codigoEstudiante (único), semestreActual, programa | Pertenece a un `Programa`. Ve los grupos de **todos** los docentes de un momento de su programa y se inscribe en uno (**un grupo por momento**, con historial). Sube entregas y consulta su desempeño por `RAP`. |
-| `EvaluadorExterno` | tipoEvaluador, organizacion, cargo, anioGraduacion, programaEgreso (los cuatro últimos opcionales) | Evaluador que no es docente (hoy empresarios y egresados). Lo crea un docente y califica solo los grupos para los que fue designado (ADR-011). |
-| `TipoEvaluador` | nombre, descripcion, activo | Catálogo de tipos de evaluador externo que mantiene el super_admin (datos semilla: "Empresario" y "Egresado"). Crear un tipo nuevo no requiere programar. |
+| Facultad | `Faculty` | `faculty` |
+| Programa | `Program` | `program` |
+| PeriodoAcademico | `AcademicPeriod` | `academic_period` |
+| ParametroGlobal | `GlobalParameter` | `global_parameter` |
+| Momento | `Moment` | `moment` |
+| EstadoMomento (CONFIGURACION, LANZADO) | `MomentStatus` (`CONFIGURATION`, `LAUNCHED`) | column `moment.status` |
+| RAP | `LearningOutcome` | `learning_outcome` |
+| CriterioEvaluacion | `EvaluationCriterion` | `evaluation_criterion` |
+| NivelDesempeno | `PerformanceLevel` | `performance_level` |
+| Usuario | `User` | `app_user` (`user` is reserved in PostgreSQL) |
+| SuperAdmin / Admin | `SuperAdmin` / `Admin` | `super_admin` / `admin` |
+| Docente | `Teacher` | `teacher` |
+| Estudiante | `Student` | `student` |
+| EvaluadorExterno | `ExternalEvaluator` | `external_evaluator` |
+| TipoEvaluador | `EvaluatorType` | `evaluator_type` |
+| Evaluador (interfaz) | `Evaluator` (interface) | — |
+| RolUsuario | `UserRole` | column `app_user.role` |
+| TipoDocumento | `DocumentType` | — |
+| Grupo (= proyecto de aula) | `ProjectGroup` | `project_group` (`group` is reserved in SQL) |
+| Entrega | `Submission` | `submission` |
+| Evaluacion | `Evaluation` | `evaluation` |
+| CalificacionCriterio | `CriterionGrade` | `criterion_grade` |
+| Reporte (Individual / Grupal / Comparativo) | `Report` (`IndividualReport` / `GroupReport` / `ComparativeReport`) | — |
 
-**Interfaz `Evaluador`:** contrato común implementado por `Docente` y
-`EvaluadorExterno`: ambos califican grupos y consultan los grupos que les
-corresponden, aunque no comparten un padre propio para eso (los dos heredan de
-`Usuario`, pero "evaluar" es un comportamiento transversal a roles distintos: caso
-natural para una interfaz). El `Estudiante` **no** implementa `Evaluador`: en SIERAP
-no hay autoevaluación.
+The D2 names are already in the code. The D1 and D3 names are the proposal for their
+branches and should be confirmed by whoever implements them.
 
-## Estructura académica y configuración de la evaluación · D2
+## Users (inheritance hierarchy) · D1
 
-Toda la configuración de la evaluación se define **por periodo académico** y la
-administra el admin de cada facultad; nada viene fijo en el código (ADR-010). Al
-abrir un periodo se copia la configuración del periodo anterior como punto de
-partida.
+Persisted with `@Inheritance(JOINED)`: an `app_user` table with the common data and
+one table per role (ADR-009). Every user logs in with their **email**.
 
-| Clase | Atributos | Descripción |
+| Class | Spanish name | Attributes | Description |
+|---|---|---|---|
+| `User` (abstract) | Usuario | firstNames, lastNames, documentType, documentNumber (unique), email (unique, login), passwordHash, role, active, createdAt | Data common to every user of the system. The five roles inherit from it. |
+| `SuperAdmin` | Super administrador | — | Global permissions: system parameters, academic periods, faculties and the evaluator type catalog. |
+| `Admin` | Administrador (decano) | faculty | User of a `Faculty` (dean role). Creates and configures the `Moment`s of the programs of their faculty and **launches** them. |
+| `Teacher` | Docente | faculty | Belongs to **one** `Faculty` (SIERAP only includes teachers with a classroom project, and they teach in their faculty). **Enables** groups in a moment, creates and assigns external evaluators to them, sets their dates and grades **only the groups they enabled**. |
+| `Student` | Estudiante | studentCode (unique), currentSemester, program | Belongs to a `Program`. Sees the groups of **all** the teachers of a moment of their program and joins one (**one group per moment**, with history). Uploads submissions and checks their performance per RAP. |
+| `ExternalEvaluator` | Evaluador externo | evaluatorType, organization, position, graduationYear, graduationProgram (the last four optional) | Evaluator who is not a teacher (today business people and alumni). Created by a teacher; grades only the groups they were assigned to (ADR-011). |
+| `EvaluatorType` | Tipo de evaluador | name, description, active | Catalog of external evaluator types maintained by the super_admin (seed data: "Empresario" and "Egresado"). Creating a new type requires no programming. |
+
+**`Evaluator` interface:** common contract implemented by `Teacher` and
+`ExternalEvaluator`: both grade groups and query the groups assigned to them, even
+though they do not share a parent of their own for that (both inherit from `User`,
+but "evaluating" is a behavior that cuts across different roles: a natural case for
+an interface). `Student` does **not** implement `Evaluator`: there is no
+self-assessment in SIERAP.
+
+## Academic structure and assessment configuration · D2
+
+The whole assessment configuration is defined **per academic period** and managed by
+the admin of each faculty; nothing is fixed in the code (ADR-010). When a period is
+opened, the configuration of the previous period is copied as a starting point.
+
+| Class | Spanish name | Attributes | Description |
+|---|---|---|---|
+| `Faculty` | Facultad | code (unique, e.g. `04`), name | Top-level academic unit of the university; groups one or more `Program`s. |
+| `Program` | Programa | code (unique, e.g. `108`), name, faculty | Academic program (e.g. Ingeniería de Sistemas) that belongs to a `Faculty`. |
+| `AcademicPeriod` | Periodo académico | code (e.g. 2026-2), startDate, endDate, upcEvaluationDeadline | Academic semester with the evaluation deadline set by the UPC. Allows validating dates (RF 9) and comparing results across semesters and years (RF 12). |
+| `Moment` | Momento | program, period, number, name, subject, semesterFrom, semesterTo, requirementLevel (free text), minMembers, maxMembers, status, groupFormationStart, groupFormationEnd, submissionStart, submissionEnd, gradingStart, gradingEnd | Assessment stage of a `Program` **in a period**. It has a lifecycle (ADR-012): in `CONFIGURATION` the admin defines its RAP, criteria, levels, members per group and date windows, and students form groups; once **launched** (`LAUNCHED`) the configuration and groups are locked and the windows mark when work is submitted and when it is graded. |
+| `LearningOutcome` | RAP (Resultado de Aprendizaje del Programa) | moment, code, description | RAP assessed in a `Moment`. Each moment has its own RAP, which the admin creates, edits or deletes while the moment is in configuration. It weighs the sum of its criteria. |
+| `EvaluationCriterion` | Criterio de evaluación | learningOutcome, description, displayOrder | Grading item within a RAP (e.g. "Identificación del problema" in the UPC rubric). |
+| `PerformanceLevel` | Nivel de desempeño | criterion, name, description, score (`BigDecimal`, ADR-013), displayOrder | Level the evaluator can pick in a criterion (e.g. Bajo 0 · Básico 0.36 · Alto 0.48 · Sobresaliente 0.6). Names, number of levels and scores are defined by the admin for each criterion. |
+| `GlobalParameter` | Parámetro global | key, value, description | Institutional key/value parameter defined by the `SuperAdmin` (RF 11), so general rules are not hard-coded. |
+
+## Operations · D3
+
+| Class | Spanish name | Attributes | Description |
+|---|---|---|---|
+| `ProjectGroup` | Grupo (= proyecto de aula) | moment, teacher, name, projectTitle, members, evaluators, submissionDeadline, evaluationDate | Group **and** classroom project at the same time (each group has a single project). A `Teacher` enables it in a moment; students join it (between the minimum and maximum of the moment). The teacher assigns external evaluators to it and sets its dates within the moment windows. |
+| `Submission` | Entrega | projectGroup, versionNumber, zipFilePath, presentationPath, submittedAt | Version of the group's submission (zip file + presentation). Each upload is a new version; history is kept. |
+
+## Evaluation and reporting · D3
+
+| Class | Spanish name | Description |
 |---|---|---|
-| `Facultad` | nombre | Unidad académica mayor de la universidad; agrupa uno o varios `Programa`. |
-| `Programa` | codigo, nombre, facultad | Programa académico (p. ej. Ing. de Sistemas), perteneciente a una `Facultad`. |
-| `PeriodoAcademico` | codigo (p. ej. 2026-2), fechaInicio, fechaFin, fechaLimiteEvaluacionUPC | Semestre académico con la fecha límite de evaluación fijada por la UPC. Permite validar fechas (RF 9) y comparar resultados entre semestres y años (RF 12). |
-| `Momento` | programa, periodo, numero, nombre, asignatura, semestreDesde, semestreHasta, nivelExigencia (texto libre), minIntegrantes, maxIntegrantes, estado, inicioConformacion, finConformacion, inicioEntregas, finEntregas, inicioCalificacion, finCalificacion | Etapa de evaluación de un `Programa` **en un periodo**. Tiene un ciclo de vida (ADR-012): en `CONFIGURACION` el admin define sus RAP, criterios, niveles, integrantes por grupo y ventanas de fechas, y los estudiantes arman grupos; al **lanzarlo** (`LANZADO`) la configuración y los grupos quedan bloqueados y las ventanas marcan cuándo se entrega y cuándo se califica. |
-| `RAP` | momento, codigo, descripcion | Resultado de Aprendizaje del Programa evaluado en un `Momento`. Cada momento tiene sus propios RAP, que el admin crea, edita o elimina mientras el momento está en configuración. Pesa lo que sumen sus criterios. |
-| `CriterioEvaluacion` | rap, descripcion, orden | Ítem de calificación dentro de un `RAP` (p. ej. "Identificación del problema" en la rúbrica de la UPC). |
-| `NivelDesempeno` | criterio, nombre, descripcion, puntaje, orden | Nivel que el evaluador puede elegir en un criterio (p. ej. Bajo 0 · Básico 0.36 · Alto 0.48 · Sobresaliente 0.6). Nombres, cantidad y puntajes los define el admin en cada criterio. |
-| `ParametroGlobal` | clave, valor, descripcion | Parámetro institucional clave/valor definido por el `SuperAdmin` (RF 11), para no hardcodear reglas generales. |
+| `Evaluation` | Evaluación | Grade that an `Evaluator` (the group's teacher or an assigned external evaluator) gives a `ProjectGroup`; groups one `CriterionGrade` per criterion of the moment. |
+| `CriterionGrade` | Calificación por criterio | Performance level the evaluator picked in an `EvaluationCriterion`, with its score. Performance per RAP is the sum of that RAP's criteria, and the evaluation grade is the sum of all of them. |
+| `Report` (abstract) | Reporte | Report generated from the recorded `Evaluation`s, filterable by semester, moment, program or year. Defines an abstract `generate()`. |
+| `IndividualReport` / `GroupReport` / `ComparativeReport` | Reporte individual / grupal / comparativo | Subclasses of `Report`: each implements its own `generate()` (per student and RAP, per group, or comparing two periods). |
 
-## Estructura operativa · D3
+## Enumerations
 
-| Clase | Atributos | Descripción |
+| Enum | Values | Description |
 |---|---|---|
-| `Grupo` | momento, docente, nombre, tituloProyecto, integrantes, evaluadores, fechaLimiteEntrega, fechaEvaluacion | Grupo **y** proyecto de aula a la vez (cada grupo tiene un solo proyecto). Lo habilita un `Docente` en un momento; los estudiantes se inscriben (entre el mínimo y el máximo del momento). El docente le designa evaluadores externos y fija sus fechas dentro de las ventanas del momento. |
-| `Entrega` | grupo, numeroVersion, rutaArchivoZip, rutaPresentacion, fechaSubida | Versión de la entrega del grupo (archivo zip + presentación). Cada subida es una versión nueva; se conserva el historial. |
+| `UserRole` | `SUPER_ADMIN`, `ADMIN`, `TEACHER`, `STUDENT`, `EXTERNAL_EVALUATOR` | Role of the user; it is also the discriminator of the JOINED inheritance and the basis of access control (Spring Security). |
+| `DocumentType` | `CC`, `TI`, `CE`, `PASSPORT` | Identity document type of the user (citizenship ID, identity card, foreigner ID, passport). |
+| `MomentStatus` | `CONFIGURATION`, `LAUNCHED` | Lifecycle status of the moment (ADR-012). It is system flow, not an assessment business value. |
 
-## Evaluación y reportería · D3
+The Phase 2 enums `NivelExigencia` and `NivelDesempeno` **were removed** (the
+requirement level is free text in `Moment` and performance levels are the
+configurable `PerformanceLevel` entity, ADR-010), and so were the `EMPRESARIO` and
+`EGRESADO` roles (they are now types of `ExternalEvaluator`, ADR-011).
 
-| Clase | Descripción |
-|---|---|
-| `Evaluacion` | Calificación que un `Evaluador` (el docente del grupo o un evaluador externo designado) hace sobre un `Grupo`; agrupa una `CalificacionCriterio` por cada criterio del momento. |
-| `CalificacionCriterio` | Nivel de desempeño que el evaluador eligió en un `CriterioEvaluacion`, con su puntaje. El desempeño por RAP se calcula sumando los criterios de ese RAP, y la nota de la evaluación, sumando todos. |
-| `Reporte` (abstracta) | Informe generado a partir de las `Evaluacion` registradas, filtrable por semestre, momento, programa o año. Define `generar()` abstracto. |
-| `ReporteIndividual` / `ReporteGrupal` / `ReporteComparativo` | Subclases de `Reporte`: cada una implementa su propio `generar()` (por estudiante y RAP, por grupo, o comparando dos periodos). |
+## Relationships shown in the diagram
 
-## Enumeraciones
+- **Inheritance:** `SuperAdmin`, `Admin`, `Teacher`, `Student` and `ExternalEvaluator`
+  inherit from `User`.
+- **Interface realization:** `Teacher` and `ExternalEvaluator` implement `Evaluator`.
+- **Composition:** `Faculty`—`Program`; `Program`—`Moment`; `Moment`—`LearningOutcome`;
+  `LearningOutcome`—`EvaluationCriterion`; `EvaluationCriterion`—`PerformanceLevel`;
+  `Moment`—`ProjectGroup`; `ProjectGroup`—`Submission`; `ProjectGroup`—`Evaluation`;
+  `Evaluation`—`CriterionGrade` (the whole controls the lifecycle of its parts).
+- **Aggregation:** `ProjectGroup`—`Student` (the student exists without the group
+  and goes through several groups during the program, one per moment).
+- **Association:** `Moment`—`AcademicPeriod`; `Admin`—`Faculty`; `Teacher`—`Faculty`;
+  `Teacher`—`ProjectGroup` (the teacher who enabled it);
+  `ProjectGroup`—`ExternalEvaluator` (assigned evaluators);
+  `ExternalEvaluator`—`EvaluatorType`; `Student`—`Program`;
+  `ExternalEvaluator`—`Program` (graduation program, optional);
+  `CriterionGrade`—`EvaluationCriterion`; `CriterionGrade`—`PerformanceLevel`.
+- **Dependency:** `Report` depends on `Evaluation` (the report consumes evaluation
+  data without owning it).
 
-| Enum | Valores | Descripción |
-|---|---|---|
-| `RolUsuario` | `SUPER_ADMIN`, `ADMIN`, `DOCENTE`, `ESTUDIANTE`, `EVALUADOR_EXTERNO` | Rol del usuario; es también el discriminador de la herencia JOINED y la base del control de acceso (Spring Security). |
-| `TipoDocumento` | `CC`, `TI`, `CE`, `PASAPORTE` | Tipo de documento de identidad del usuario. |
-| `EstadoMomento` | `CONFIGURACION`, `LANZADO` | Estado del ciclo de vida del momento (ADR-012). Es flujo del sistema, no un valor de negocio de la evaluación. |
+## Still to be defined
 
-Los enums `NivelExigencia` y `NivelDesempeno` de la Fase 2 **se eliminaron** (el nivel
-de exigencia es texto libre del `Momento` y los niveles de desempeño son la entidad
-configurable `NivelDesempeno`, ADR-010), y también los roles `EMPRESARIO` y
-`EGRESADO` (ahora son tipos de `EvaluadorExterno`, ADR-011).
-
-## Relaciones representadas en el diagrama
-
-- **Herencia:** `SuperAdmin`, `Admin`, `Docente`, `Estudiante` y `EvaluadorExterno`
-  heredan de `Usuario`.
-- **Realización de interfaz:** `Docente` y `EvaluadorExterno` implementan `Evaluador`.
-- **Composición:** `Facultad`—`Programa`; `Programa`—`Momento`; `Momento`—`RAP`;
-  `RAP`—`CriterioEvaluacion`; `CriterioEvaluacion`—`NivelDesempeno`;
-  `Momento`—`Grupo`; `Grupo`—`Entrega`; `Grupo`—`Evaluacion`;
-  `Evaluacion`—`CalificacionCriterio` (el todo controla el ciclo de vida de sus
-  partes).
-- **Agregación:** `Grupo`—`Estudiante` (el estudiante existe sin el grupo y pasa por
-  varios grupos a lo largo de la carrera, uno por momento).
-- **Asociación:** `Momento`—`PeriodoAcademico`; `Admin`—`Facultad`;
-  `Docente`—`Facultad`; `Docente`—`Grupo` (el docente que lo habilitó);
-  `Grupo`—`EvaluadorExterno` (evaluadores designados); `EvaluadorExterno`—`TipoEvaluador`;
-  `Estudiante`—`Programa`; `EvaluadorExterno`—`Programa` (programa de egreso,
-  opcional); `CalificacionCriterio`—`CriterioEvaluacion`;
-  `CalificacionCriterio`—`NivelDesempeno`.
-- **Dependencia:** `Reporte` depende de `Evaluacion` (el reporte consume datos
-  de evaluación, sin poseerlos).
-
-## Pendiente de definir
-
-Ver "Pendiente de definir con el equipo" en
+See "Still to be defined with the team" in
 [`04-requerimientos-funcionales.md`](04-requerimientos-funcionales.md).

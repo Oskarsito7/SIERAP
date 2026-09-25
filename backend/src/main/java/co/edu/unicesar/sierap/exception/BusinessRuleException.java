@@ -7,19 +7,19 @@ import org.springframework.http.HttpStatus;
  * más integrantes de los permitidos o una entrega fuera de la fecha límite.
  * La API responde con {@code 422 Unprocessable Entity}.
  */
-public class ReglaNegocioException extends SierapException {
+public class BusinessRuleException extends SierapException {
 
     /**
      * Crea la excepción con la descripción de la regla violada.
      *
-     * @param mensaje explicación de por qué no se permite la operación
+     * @param message explicación de por qué no se permite la operación
      */
-    public ReglaNegocioException(String mensaje) {
-        super(mensaje);
+    public BusinessRuleException(String message) {
+        super(message);
     }
 
     @Override
-    public HttpStatus getEstadoHttp() {
+    public HttpStatus getHttpStatus() {
         return HttpStatus.UNPROCESSABLE_ENTITY;
     }
 }

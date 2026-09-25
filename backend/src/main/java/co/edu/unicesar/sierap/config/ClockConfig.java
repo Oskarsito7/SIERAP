@@ -12,22 +12,22 @@ import org.springframework.context.annotation.Configuration;
  *
  * <p>Varias reglas de negocio dependen de la fecha actual (entregas dentro de la
  * fecha límite, evaluación dentro de la ventana definida por el docente y del
- * rango fijado por la UPC). Los servicios deben usar {@code LocalDate.now(reloj)}
+ * rango fijado por la UPC). Los servicios deben usar {@code LocalDate.now(clock)}
  * en lugar de {@code LocalDate.now()}, para que las pruebas puedan fijar "hoy"
  * con {@link Clock#fixed} y las reglas se evalúen siempre en la zona horaria
  * configurada, no en la del servidor.</p>
  */
 @Configuration
-public class RelojConfig {
+public class ClockConfig {
 
     /**
      * Crea el reloj de la aplicación en la zona horaria institucional.
      *
-     * @param zonaHoraria identificador de zona horaria, p. ej. {@code America/Bogota}
+     * @param timeZone identificador de zona horaria, p. ej. {@code America/Bogota}
      * @return reloj del sistema en esa zona horaria
      */
     @Bean
-    public Clock reloj(@Value("${sierap.zona-horaria}") String zonaHoraria) {
-        return Clock.system(ZoneId.of(zonaHoraria));
+    public Clock clock(@Value("${sierap.time-zone}") String timeZone) {
+        return Clock.system(ZoneId.of(timeZone));
     }
 }

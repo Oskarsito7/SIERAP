@@ -2,7 +2,7 @@ import { Link, Outlet } from 'react-router'
 
 /**
  * Estructura común de todas las páginas: encabezado, contenido y pie.
- * En la Etapa 2 se reemplaza por un layout por rol (menú distinto según `RolUsuario`).
+ * En la Etapa 2 se reemplaza por un layout por rol (menú distinto según `UserRole`).
  */
 export function MainLayout() {
   return (

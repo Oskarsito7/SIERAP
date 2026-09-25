@@ -1,388 +1,448 @@
-# 05 — Decisiones técnicas (ADRs)
+# 05 — Technical decisions (ADRs)
 
-Registro de decisiones de arquitectura relevantes, en formato breve de
-Architecture Decision Record. Añadir una entrada nueva (no editar las
-anteriores) cuando el equipo tome una decisión técnica no trivial.
-
----
-
-## ADR-001 — Aplicación web con base de datos, en lugar de consola + archivos
-
-**Fecha:** definida antes del inicio de la implementación.
-**Estado:** Aceptada.
-
-**Contexto:** la guía oficial de la UPC para el Momento 1 de Programación II pide,
-por defecto, una aplicación de consola/GUI simple con persistencia en archivos.
-
-**Decisión:** se desarrollará una aplicación web completa con base de datos
-relacional real, dado que el docente autorizó explícitamente esta ampliación de
-alcance, conociendo la experiencia previa de +2 años en desarrollo web de uno de
-los integrantes del equipo.
-
-**Restricción impuesta por el docente:** el backend debe estar en Java (no
-negociable).
-
-**Consecuencias:** el proyecto debe seguir cumpliendo los mismos criterios de
-fondo de la rúbrica (POO completa, arquitectura por capas, buenas prácticas),
-solo que implementados sobre un stack web en lugar de consola. Ver
-`docs/00-guia-oficial-momento1.md` para la rúbrica exacta.
+Log of relevant architecture decisions, in a short Architecture Decision Record
+format. Add a new entry (do not edit the previous ones) when the team makes a
+non-trivial technical decision. The whole log was translated to English on
+2026-09-24 (ADR-014); the content of each decision did not change.
 
 ---
 
-## ADR-002 — Backend en Java + Spring Boot
+## ADR-001 — Web application with a database instead of console + files
 
-**Fecha:** definida antes del inicio de la implementación.
-**Estado:** Aceptada.
+**Date:** defined before implementation started.
+**Status:** Accepted.
 
-**Contexto:** el backend debe estar en Java (restricción del docente). Se
-necesita un framework que soporte una API REST completa, con arquitectura por
-capas, seguridad por rol, y persistencia con un ORM.
+**Context:** the official UPC guide for Moment 1 of Programación II asks, by default,
+for a simple console/GUI application with file persistence.
 
-**Decisión:** Spring Boot (Spring Web + Spring Data JPA + Spring Security con
-JWT).
+**Decision:** a full web application with a real relational database will be built,
+since the teacher explicitly authorized this scope extension, knowing that one of the
+team members has 2+ years of web development experience.
 
-**Alternativas consideradas:** Java EE/Jakarta EE puro (descartado por mayor
-verbosidad de configuración para un equipo pequeño y con plazos ajustados de
-proyecto de aula).
+**Constraint set by the teacher:** the backend must be in Java (non-negotiable).
 
-**Consecuencias:** la arquitectura por capas exigida por la guía se traduce
-naturalmente en `controller → service → repository → entity`. El manejo de
-excepciones se centraliza con `@ControllerAdvice`. El control de acceso por rol
-(6 roles) se implementa con Spring Security + un enum `RolUsuario`.
+**Consequences:** the project must still meet the same underlying rubric criteria
+(full OOP, layered architecture, good practices), only implemented on a web stack
+instead of a console. See `docs/00-guia-oficial-momento1.md` for the exact rubric.
 
 ---
 
-## ADR-003 — PostgreSQL como base de datos
+## ADR-002 — Backend in Java + Spring Boot
 
-**Fecha:** definida antes del inicio de la implementación.
-**Estado:** Aceptada (MySQL queda como alternativa válida si el equipo cambia
-de opinión).
+**Date:** defined before implementation started.
+**Status:** Accepted.
 
-**Contexto:** el dominio tiene una jerarquía relacional profunda
-(facultad→programa→momento→RAP→evaluación→calificación) y se necesitan
-agregaciones para reportería comparativa (por semestre, momento, programa, año).
+**Context:** the backend must be in Java (teacher constraint). A framework is needed
+that supports a full REST API, with a layered architecture, role-based security and
+persistence through an ORM.
 
-**Decisión:** PostgreSQL.
+**Decision:** Spring Boot (Spring Web + Spring Data JPA + Spring Security with JWT).
 
-**Alternativas consideradas:** MySQL — también válido, el equipo tiene más
-familiaridad previa con él, pero PostgreSQL ofrece mejor soporte de
-funciones de ventana y agregaciones complejas, más relevante aquí por el
-módulo de reportería (la carencia principal que motiva el proyecto frente a
-AULAWEB).
+**Alternatives considered:** plain Java EE/Jakarta EE (discarded because of its more
+verbose configuration for a small team with tight classroom-project deadlines).
 
----
-
-## ADR-004 — Frontend en React + TypeScript
-
-**Fecha:** definida antes del inicio de la implementación.
-**Estado:** Aceptada.
-
-**Contexto:** se necesita una SPA con vistas diferenciadas por rol (6 roles),
-formularios complejos (configuración de RAP/momentos, subida de archivos
-versionada) y consumo de una API REST.
-
-**Decisión:** React + TypeScript, por ser el stack de mayor experiencia previa
-del equipo (+2 años), ya conocido y aprobado por el docente.
+**Consequences:** the layered architecture required by the guide maps naturally to
+`controller → service → repository → entity`. Exception handling is centralized with
+`@ControllerAdvice`. Role-based access control is implemented with Spring Security +
+a `UserRole` enum.
 
 ---
 
-## ADR-005 — Flujo de ramas Git Flow simplificado (`main` / `develop` / `feature/*`)
+## ADR-003 — PostgreSQL as the database
 
-**Fecha:** al inicio de la implementación, antes de crear `backend/` y `frontend/`.
-**Estado:** Aceptada.
+**Date:** defined before implementation started.
+**Status:** Accepted (MySQL remains a valid alternative if the team changes its mind).
 
-**Contexto:** el equipo son tres personas trabajando en paralelo sobre el mismo
-repositorio, con niveles de experiencia distintos, y con entregas a la universidad
-en fechas fijas. Trabajar todos directamente sobre `main` haría imposible tener un
-estado estable garantizado el día de la sustentación, y no dejaría evidencia de
-proceso (la guía pide documentar cómo se desarrolló el proyecto).
+**Context:** the domain has a deep relational hierarchy
+(faculty→program→moment→RAP→evaluation→grade) and needs aggregations for
+comparative reporting (by semester, moment, program, year).
 
-**Decisión:** Git Flow simplificado — `main` como rama de producción (solo estados
-entregados y estables, con tag por entrega), `develop` como rama de integración, y
-ramas temporales `feature/`, `fix/`, `test/`, `refactor/`, `docs/`, `chore/`,
-`release/` y `hotfix/`. Todo entra a `develop` vía Pull Request con al menos una
-aprobación de otro integrante. Detalle completo en
+**Decision:** PostgreSQL.
+
+**Alternatives considered:** MySQL — also valid, and the team is more familiar with
+it, but PostgreSQL offers better support for window functions and complex
+aggregations, which matters here because of the reporting module (the main gap that
+motivates the project compared with AULAWEB).
+
+---
+
+## ADR-004 — Frontend in React + TypeScript
+
+**Date:** defined before implementation started.
+**Status:** Accepted.
+
+**Context:** an SPA is needed with views specific to each role, complex forms
+(RAP/moment configuration, versioned file uploads) and consumption of a REST API.
+
+**Decision:** React + TypeScript, as the stack the team has the most prior experience
+with (2+ years), already known and approved by the teacher.
+
+---
+
+## ADR-005 — Simplified Git Flow branching (`main` / `develop` / `feature/*`)
+
+**Date:** at the start of implementation, before creating `backend/` and `frontend/`.
+**Status:** Accepted.
+
+**Context:** the team is three people working in parallel on the same repository,
+with different levels of experience, and with university deliveries on fixed dates.
+Everyone working directly on `main` would make it impossible to have a guaranteed
+stable state on presentation day, and would leave no evidence of the process (the
+guide asks to document how the project was developed).
+
+**Decision:** simplified Git Flow — `main` as the production branch (only delivered,
+stable states, with a tag per delivery), `develop` as the integration branch, and
+temporary `feature/`, `fix/`, `test/`, `refactor/`, `docs/`, `chore/`, `release/` and
+`hotfix/` branches. Everything reaches `develop` through a Pull Request with at least
+one approval from another team member. Full detail in
 [`06-plan-de-trabajo.md`](06-plan-de-trabajo.md).
 
-**Alternativas consideradas:** *trunk-based* con push directo a `main` (descartado:
-sin una rama estable, cualquier commit roto la noche anterior compromete la
-sustentación); una rama por persona en lugar de una por funcionalidad (descartado:
-las ramas de larga vida acumulan conflictos enormes y no permiten revisión por
-unidad de trabajo).
+**Alternatives considered:** trunk-based with direct pushes to `main` (discarded:
+without a stable branch, any broken commit the night before puts the presentation at
+risk); one branch per person instead of one per feature (discarded: long-lived
+branches pile up huge conflicts and do not allow review per unit of work).
 
-**Consecuencias:** ningún cambio llega a `main` sin pasar por `develop` y por una
-revisión. La revisión cruzada obligatoria además sirve como preparación para la
-sustentación, que según la rúbrica es individual y evalúa el dominio del código
-completo, no solo de la parte que cada quien escribió. Requiere configurar
-protección de ramas en GitHub y un workflow de CI que valide cada PR.
-
----
-
-## ADR-006 — Frontend con Vite, Tailwind CSS y shadcn/ui
-
-**Fecha:** 2026-09-24 (Etapa 0).
-**Estado:** Aceptada.
-
-**Contexto:** el frontend necesita formularios, tablas, diálogos y (en reportería)
-gráficas para cinco roles distintos, construido por un equipo con niveles de
-experiencia diferentes. El ADR-004 fijó React + TypeScript pero no la herramienta de
-build ni la librería de componentes.
-
-**Decisión:** Vite como herramienta de build; Tailwind CSS v4 para estilos;
-shadcn/ui (estilo `new-york`, primitivas de Radix) como librería de componentes;
-React Router para el enrutamiento y axios como cliente HTTP (un único cliente en
-`services/api/httpClient.ts`). Pruebas con Vitest + React Testing Library.
-
-**Alternativas consideradas:** Material UI (componentes listos, pero con su propio
-sistema de estilos y un bundle más pesado); Ant Design (muy completo para paneles
-administrativos, pero pesado y costoso de adaptar a una identidad visual propia).
-
-**Consecuencias:** el código de cada componente queda dentro del repositorio
-(`frontend/src/components/ui/`), se agrega con `npx shadcn@latest add <componente>`
-y se puede modificar libremente. El tema visual se centraliza en las variables CSS de
-`src/index.css`. Nota de proceso: en la sesión de IA que creó el esqueleto no había
-acceso al registro de shadcn/ui, así que `components.json`, el tema y los componentes
-`Button`, `Card` y `Badge` se escribieron a mano con el mismo contenido que genera el
-CLI. En las máquinas del equipo el CLI funciona normalmente.
+**Consequences:** no change reaches `main` without going through `develop` and a
+review. Mandatory cross-review also prepares the team for the presentation, which
+according to the rubric is individual and assesses mastery of the whole code, not
+only the part each person wrote. It requires configuring branch protection on GitHub
+and a CI workflow that validates every PR.
 
 ---
 
-## ADR-007 — Pruebas de integración contra PostgreSQL real (Testcontainers)
+## ADR-006 — Frontend with Vite, Tailwind CSS and shadcn/ui
 
-**Fecha:** 2026-09-24 (Etapa 0).
-**Estado:** Aceptada.
+**Date:** 2026-09-24 (Stage 0).
+**Status:** Accepted.
 
-**Contexto:** el plan de trabajo dejaba abierto "Testcontainers (o H2)" para las
-pruebas de integración del backend. Las migraciones de Flyway se escriben en SQL de
-PostgreSQL, y la reportería usará funciones de ventana y agregaciones propias de
-PostgreSQL (ver ADR-003).
+**Context:** the frontend needs forms, tables, dialogs and (in reporting) charts for
+five different roles, built by a team with different levels of experience. ADR-004
+set React + TypeScript but not the build tool or the component library.
 
-**Decisión:** las pruebas de integración (`@SpringBootTest`) corren contra un
-PostgreSQL real levantado con Testcontainers, con la misma imagen que
-`docker-compose.yml` (`postgres:17-alpine`), conectado con `@ServiceConnection` de
-Spring Boot (`TestcontainersConfiguration`).
+**Decision:** Vite as the build tool; Tailwind CSS v4 for styles; shadcn/ui
+(`new-york` style, Radix primitives) as the component library; React Router for
+routing and axios as the HTTP client (a single client in
+`services/api/httpClient.ts`). Tests with Vitest + React Testing Library.
 
-**Alternativas consideradas:** H2 en memoria (más rápida y sin Docker, pero con otro
-dialecto SQL: una prueba puede pasar en H2 y la misma consulta fallar en PostgreSQL,
-o al revés).
+**Alternatives considered:** Material UI (ready-made components, but with its own
+styling system and a heavier bundle); Ant Design (very complete for admin panels, but
+heavy and costly to adapt to a custom visual identity).
 
-**Consecuencias:** correr `./mvnw verify` completo requiere Docker (Docker Desktop en
-Windows/macOS). Las pruebas unitarias con Mockito y las de `@WebMvcTest` no lo
-necesitan. Los runners de GitHub Actions ya traen Docker, así que el CI no requiere
-configuración adicional.
-
----
-
-## ADR-008 — Convenciones del backend: sin Lombok, DTOs como `record` y reloj inyectable
-
-**Fecha:** 2026-09-24 (Etapa 0).
-**Estado:** Aceptada.
-
-**Contexto:** la rúbrica evalúa encapsulamiento, polimorfismo, manejo de excepciones y
-documentación de cada clase, y la sustentación es individual sobre el código. Además,
-varias reglas de negocio dependen de la fecha actual (RF 3, 6 y 9).
-
-**Decisión:**
-
-- **Sin Lombok.** Las entidades declaran sus getters/setters explícitamente, con
-  Javadoc.
-- **DTOs como `record`** de Java (inmutables, sin código repetitivo).
-- **Inyección por constructor**, nunca `@Autowired` sobre atributos.
-- **Reloj inyectable:** los services obtienen la fecha con
-  `LocalDate.now(reloj)`, usando el `Clock` que expone `config.RelojConfig` en la zona
-  `America/Bogota`, nunca con `LocalDate.now()`.
-- **Errores de negocio como subclases de `SierapException`**
-  (`RecursoNoEncontradoException` → 404, `ReglaNegocioException` → 422,
-  `AccesoDenegadoException` → 403); cada subclase define su código HTTP por
-  polimorfismo y `GlobalExceptionHandler` responde con el formato `ErrorResponse`.
-
-**Alternativas consideradas:** Lombok (menos código, pero el encapsulamiento deja de
-verse en el código que se sustenta y agrega un procesador de anotaciones que falla en
-IDEs mal configurados); `LocalDate.now()` directo (impide probar reglas de fechas sin
-depender del día en que se ejecuta la prueba).
-
-**Consecuencias:** las entidades tienen más líneas (el IDE genera getters/setters).
-Toda regla de fechas se puede probar con `Clock.fixed(...)`, y los controllers no
-necesitan `try/catch`.
+**Consequences:** the code of each component lives inside the repository
+(`frontend/src/components/ui/`), is added with `npx shadcn@latest add <component>`
+and can be freely modified. The visual theme is centralized in the CSS variables of
+`src/index.css`. Process note: the AI session that created the skeleton had no access
+to the shadcn/ui registry, so `components.json`, the theme and the `Button`, `Card`
+and `Badge` components were written by hand with the same content the CLI generates.
+On the team's machines the CLI works normally.
 
 ---
 
-## ADR-009 — Herencia de `Usuario` en JPA con estrategia `JOINED`
+## ADR-007 — Integration tests against a real PostgreSQL (Testcontainers)
 
-**Fecha:** 2026-09-24 (Etapa 1).
-**Estado:** Aceptada.
+**Date:** 2026-09-24 (Stage 0).
+**Status:** Accepted.
 
-**Contexto:** `Usuario` es abstracta y tiene cinco subclases con atributos propios
-(`Admin` → facultad; `Docente` → facultad; `Estudiante` → código, semestre y
-programa; `EvaluadorExterno` → tipo de evaluador y datos opcionales, ver ADR-011;
-`SuperAdmin` sin atributos propios). Había que elegir cómo se guarda esa jerarquía
-en PostgreSQL (`@Inheritance`).
+**Context:** the work plan left "Testcontainers (or H2)" open for the backend
+integration tests. Flyway migrations are written in PostgreSQL SQL, and reporting
+will use PostgreSQL-specific window functions and aggregations (see ADR-003).
 
-**Decisión:** `@Inheritance(strategy = InheritanceType.JOINED)`. La tabla `usuario`
-guarda los datos comunes (nombres, apellidos, documento, correo, contraseña, rol,
-estado, fecha de creación) y cada rol tiene su propia tabla (`super_admin`, `admin`,
-`docente`, `estudiante`, `evaluador_externo`) con su llave primaria como llave
-foránea a `usuario.id`. La columna `usuario.rol` actúa como discriminador
-(`@DiscriminatorColumn`) con los valores de `RolUsuario`, para conocer el rol sin
-hacer joins (útil en el login y en Spring Security).
+**Decision:** integration tests (`@SpringBootTest`) run against a real PostgreSQL
+started with Testcontainers, with the same image as `docker-compose.yml`
+(`postgres:17-alpine`), connected with Spring Boot's `@ServiceConnection`
+(`TestcontainersConfiguration`).
 
-**Alternativas consideradas:**
+**Alternatives considered:** in-memory H2 (faster and without Docker, but with a
+different SQL dialect: a test can pass on H2 and the same query fail on PostgreSQL,
+or the other way around).
 
-- `SINGLE_TABLE`: una sola tabla con todas las columnas de todos los roles. Es más
-  rápida, pero obliga a que las columnas propias de cada rol acepten `NULL` (no se
-  puede exigir `NOT NULL` en `codigo_estudiante`, por ejemplo) y la tabla no se
-  parece al diagrama de clases.
-- `TABLE_PER_CLASS`: una tabla completa por rol, sin tabla común. Complica que el
-  correo sea único entre todos los usuarios y las consultas sobre "cualquier usuario".
-
-**Consecuencias:** el esquema refleja la jerarquía del diagrama UML (útil para la
-sustentación: cada clase tiene su tabla), cada rol puede tener restricciones
-`NOT NULL` y llaves foráneas propias, y el correo es único en `usuario`. Leer un
-usuario concreto implica un join con la tabla de su rol, costo despreciable para el
-volumen de SIERAP.
+**Consequences:** running the full `./mvnw verify` requires Docker (Docker Desktop on
+Windows/macOS). Unit tests with Mockito and `@WebMvcTest` tests do not need it.
+GitHub Actions runners already ship with Docker, so CI needs no extra configuration.
 
 ---
 
-## ADR-010 — Configuración de la evaluación por periodo académico, sin valores estándar
+## ADR-008 — Backend conventions: no Lombok, DTOs as `record` and an injectable clock
 
-**Fecha:** 2026-09-24 (Etapa 1).
-**Estado:** Aceptada.
+**Date:** 2026-09-24 (Stage 0).
+**Status:** Accepted.
 
-**Contexto:** los RAP, los criterios de evaluación, los niveles de desempeño y los
-puntajes varían por programa, por momento y en el tiempo; cada admin los crea,
-modifica o elimina según su criterio. Al mismo tiempo, la reportería (RF 12) debe
-comparar resultados entre semestres, así que editar la configuración de este
-semestre no puede alterar las evaluaciones de semestres anteriores.
+**Context:** the rubric assesses encapsulation, polymorphism, exception handling and
+documentation of every class, and the presentation is individual and about the code.
+In addition, several business rules depend on the current date (RF 3, 6 and 9).
 
-**Decisión:**
+**Decision:**
 
-- La configuración se versiona **por periodo académico**: `Momento` pertenece a un
-  `Programa` **y** a un `PeriodoAcademico`. Cada momento tiene sus propios `RAP`;
-  cada RAP, sus `CriterioEvaluacion`; y cada criterio, sus `NivelDesempeno` con su
-  puntaje.
-- Al abrir un periodo nuevo, la configuración del periodo anterior se **copia** como
-  punto de partida (momentos → RAP → criterios → niveles) y se edita. Los periodos
-  pasados quedan intactos.
-- **Nada estándar en el código:** no existen los enums `NivelExigencia` ni
-  `NivelDesempeno`. El nivel de exigencia del momento es texto libre, y los niveles
-  de desempeño (nombre, descripción, puntaje y orden) los define el admin en cada
-  criterio. El RAP no tiene "peso": pesa lo que sumen los puntajes máximos de sus
-  criterios.
-- El evaluador elige **un nivel por criterio**; la nota es la suma de los puntajes
-  elegidos, y el desempeño por RAP es la suma de los de sus criterios
-  (`CalificacionCriterio` reemplaza a `CalificacionRAP`).
+- **No Lombok.** Entities declare their getters/setters explicitly, with Javadoc.
+- **DTOs as Java `record`s** (immutable, no boilerplate).
+- **Constructor injection**, never `@Autowired` on fields.
+- **Injectable clock:** services get the date with `LocalDate.now(clock)`, using the
+  `Clock` exposed by `config.ClockConfig` in the `America/Bogota` zone, never with
+  `LocalDate.now()`.
+- **Business errors as subclasses of `SierapException`**
+  (`ResourceNotFoundException` → 404, `BusinessRuleException` → 422,
+  `ForbiddenAccessException` → 403; English names since ADR-014); each subclass
+  defines its HTTP status through polymorphism and `GlobalExceptionHandler` responds
+  with the `ErrorResponse` format.
 
-**Alternativas consideradas:** una sola configuración viva editable, desactivando
-(sin borrar) lo que se elimina: más simple, pero la configuración de semestres
-pasados se deforma con cada edición y los comparativos pierden sentido. Puntaje
-directo por RAP (sin criterios ni niveles): no refleja cómo evalúa hoy la UPC (ver la
-rúbrica en `00-guia-oficial-momento1.md`, donde cada ítem tiene niveles con puntos).
+**Alternatives considered:** Lombok (less code, but encapsulation is no longer
+visible in the code being presented, and it adds an annotation processor that breaks
+in misconfigured IDEs); calling `LocalDate.now()` directly (makes it impossible to
+test date rules without depending on the day the test runs).
 
-**Consecuencias:** hay más entidades de configuración (`CriterioEvaluacion`,
-`NivelDesempeno`) y hace falta una operación de "copiar configuración del periodo
-anterior" (Etapa 3). A cambio, cada evaluación queda ligada a la configuración con
-la que se hizo, y los reportes comparativos entre periodos son confiables.
+**Consequences:** entities have more lines (the IDE generates getters/setters). Every
+date rule can be tested with `Clock.fixed(...)`, and controllers need no
+`try/catch`.
 
 ---
 
-## ADR-011 — Tipos de evaluador configurables (`EvaluadorExterno` + catálogo)
+## ADR-009 — JPA inheritance of `User` with the `JOINED` strategy
 
-**Fecha:** 2026-09-24 (Etapa 1).
-**Estado:** Aceptada.
+**Date:** 2026-09-24 (Stage 1).
+**Status:** Accepted.
 
-**Contexto:** hoy evalúan el docente, el empresario y el egresado, pero el
-responsable del proyecto indicó que pueden aparecer más tipos de evaluador con otros
-nombres, y que deben poder crearse sin programar. Con una subclase de `Usuario` por
-tipo (`Empresario`, `Egresado`), cada tipo nuevo exigiría código, una tabla y una
-migración.
+**Context:** `User` is abstract and has five subclasses with their own attributes
+(`Admin` → faculty; `Teacher` → faculty; `Student` → code, semester and program;
+`ExternalEvaluator` → evaluator type and optional data, see ADR-011; `SuperAdmin`
+without attributes of its own). We had to choose how this hierarchy is stored in
+PostgreSQL (`@Inheritance`).
 
-**Decisión:**
+**Decision:** `@Inheritance(strategy = InheritanceType.JOINED)`. The `app_user` table
+stores the common data (names, document, email, password, role, status, creation
+date) and each role has its own table (`super_admin`, `admin`, `teacher`, `student`,
+`external_evaluator`) whose primary key is a foreign key to `app_user.id`. The
+`app_user.role` column acts as the discriminator (`@DiscriminatorColumn`) with the
+values of `UserRole`, to know the role without joins (useful at login and in Spring
+Security). The table is called `app_user` because `user` is a reserved word in
+PostgreSQL (ADR-014).
 
-- `Docente` sigue siendo un rol propio, porque además de evaluar habilita grupos,
-  designa evaluadores y fija fechas.
-- Todos los evaluadores que no son docentes son una sola subclase,
-  **`EvaluadorExterno`** (rol `EVALUADOR_EXTERNO`), con un `TipoEvaluador` tomado de
-  un **catálogo** que mantiene el super_admin. Los datos semilla del catálogo son
-  "Empresario" y "Egresado"; agregar un tipo es agregar una fila.
-- Los datos propios de cada tipo son opcionales en `EvaluadorExterno`: organización,
-  cargo, año de graduación y programa de egreso.
-- La interfaz `Evaluador` la implementan `Docente` y `EvaluadorExterno`.
+**Alternatives considered:**
 
-**Alternativas consideradas:** mantener `Empresario` y `Egresado` como subclases y
-agregar una genérica "Otro evaluador" (dos formas distintas de modelar lo mismo); una
-subclase por tipo (no es configurable desde la aplicación).
+- `SINGLE_TABLE`: a single table with all the columns of all the roles. It is faster,
+  but forces the role-specific columns to accept `NULL` (`student_code` cannot be
+  `NOT NULL`, for example) and the table does not resemble the class diagram.
+- `TABLE_PER_CLASS`: a full table per role, with no common table. It makes it hard for
+  the email to be unique across all users and to query "any user".
 
-**Consecuencias:** `RolUsuario` queda con `SUPER_ADMIN`, `ADMIN`, `DOCENTE`,
-`ESTUDIANTE` y `EVALUADOR_EXTERNO`. Los permisos se dan por rol, sin importar el tipo;
-el tipo se usa para mostrar, para los reportes y, si se decide, para ponderar la
-nota por tipo de evaluador (pendiente en `docs/04`). El polimorfismo que pide la
-rúbrica se mantiene: `getRol()` en cada subclase y la interfaz `Evaluador` con dos
-implementaciones.
-
----
-
-## ADR-012 — Ciclo de vida del momento: configuración, conformación, lanzamiento y ventanas
-
-**Fecha:** 2026-09-24 (Etapa 1).
-**Estado:** Aceptada.
-
-**Contexto:** el responsable del proyecto describió cómo se ejecuta un momento, igual
-para cualquier momento y programa:
-
-1. El admin crea el momento (p. ej. "Momento 1") y configura sus RAP, criterios y
-   niveles con puntaje.
-2. Los docentes habilitan grupos y designan a sus evaluadores externos.
-3. Los estudiantes entran a SIERAP, ven los grupos de **todos** los docentes del
-   momento y se inscriben en el que acordaron con sus compañeros.
-4. El admin **lanza** el momento; se entrega y se califica.
-
-**Decisión:**
-
-- `Momento.estado` (enum `EstadoMomento`): `CONFIGURACION` → `LANZADO`.
-- El admin define en el momento el mínimo y el máximo de integrantes por grupo y tres
-  **ventanas de fechas**: conformación de grupos, entregas y calificación. Deben
-  estar ordenadas y sin solaparse, y la de calificación debe terminar a más tardar
-  en la `fechaLimiteEvaluacionUPC` del periodo. Mientras se configura pueden estar
-  vacías; son obligatorias para lanzar.
-- **En `CONFIGURACION`:** el admin edita todo. Dentro de la ventana de conformación,
-  los docentes habilitan grupos y los estudiantes del programa se inscriben (un grupo
-  por momento).
-- **"Lanzar"** lo hace el admin **después** de la conformación de grupos: valida que
-  la configuración esté completa y **bloquea** los RAP, criterios, niveles, puntajes y
-  la composición de los grupos.
-- **En `LANZADO`**, lo que se permite hacer lo dan las fechas, evaluadas con el
-  `Clock` inyectado: dentro de la ventana de entregas se entrega, dentro de la de
-  calificación se califica, y después de la calificación el momento queda cerrado.
-  Fuera de las ventanas no se entrega ni se califica.
-- Cada docente fija la fecha límite de entrega y la fecha de evaluación de **sus**
-  grupos, dentro de las ventanas del momento (RF 7 y 9).
-
-**Alternativas consideradas:** avanzar todas las fases con botones (más trabajo manual
-y fácil de olvidar); lanzar al terminar la configuración, antes de la conformación
-(el responsable prefirió lanzar con los grupos ya armados); activar el momento solo
-por fecha, sin botón.
-
-**Consecuencias:** `EstadoMomento` es un enum del **flujo del sistema**, no un valor de
-negocio de la evaluación, así que no contradice el ADR-010. Cada operación valida
-estado y fecha (p. ej. inscribirse solo en `CONFIGURACION` y dentro de la ventana de
-conformación; entregar solo en `LANZADO` y dentro de la ventana de entregas). Queda
-pendiente qué pasa al lanzar con grupos que no alcanzan el mínimo de integrantes.
+**Consequences:** the schema mirrors the hierarchy of the UML diagram (useful for the
+presentation: each class has its table), each role can have its own `NOT NULL`
+constraints and foreign keys, and the email is unique in `app_user`. Reading a
+specific user means a join with its role table, a negligible cost for SIERAP's
+volume.
 
 ---
 
-## Plantilla para nuevas entradas
+## ADR-010 — Assessment configuration per academic period, with no standard values
+
+**Date:** 2026-09-24 (Stage 1).
+**Status:** Accepted.
+
+**Context:** RAP, evaluation criteria, performance levels and scores vary by program,
+by moment and over time; each admin creates, modifies or deletes them at their
+discretion. At the same time, reporting (RF 12) must compare results across
+semesters, so editing this semester's configuration cannot alter past semesters'
+evaluations.
+
+**Decision:**
+
+- The configuration is versioned **per academic period**: `Moment` belongs to a
+  `Program` **and** an `AcademicPeriod`. Each moment has its own RAP
+  (`LearningOutcome`); each RAP, its `EvaluationCriterion`s; and each criterion, its
+  `PerformanceLevel`s with their score.
+- When a new period opens, the previous period's configuration is **copied** as a
+  starting point (moments → RAP → criteria → levels) and edited. Past periods stay
+  intact.
+- **Nothing standard in the code:** there are no `NivelExigencia` or `NivelDesempeno`
+  enums. The requirement level of the moment is free text, and the performance
+  levels (name, description, score and order) are defined by the admin in each
+  criterion. The RAP has no "weight": it weighs the sum of the maximum scores of its
+  criteria.
+- The evaluator picks **one level per criterion**; the grade is the sum of the
+  picked scores, and the performance per RAP is the sum of its criteria
+  (`CriterionGrade` replaces the old per-RAP grade).
+
+**Alternatives considered:** a single live, editable configuration, deactivating
+(not deleting) what is removed: simpler, but past semesters' configuration gets
+distorted with every edit and comparisons lose meaning. A direct score per RAP (no
+criteria or levels): does not reflect how the UPC assesses today (see the rubric in
+`00-guia-oficial-momento1.md`, where each item has levels with points).
+
+**Consequences:** there are more configuration entities (`EvaluationCriterion`,
+`PerformanceLevel`) and a "copy configuration from the previous period" operation is
+needed (Stage 3). In exchange, each evaluation stays tied to the configuration it was
+made with, and comparative reports across periods are reliable.
+
+---
+
+## ADR-011 — Configurable evaluator types (`ExternalEvaluator` + catalog)
+
+**Date:** 2026-09-24 (Stage 1).
+**Status:** Accepted.
+
+**Context:** today the teacher, the business person and the alumnus grade, but the
+project lead indicated that more evaluator types with other names may appear, and
+that they must be creatable without programming. With one `User` subclass per type
+(`Empresario`, `Egresado`), each new type would require code, a table and a
+migration.
+
+**Decision:**
+
+- `Teacher` stays a role of its own, because besides grading it enables groups,
+  assigns evaluators and sets dates.
+- Every evaluator who is not a teacher is a single subclass, **`ExternalEvaluator`**
+  (role `EXTERNAL_EVALUATOR`), with an `EvaluatorType` taken from a **catalog**
+  maintained by the super_admin. The catalog seed data are "Empresario" and
+  "Egresado"; adding a type is adding a row.
+- Type-specific data is optional in `ExternalEvaluator`: organization, position,
+  graduation year and graduation program.
+- The `Evaluator` interface is implemented by `Teacher` and `ExternalEvaluator`.
+
+**Alternatives considered:** keeping `Empresario` and `Egresado` as subclasses and
+adding a generic "Other evaluator" (two different ways of modeling the same thing);
+one subclass per type (not configurable from the application).
+
+**Consequences:** `UserRole` is left with `SUPER_ADMIN`, `ADMIN`, `TEACHER`,
+`STUDENT` and `EXTERNAL_EVALUATOR`. Permissions are granted by role, regardless of
+the type; the type is used for display, for reports and, if decided, to weight the
+grade by evaluator type (pending in `docs/04`). The polymorphism required by the
+rubric is kept: `getRole()` in each subclass and the `Evaluator` interface with two
+implementations.
+
+---
+
+## ADR-012 — Moment lifecycle: configuration, group formation, launch and windows
+
+**Date:** 2026-09-24 (Stage 1).
+**Status:** Accepted.
+
+**Context:** the project lead described how a moment runs, the same for any moment
+and program:
+
+1. The admin creates the moment (e.g. "Momento 1") and configures its RAP, criteria
+   and levels with scores.
+2. Teachers enable groups and assign their external evaluators.
+3. Students enter SIERAP, see the groups of **all** the teachers of the moment and
+   join the one they agreed on.
+4. The admin **launches** the moment; work is submitted and graded.
+
+**Decision:**
+
+- `Moment.status` (enum `MomentStatus`): `CONFIGURATION` → `LAUNCHED`.
+- The admin defines on the moment the minimum and maximum members per group and three
+  **date windows**: group formation, submissions and grading. They must be ordered and
+  must not overlap, and the grading window must end no later than the period's
+  `upcEvaluationDeadline`. They may be empty while configuring; they are required to
+  launch.
+- **In `CONFIGURATION`:** the admin edits everything. Within the group formation
+  window, teachers enable groups and the program's students join them (one group per
+  moment).
+- **"Launch"** is done by the admin **after** group formation: it validates that the
+  configuration is complete and **locks** the RAP, criteria, levels, scores and group
+  membership.
+- **In `LAUNCHED`**, what is allowed depends on the dates, evaluated with the injected
+  `Clock`: work is submitted within the submission window, graded within the grading
+  window, and after grading the moment is closed. Outside the windows nothing is
+  submitted or graded.
+- Each teacher sets the submission deadline and evaluation date of **their** groups,
+  within the moment windows (RF 7 and 9).
+
+**Alternatives considered:** advancing every phase with buttons (more manual work and
+easy to forget); launching when configuration ends, before group formation (the lead
+preferred launching with the groups already formed); activating the moment by date
+only, with no button.
+
+**Consequences:** `MomentStatus` is a **system flow** enum, not an assessment business
+value, so it does not contradict ADR-010. Each operation validates status and date
+(e.g. joining only in `CONFIGURATION` and within the group formation window;
+submitting only in `LAUNCHED` and within the submission window). What happens when
+launching with groups below the minimum number of members is still pending.
+
+---
+
+## ADR-013 — Scores as `BigDecimal`
+
+**Date:** 2026-09-24 (Stage 1).
+**Status:** Accepted.
+
+**Context:** the class diagram had performance level scores as `double`. The Moment 1
+grade is a sum of 0.36, 0.48, 0.6 and 0.8, values with no exact binary
+representation: with `double` the sum can give `4.999999…` instead of `5.0`, and such
+a grade is displayed wrongly, compares wrongly against a threshold and throws reports
+off.
+
+**Decision:** scores (`PerformanceLevel.score`, the `getMaxScore()` of
+`EvaluationCriterion`, `LearningOutcome` and `Moment`, and the grades computed in
+Stage 6) use `java.math.BigDecimal`, stored in PostgreSQL as `NUMERIC(5,2)`. Tests
+compare with `isEqualByComparingTo` (scale does not matter: `5.0` = `5.00`).
+
+**Alternatives considered:** `double` with rounding on display (the error accumulates
+in averages and comparisons, and rounding has to be remembered everywhere); storing
+hundredths as integers (exact, but forces conversions across the whole application
+and makes the code less readable in the presentation).
+
+**Consequences:** sums are exact. Adding is written with `add` instead of `+`, and DTOs
+expose the score as a decimal number in the JSON.
+
+---
+
+## ADR-014 — Language: English for code and documentation, Spanish for the user and for code comments
+
+**Date:** 2026-09-24 (Stage 1).
+**Status:** Accepted (approved by the project lead).
+
+**Context:** the Stage 0 code, the Stage 1 model and the documentation were written in
+Spanish. The project lead decided which parts of the project are written in English
+and which stay in Spanish.
+
+**Decision:**
+
+- **In English:**
+  - The code: classes, interfaces, enums and their values, attributes, methods,
+    variables, tables and columns, API routes (`/api/status`) and JSON fields of the
+    DTOs, on the backend and the frontend.
+  - The documentation: `docs/` (except what is listed below), the READMEs and the
+    ADRs.
+  - Commit messages.
+- **In Spanish:**
+  - Every text the user sees: frontend screens and API error messages
+    (`ErrorResponse.message`, validation messages), and the business data shown on
+    screen (names of faculties, programs, RAP, criteria and levels in the seed data).
+  - Javadoc and code comments, because the presentation to the university is in
+    Spanish.
+  - `docs/00` (transcription of the official guide) and `docs/entregas`.
+- Name mapping: see the Spanish → English table in
+  [`03-entidades-dominio.md`](03-entidades-dominio.md).
+- SQL reserved words are avoided as table or column names: `app_user` instead of
+  `user`, `ProjectGroup` instead of `Group`, `display_order` instead of `order`,
+  `param_key`/`param_value` instead of `key`/`value`.
+
+**Alternatives considered:** everything in Spanish (the previous state); English only
+in new code (the backend would be mixed, with Stage 0 classes in Spanish and Stage 1
+classes in English); Javadoc in English too (discarded by the lead: the presentation
+is in Spanish).
+
+**Consequences:** the Stage 0 code was renamed in the same PR as the academic model
+(`EstadoSistema*` → `SystemStatus*`, `RelojConfig` → `ClockConfig`, the exceptions,
+the `/api/estado` → `/api/status` endpoint and the JSON fields, with the frontend
+adjusted). D1 and D3 branches must use the names in the `docs/03` table. The standard
+Java naming convention required by the rubric stays the same; only the language
+changes.
+
+---
+
+## Template for new entries
 
 ```
-## ADR-00X — <título corto de la decisión>
+## ADR-00X — <short title of the decision>
 
-**Fecha:** <fecha>
-**Estado:** Propuesta / Aceptada / Reemplazada por ADR-00Y
+**Date:** <date>
+**Status:** Proposed / Accepted / Superseded by ADR-00Y
 
-**Contexto:** <qué problema motiva esta decisión>
+**Context:** <what problem motivates this decision>
 
-**Decisión:** <qué se decidió>
+**Decision:** <what was decided>
 
-**Alternativas consideradas:** <qué otras opciones se evaluaron y por qué no>
+**Alternatives considered:** <what other options were evaluated and why not>
 
-**Consecuencias:** <qué implica esta decisión hacia adelante>
+**Consequences:** <what this decision implies going forward>
 ```

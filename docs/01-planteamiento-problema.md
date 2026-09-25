@@ -1,45 +1,43 @@
-# 01 — Planteamiento del problema
+# 01 — Problem statement
 
-## Problema o necesidad central
+## Central problem or need
 
-Los Resultados de Aprendizaje del Programa (RAP) son obligatorios desde primer
-semestre en Ing. de Sistemas de la UPC, y se evalúan de forma acumulativa en
-distintos momentos del programa (el Momento I, por ejemplo, se evalúa en tercer
-semestre a través de Programación de Computadores II, pero valora todo lo
-aprendido desde primer semestre; los siguientes momentos siguen esa misma lógica
-acumulativa). Este proceso, que involucra a docentes, estudiantes, empresarios y
-egresados como evaluadores, se gestiona actualmente a través de AULAWEB, un
-sistema propio de la UPC que no fue diseñado específicamente para este flujo: la
-interacción es poco intuitiva tanto para docentes como para estudiantes, la
-organización de grupos, entregas, fechas y calificaciones por cada RAP resulta
-dispendiosa, y el sistema no genera reportes ni informes que permitan consolidar
-o comparar resultados a lo largo de los distintos momentos.
+Program Learning Outcomes (RAP, *Resultados de Aprendizaje del Programa*) are
+mandatory from the first semester in Systems Engineering at the UPC, and they are
+assessed cumulatively at different moments of the program (Moment I, for example,
+is assessed in the third semester through Programación de Computadores II, but it
+covers everything learned since the first semester; the following moments follow
+the same cumulative logic). This process, which involves teachers, students,
+business people and alumni as evaluators, is currently managed through AULAWEB, the
+UPC's in-house system, which was not designed specifically for this flow: the
+interaction is not intuitive for teachers or students, organizing groups,
+submissions, dates and grades for each RAP is cumbersome, and the system does not
+produce reports that allow results to be consolidated or compared across the
+different moments.
 
-## Causas
+## Causes
 
-- AULAWEB, siendo un desarrollo propio de la universidad, no fue construido
-  específicamente para el flujo de evaluación acumulativa de RAP por momentos,
-  niveles y semestres.
-- No existe un módulo de reportería: los datos de calificación quedan dispersos
-  y no se pueden consolidar ni comparar entre momentos, semestres o años.
-- Los criterios de evaluación (RAP, momentos, semestres asociados, puntuaciones)
-  varían por programa y facultad, pero la plataforma no permite configurarlos de
-  forma flexible por cada decano/programa.
-- La gestión de grupos, entregas versionadas y asignación de evaluadores
-  (empresario/egresado) se hace de forma manual o poco estructurada dentro de la
-  herramienta actual.
+- AULAWEB, being an in-house university development, was not built specifically
+  for the cumulative assessment flow of RAP by moments, levels and semesters.
+- There is no reporting module: grading data is scattered and cannot be
+  consolidated or compared across moments, semesters or years.
+- The assessment criteria (RAP, moments, associated semesters, scores) vary by
+  program and faculty, but the platform does not allow each dean/program to
+  configure them flexibly.
+- Managing groups, versioned submissions and evaluator assignment (business
+  person/alumnus) is done manually or in a poorly structured way inside the current
+  tool.
 
-## Consecuencias
+## Consequences
 
-- El proceso de evaluación es agotador y consume tiempo excesivo tanto a
-  docentes como estudiantes, en cada uno de los momentos de evaluación.
-- Los estudiantes no tienen visibilidad clara ni oportuna de su desempeño
-  individual acumulado por cada RAP a lo largo del programa.
-- La universidad no puede comparar fácilmente el desempeño entre semestres,
-  momentos, programas o años para tomar decisiones de mejora curricular.
-- Se dificulta la trazabilidad de versiones de entregas y el cumplimiento de
-  fechas estipuladas en cada momento.
+- The assessment process is exhausting and takes excessive time for both teachers
+  and students, in every assessment moment.
+- Students do not have clear or timely visibility of their cumulative individual
+  performance on each RAP throughout the program.
+- The university cannot easily compare performance across semesters, moments,
+  programs or years to make curricular improvement decisions.
+- Tracking submission versions and meeting the dates set for each moment is hard.
 
-## Área de aplicación
+## Application area
 
-**Educación** (gestión académica y evaluación por competencias).
+**Education** (academic management and competency-based assessment).

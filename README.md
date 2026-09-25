@@ -1,213 +1,218 @@
 # SIERAP — Sistema Integral Evaluador de Resultados de Aprendizajes por Programa
 
-> Documento raíz del proyecto. Léelo primero, completo, antes de tocar código o de
-> continuar cualquier conversación (IA o humana) sobre este repositorio. Contiene
-> todo el contexto acordado hasta la fecha: problema, solución, alcance, stack,
-> decisiones tomadas y su justificación.
+> Root document of the project. Read it first, in full, before touching code or
+> continuing any conversation (AI or human) about this repository. It contains all
+> the context agreed so far: problem, solution, scope, stack, decisions made and their
+> rationale.
 
-**Última actualización:** ver historial de git.
-**Autor / equipo:** Oskramsito y equipo — Universidad Popular del Cesar (UPC), Ing. de Sistemas.
+**Last update:** see the git history.
+**Author / team:** Oskramsito and team — Universidad Popular del Cesar (UPC), Systems Engineering.
 
 ---
 
-## 1. Qué es SIERAP
+## 1. What SIERAP is
 
-SIERAP es un sistema web para la **gestión y evaluación de los proyectos de aula y
-los RAP (Resultados de Aprendizaje del Programa)** de la Universidad Popular del
-Cesar. Nace como el proyecto de aula de la asignatura **Programación II (SS300)**,
-evaluado en su **Momento 1**, pero su alcance real de diseño e implementación es
-**institucional**: no es un ejercicio de clase recortado, es el sistema completo que
-el equipo pretende construir para reemplazar el flujo actual.
+SIERAP is a web system to **manage and assess the classroom projects and the RAP
+(Program Learning Outcomes, *Resultados de Aprendizaje del Programa*)** of the
+Universidad Popular del Cesar. It was born as the classroom project of the course
+**Programación II (SS300)**, assessed in its **Moment 1**, but its real design and
+implementation scope is **institutional**: it is not a trimmed-down class exercise, it
+is the complete system the team intends to build to replace the current flow.
 
-## 2. El problema que resuelve
+## 2. The problem it solves
 
-Los RAP son obligatorios desde primer semestre en Ing. de Sistemas de la UPC y se
-evalúan de forma **acumulativa** en distintos momentos del programa:
+RAP are mandatory from the first semester in Systems Engineering at the UPC and are
+assessed **cumulatively** at different moments of the program:
 
-- **Momento I** — se evalúa en tercer semestre, en la asignatura Programación de
-  Computadores II, pero valora todo lo aprendido desde primer semestre.
-- **Momento II** — se evalúa en Ingeniería de Software II, sobre un rango de
-  semestres mayor.
-- **Momento III** — se evalúa en una Electiva/Optativa de profundización.
+- **Moment I** — assessed in the third semester, in the course Programación de
+  Computadores II, but it covers everything learned since the first semester.
+- **Moment II** — assessed in Ingeniería de Software II, over a wider range of
+  semesters.
+- **Moment III** — assessed in an in-depth elective course.
 
-Cada momento reevalúa los mismos 5 RAP institucionales, subiendo el nivel de
-exigencia (bajo → medio → alto).
+Each moment reassesses the same 5 institutional RAP, raising the requirement level
+(low → medium → high).
 
-En SIERAP los proyectos de los estudiantes los califican el **docente** del grupo y
-**evaluadores externos** (hoy empresarios y egresados; se pueden crear más tipos). El
-estudiante no se autoevalúa.
-Hoy el proceso se gestiona a través de **AULAWEB**, un
-sistema propio (no externo) de la UPC que **no fue diseñado específicamente para
-este flujo**:
+In SIERAP, students' projects are graded by the group's **teacher** and by **external
+evaluators** (today business people and alumni; more types can be created). Students
+do not self-assess. Today the process is managed through **AULAWEB**, the UPC's own
+(not external) system, which **was not designed specifically for this flow**:
 
-- La interacción es poco intuitiva tanto para docentes como estudiantes.
-- La organización de grupos, entregas, fechas y calificaciones por RAP es
-  dispendiosa y en buena parte manual.
-- **No genera reportes ni informes** que permitan consolidar o comparar resultados
-  entre momentos, semestres, programas o años.
-- Los criterios de evaluación (RAP, momentos, semestres asociados, puntuaciones)
-  varían por programa y facultad, y AULAWEB no permite configurarlos de forma
-  flexible por cada decano/programa.
+- The interaction is not intuitive for teachers or students.
+- Organizing groups, submissions, dates and grades per RAP is cumbersome and largely
+  manual.
+- **It does not produce reports** that allow results to be consolidated or compared
+  across moments, semesters, programs or years.
+- The assessment criteria (RAP, moments, associated semesters, scores) vary by
+  program and faculty, and AULAWEB does not allow each dean/program to configure them
+  flexibly.
 
-**Consecuencia principal:** el proceso es agotador para docentes y estudiantes, los
-estudiantes no tienen visibilidad clara de su desempeño acumulado por RAP, y la
-universidad no puede tomar decisiones curriculares basadas en datos consolidados.
+**Main consequence:** the process is exhausting for teachers and students, students
+lack clear visibility of their cumulative performance per RAP, and the university
+cannot make curricular decisions based on consolidated data.
 
-Ver el planteamiento completo (causas/consecuencias/área de aplicación) en
+See the full problem statement (causes/consequences/application area) in
 [`docs/01-planteamiento-problema.md`](docs/01-planteamiento-problema.md).
 
-## 3. La solución — qué hace SIERAP
+## 3. The solution — what SIERAP does
 
-Sistema web con **5 roles**:
+Web system with **5 roles**:
 
-| Rol | Qué hace |
+| Role | What it does |
 |---|---|
-| `super_admin` | Configura los parámetros globales, los periodos académicos y el catálogo de tipos de evaluador. |
-| `admin` | Uno por facultad (lo usa el decano). Crea y configura los momentos de cada programa (RAP, criterios, puntajes, fechas) y los lanza. |
-| `docente` | Habilita grupos en un momento, crea y designa evaluadores externos, fija fechas y califica solo los grupos que habilitó. |
-| `estudiante` | Ve los grupos del momento, se inscribe en uno, sube entregas versionadas (zip + presentación) y consulta su calificación por RAP. |
-| `evaluador_externo` | Empresario, egresado u otro tipo del catálogo: califica los grupos para los que fue designado. |
+| `super_admin` | Configures the global parameters, the academic periods and the evaluator type catalog. |
+| `admin` | One per faculty (used by the dean). Creates and configures the moments of each program (RAP, criteria, scores, dates) and launches them. |
+| `teacher` | Enables groups in a moment, creates and assigns external evaluators, sets dates and grades only the groups they enabled. |
+| `student` | Sees the groups of the moment, joins one, uploads versioned submissions (zip + presentation) and checks their grade per RAP. |
+| `external_evaluator` | Business person, alumnus or another type from the catalog: grades the groups they were assigned to. |
 
-Genera **reportes individuales, grupales y comparativos** (entre semestres, momentos,
-programas o años) — la carencia más crítica de AULAWEB hoy.
+It produces **individual, group and comparative reports** (across semesters, moments,
+programs or years) — AULAWEB's most critical gap today.
 
-**Factor diferenciador:** a diferencia de AULAWEB (genérico), SIERAP está diseñado
-específicamente alrededor del ciclo de vida de un RAP: `momento → nivel → programa →
-grupo → entrega → evaluación multi-rol → reporte`, con configuración flexible por
-facultad/programa y reportería comparativa automática.
+**Differentiating factor:** unlike AULAWEB (generic), SIERAP is designed specifically
+around the lifecycle of a RAP: `moment → level → program → group → submission →
+multi-role evaluation → report`, with flexible configuration per faculty/program and
+automatic comparative reporting.
 
-Descripción completa de la solución en
+Full description of the solution in
 [`docs/02-descripcion-solucion.md`](docs/02-descripcion-solucion.md).
 
-## 4. Alcance del proyecto de aula (Momento 1) vs. alcance real
+## 4. Classroom project scope (Moment 1) vs. real scope
 
-Es importante que cualquier persona (o IA) que entre a este proyecto entienda esta
-distinción:
+It is important that anyone (or any AI) joining this project understands this
+distinction:
 
-- **La guía oficial de la UPC** para el Momento 1 de Programación II pide, por
-  defecto, una aplicación de consola/GUI simple con **persistencia en archivos**,
-  en parejas.
-- **El equipo decidió, con autorización explícita del docente** (que conoce la
-  experiencia previa de +2 años en desarrollo web de uno de los integrantes), ir
-  más allá: **aplicación web completa, con base de datos real**. El único requisito
-  no negociable del docente es que **el backend esté en Java**.
-- Por tanto, el sistema que se está construyendo **no es una maqueta académica
-  reducida**: es el arranque real de SIERAP como producto, evaluado además contra
-  la rúbrica oficial del Momento 1.
+- **The official UPC guide** for Moment 1 of Programación II asks, by default, for a
+  simple console/GUI application with **file persistence**, in pairs.
+- **The team decided, with the teacher's explicit authorization** (the teacher knows
+  one of the members has 2+ years of web development experience), to go further: a
+  **full web application with a real database**. The teacher's only non-negotiable
+  requirement is that **the backend must be in Java**.
+- Therefore, the system being built **is not a reduced academic mock-up**: it is the
+  real start of SIERAP as a product, also assessed against the official Moment 1
+  rubric.
 
-La rúbrica oficial completa (con puntajes) está en
-[`docs/00-guia-oficial-momento1.md`](docs/00-guia-oficial-momento1.md) — cualquier
-decisión de alcance para las entregas de universidad debe revisarse contra esos
-criterios de evaluación.
+The full official rubric (with scores) is in
+[`docs/00-guia-oficial-momento1.md`](docs/00-guia-oficial-momento1.md) (in Spanish, as
+a faithful transcription) — any scope decision for university deliveries must be
+checked against those assessment criteria.
 
-## 5. Stack tecnológico
+## 5. Technology stack
 
-| Capa | Tecnología | Por qué |
+| Layer | Technology | Why |
 |---|---|---|
-| Backend | **Java + Spring Boot** (Spring Web, Spring Data JPA, Spring Security + JWT) | Requisito no negociable del docente (Java). Spring Boot es el estándar de facto para web en Java; encaja con la arquitectura por capas exigida por la guía (controller/service/repository/entity) y con la POO completa que pide la rúbrica (interfaces, herencia, manejo de excepciones vía `@ControllerAdvice`). |
-| Base de datos | **PostgreSQL** | Más robusto que MySQL para las relaciones jerárquicas del dominio (facultad→programa→momento→RAP) y mejor soporte de agregaciones para reportería. MySQL es alternativa válida si el equipo prefiere. |
-| Frontend | **React + TypeScript** | Stack habitual del equipo (+2 años de experiencia), ya aprobado por el docente. |
+| Backend | **Java + Spring Boot** (Spring Web, Spring Data JPA, Spring Security + JWT) | Non-negotiable teacher requirement (Java). Spring Boot is the de facto standard for web in Java; it fits the layered architecture required by the guide (controller/service/repository/entity) and the full OOP the rubric asks for (interfaces, inheritance, exception handling through `@ControllerAdvice`). |
+| Database | **PostgreSQL** | More robust than MySQL for the hierarchical relationships of the domain (faculty→program→moment→RAP) and better support for reporting aggregations. MySQL is a valid alternative if the team prefers. |
+| Frontend | **React + TypeScript** | The team's usual stack (2+ years of experience), already approved by the teacher. |
 
-## 6. Estado actual del diseño (Momento 1 — Fase 1 y 2)
+**Language (ADR-014):** code, documentation and commit messages are in English; screens,
+API error messages, Javadoc and code comments are in Spanish.
 
-- [x] Planteamiento del problema (causas, consecuencias, área de aplicación)
-- [x] Descripción de la solución (alcance, factor diferenciador, requerimientos)
-- [x] Identificación de entidades del dominio
-- [x] Diagrama de clases preliminar en notación UML
-- [x] Diagrama de clases mejorado, de jerarquías y de paquetes (capas)
-- [x] Requerimientos funcionales formalizados por rol con control de acceso
-- [ ] Diseño preliminar de GUI (mockup/wireframe por rol)
-- [ ] Implementación de código (avance de clases del diagrama)
+## 6. Current design status (Moment 1 — Phases 1 and 2)
 
-Avance de la implementación, por etapas de [`docs/06-plan-de-trabajo.md`](docs/06-plan-de-trabajo.md):
+- [x] Problem statement (causes, consequences, application area)
+- [x] Solution description (scope, differentiating factor, requirements)
+- [x] Identification of domain entities
+- [x] Preliminary class diagram in UML notation
+- [x] Improved class, hierarchy and package (layer) diagrams
+- [x] Functional requirements formalized by role with access control
+- [ ] Preliminary GUI design (mockup/wireframe per role)
+- [ ] Code implementation (progress on the diagram classes)
 
-- [x] **Etapa 0 — Cimientos:** esqueleto backend y frontend, PostgreSQL en
-  `docker-compose`, CI en GitHub Actions.
-- [ ] Etapa 1 — Modelo de dominio y persistencia (entidades JPA + Flyway).
-- [ ] Etapa 2 — Autenticación y control de acceso.
+Implementation progress, by stages of [`docs/06-plan-de-trabajo.md`](docs/06-plan-de-trabajo.md):
 
-## 7. Estructura de este repositorio
+- [x] **Stage 0 — Foundations:** backend and frontend skeleton, PostgreSQL in
+  `docker-compose`, CI on GitHub Actions.
+- [ ] Stage 1 — Domain model and persistence (JPA entities + Flyway). D2 part
+  (academic model and seed data) in review.
+- [ ] Stage 2 — Authentication and access control.
+
+## 7. Structure of this repository
 
 ```
 SIERAP/
-├── README.md                          ← este archivo, punto de entrada
+├── README.md                          ← this file, entry point
 ├── docs/
-│   ├── 00-guia-oficial-momento1.md    ← rúbrica y requisitos oficiales de la UPC
-│   ├── 01-planteamiento-problema.md   ← problema, causas, consecuencias
-│   ├── 02-descripcion-solucion.md     ← alcance, factor diferenciador, stack
-│   ├── 03-entidades-dominio.md        ← listado y descripción de clases
-│   ├── 04-requerimientos-funcionales.md ← 12 requerimientos por rol (lluvia de ideas formalizada)
-│   ├── 05-decisiones-tecnicas.md      ← ADRs: por qué Java/Spring/Postgres/React
-│   ├── 06-plan-de-trabajo.md          ← etapas, reparto entre los 3 devs, ramas y pruebas
-│   ├── diagramas/                     ← clases, jerarquías y capas (Mermaid + .drawio + PNG)
-│   └── entregas/                      ← documentos formales de entrega (incluye presentacion-sierap.pptx)
-├── backend/                           ← API Java 21 + Spring Boot 3 (Maven)
+│   ├── 00-guia-oficial-momento1.md    ← official UPC rubric and requirements (Spanish transcription)
+│   ├── 01-planteamiento-problema.md   ← problem, causes, consequences
+│   ├── 02-descripcion-solucion.md     ← scope, differentiating factor, stack
+│   ├── 03-entidades-dominio.md        ← list and description of classes (+ Spanish → English names)
+│   ├── 04-requerimientos-funcionales.md ← 12 requirements by role (formalized brainstorming)
+│   ├── 05-decisiones-tecnicas.md      ← ADRs: why Java/Spring/Postgres/React and the rest
+│   ├── 06-plan-de-trabajo.md          ← stages, split among the 3 devs, branches and tests
+│   ├── diagramas/                     ← class, hierarchy and layer diagrams (Mermaid + .drawio + PNG)
+│   └── entregas/                      ← formal delivery documents (includes presentacion-sierap.pptx)
+├── backend/                           ← Java 21 + Spring Boot 3 API (Maven)
 │   └── src/main/java/co/edu/unicesar/sierap/
-│       ├── controller/  dto/  mapper/          ← presentación (API REST)
-│       ├── service/  service/impl/             ← lógica de negocio
-│       ├── repository/                         ← datos (Spring Data JPA)
-│       ├── entity/  entity/enums/              ← entidades del dominio
-│       └── security/  exception/  config/      ← transversales
-├── frontend/                          ← app React + TypeScript (Vite, Tailwind, shadcn/ui)
-├── docker-compose.yml                 ← PostgreSQL para desarrollo local
-└── .github/workflows/ci.yml           ← CI: build y pruebas de backend y frontend
+│       ├── controller/  dto/  mapper/          ← presentation (REST API)
+│       ├── service/  service/impl/             ← business logic
+│       ├── repository/                         ← data (Spring Data JPA)
+│       ├── entity/  entity/enums/              ← domain entities
+│       └── security/  exception/  config/      ← cross-cutting
+├── frontend/                          ← React + TypeScript app (Vite, Tailwind, shadcn/ui)
+├── docker-compose.yml                 ← PostgreSQL for local development
+└── .github/workflows/ci.yml           ← CI: backend and frontend build and tests
 ```
 
-## 8. Cómo levantar el proyecto en local
+## 8. How to run the project locally
 
-**Requisitos:** JDK 21, Node.js 22 o superior y Docker (Docker Desktop en
-Windows/macOS). No hace falta instalar Maven: el repo trae el Maven Wrapper
+**Requirements:** JDK 21, Node.js 22 or later and Docker (Docker Desktop on
+Windows/macOS). There is no need to install Maven: the repo ships the Maven Wrapper
 (`mvnw`).
 
 ```bash
-# 1. Base de datos (PostgreSQL 17 en localhost:5432, usuario/clave: sierap/sierap)
+# 1. Database (PostgreSQL 17 on localhost:5432, user/password: sierap/sierap)
 docker compose up -d
 
-# 2. Backend — API en http://localhost:8080   (en Windows: mvnw.cmd spring-boot:run)
+# 2. Backend — API on http://localhost:8080   (Windows PowerShell: .\mvnw.cmd spring-boot:run)
 cd backend
 ./mvnw spring-boot:run
 
-# 3. Frontend — en otra terminal, app en http://localhost:5173
+# 3. Frontend — in another terminal, app on http://localhost:5173
 cd frontend
 npm install
 npm run dev
 ```
 
-Si todo está bien, la página de inicio muestra **"API conectada"** y **"Base de datos
-disponible"**. También se puede verificar con `curl http://localhost:8080/api/estado`.
+If everything is fine, the home page shows **"API conectada"** and **"Base de datos
+disponible"**. It can also be checked with `curl http://localhost:8080/api/status`.
 
-**Pruebas:**
+**Tests:**
 
 ```bash
-cd backend && ./mvnw verify                       # unitarias + integración (requiere Docker)
+cd backend && ./mvnw verify                       # unit + integration (requires Docker)
 cd frontend && npm run lint && npm test && npm run build
 ```
 
-**Configuración propia sin tocar archivos versionados:** el backend lee
-`DB_URL`, `DB_USERNAME` y `DB_PASSWORD` del entorno; también se puede crear un
-`backend/application-local.yml` (ignorado por git) y arrancar con
-`./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,local`. Si el puerto 5432 ya
-está ocupado por otro PostgreSQL: `DB_PORT=5433 docker compose up -d` y
+**Own configuration without touching versioned files:** the backend reads `DB_URL`,
+`DB_USERNAME` and `DB_PASSWORD` from the environment; you can also create a
+`backend/application-local.yml` (ignored by git) and start with
+`./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,local`. If port 5432 is already
+taken by another PostgreSQL: `DB_PORT=5433 docker compose up -d` and
 `DB_URL=jdbc:postgresql://localhost:5433/sierap`.
 
-## 9. Cómo usar este repositorio con Claude
+**Migrations:** the schema is created by Flyway at startup. A migration that is already
+in `develop` is never edited; if your local database has an older version of a migration
+that was still in review, reset it with `docker compose down -v && docker compose up -d`.
 
-- **Claude Projects (planeación, discusión con el equipo):** sube todo el contenido
-  de `/docs` como Project Knowledge. Cualquier miembro del equipo que abra una
-  conversación nueva dentro del Project tendrá automáticamente todo este contexto.
-- **Claude Code (implementación):** clona este repo localmente y trabaja desde su
-  raíz. El archivo `CLAUDE.md` en la raíz (ver siguiente) le da a Claude Code el
-  mismo contexto de forma automática en cada sesión, sin que tengas que repetirlo.
+## 9. How to use this repository with Claude
 
-## 10. Reglas de documentación del equipo
+- **Claude Projects (planning, team discussion):** upload the whole content of `/docs`
+  as Project Knowledge. Any team member who opens a new conversation inside the
+  Project will automatically have all this context.
+- **Claude Code (implementation):** clone this repo locally and work from its root.
+  The `CLAUDE.md` file at the root gives Claude Code the same context automatically in
+  every session, without you having to repeat it.
 
-Según lo acordado, el equipo debe documentar:
+## 10. Team documentation rules
 
-- El porqué la universidad se acoge a evaluar los RAP (contexto institucional).
-- Todo lo que se haga con asistencia de IA (para sustentar el proyecto ante el
-  docente sin ambigüedad sobre autoría/proceso).
-- El software en sí (arquitectura, decisiones, avance).
+As agreed, the team must document:
 
-Cada decisión técnica relevante debe quedar registrada en
-[`docs/05-decisiones-tecnicas.md`](docs/05-decisiones-tecnicas.md) con su
-justificación, siguiendo el formato de Architecture Decision Record (ADR).
+- Why the university adopted RAP assessment (institutional context).
+- Everything done with AI assistance (to present the project to the teacher without
+  ambiguity about authorship/process).
+- The software itself (architecture, decisions, progress).
+
+Every relevant technical decision must be recorded in
+[`docs/05-decisiones-tecnicas.md`](docs/05-decisiones-tecnicas.md) with its rationale,
+following the Architecture Decision Record (ADR) format.

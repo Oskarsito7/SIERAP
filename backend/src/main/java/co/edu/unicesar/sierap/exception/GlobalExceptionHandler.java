@@ -44,64 +44,64 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-    private final Clock reloj;
+    private final Clock clock;
 
     /**
      * Crea el manejador con el reloj de la aplicación.
      *
-     * @param reloj reloj usado para fechar cada respuesta de error
+     * @param clock reloj usado para fechar cada respuesta de error
      */
-    public GlobalExceptionHandler(Clock reloj) {
-        this.reloj = reloj;
+    public GlobalExceptionHandler(Clock clock) {
+        this.clock = clock;
     }
 
     /**
      * Maneja los errores de negocio propios de SIERAP.
      *
-     * @param excepcion error lanzado por un service
-     * @param peticion  petición HTTP que lo originó
+     * @param exception error lanzado por un service
+     * @param request   petición HTTP que lo originó
      * @return respuesta con el código HTTP que define la subclase
      */
     @ExceptionHandler(SierapException.class)
-    public ResponseEntity<ErrorResponse> manejarSierapException(SierapException excepcion,
-                                                                HttpServletRequest peticion) {
-        HttpStatus estado = excepcion.getEstadoHttp();
-        return ResponseEntity.status(estado)
-                .body(crearCuerpo(estado, excepcion.getMessage(), peticion.getRequestURI(), Map.of()));
+    public ResponseEntity<ErrorResponse> handleSierapException(SierapException exception,
+                                                               HttpServletRequest request) {
+        HttpStatus status = exception.getHttpStatus();
+        return ResponseEntity.status(status)
+                .body(buildBody(status, exception.getMessage(), request.getRequestURI(), Map.of()));
     }
 
     /**
      * Último recurso para errores no previstos: se registran completos en el log
      * y al cliente solo se le devuelve un mensaje genérico.
      *
-     * @param excepcion error no controlado
-     * @param peticion  petición HTTP que lo originó
+     * @param exception error no controlado
+     * @param request   petición HTTP que lo originó
      * @return respuesta {@code 500 Internal Server Error}
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> manejarExcepcionInesperada(Exception excepcion,
-                                                                    HttpServletRequest peticion) {
-        LOGGER.error("Error inesperado procesando {}", peticion.getRequestURI(), excepcion);
-        HttpStatus estado = HttpStatus.INTERNAL_SERVER_ERROR;
-        return ResponseEntity.status(estado)
-                .body(crearCuerpo(estado, "Ocurrió un error inesperado. Intente de nuevo más tarde.",
-                        peticion.getRequestURI(), Map.of()));
+    public ResponseEntity<ErrorResponse> handleUnexpectedException(Exception exception,
+                                                                   HttpServletRequest request) {
+        LOGGER.error("Unexpected error processing {}", request.getRequestURI(), exception);
+        HttpStatus status = HttpStatus.INTERNAL_SERVER_ERROR;
+        return ResponseEntity.status(status)
+                .body(buildBody(status, "Ocurrió un error inesperado. Intente de nuevo más tarde.",
+                        request.getRequestURI(), Map.of()));
     }
 
     /**
      * Responde {@code 400} con el primer mensaje de validación de cada campo inválido.
      */
     @Override
-    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException excepcion,
-                                                                  HttpHeaders cabeceras,
-                                                                  HttpStatusCode estado,
-                                                                  WebRequest peticion) {
-        Map<String, String> errores = new LinkedHashMap<>();
-        excepcion.getBindingResult().getFieldErrors()
-                .forEach(error -> errores.putIfAbsent(error.getField(), error.getDefaultMessage()));
-        return ResponseEntity.status(estado)
-                .headers(cabeceras)
-                .body(crearCuerpo(estado, "La solicitud tiene datos inválidos", obtenerRuta(peticion), errores));
+    protected ResponseEntity<Object> handleMethodArgumentNotValid(MethodArgumentNotValidException exception,
+                                                                  HttpHeaders headers,
+                                                                  HttpStatusCode status,
+                                                                  WebRequest request) {
+        Map<String, String> fieldErrors = new LinkedHashMap<>();
+        exception.getBindingResult().getFieldErrors()
+                .forEach(error -> fieldErrors.putIfAbsent(error.getField(), error.getDefaultMessage()));
+        return ResponseEntity.status(status)
+                .headers(headers)
+                .body(buildBody(status, "La solicitud tiene datos inválidos", pathOf(request), fieldErrors));
     }
 
     /**
@@ -109,37 +109,37 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
      * {@link ProblemDetail} por defecto por el formato {@link ErrorResponse} de SIERAP.
      */
     @Override
-    protected ResponseEntity<Object> createResponseEntity(Object cuerpo,
-                                                          HttpHeaders cabeceras,
-                                                          HttpStatusCode estado,
-                                                          WebRequest peticion) {
-        return ResponseEntity.status(estado)
-                .headers(cabeceras)
-                .body(crearCuerpo(estado, mensajePorEstado(estado, cuerpo), obtenerRuta(peticion), Map.of()));
+    protected ResponseEntity<Object> createResponseEntity(Object body,
+                                                          HttpHeaders headers,
+                                                          HttpStatusCode status,
+                                                          WebRequest request) {
+        return ResponseEntity.status(status)
+                .headers(headers)
+                .body(buildBody(status, messageForStatus(status, body), pathOf(request), Map.of()));
     }
 
-    private ErrorResponse crearCuerpo(HttpStatusCode estado, String mensaje, String ruta,
-                                      Map<String, String> errores) {
-        HttpStatus estadoConocido = HttpStatus.resolve(estado.value());
-        String error = estadoConocido != null ? estadoConocido.getReasonPhrase() : "Error";
-        return new ErrorResponse(LocalDateTime.now(reloj), estado.value(), error, mensaje, ruta, errores);
+    private ErrorResponse buildBody(HttpStatusCode status, String message, String path,
+                                    Map<String, String> fieldErrors) {
+        HttpStatus knownStatus = HttpStatus.resolve(status.value());
+        String error = knownStatus != null ? knownStatus.getReasonPhrase() : "Error";
+        return new ErrorResponse(LocalDateTime.now(clock), status.value(), error, message, path, fieldErrors);
     }
 
-    private static String mensajePorEstado(HttpStatusCode estado, Object cuerpo) {
-        return switch (estado.value()) {
+    private static String messageForStatus(HttpStatusCode status, Object body) {
+        return switch (status.value()) {
             case 400 -> "La solicitud no es válida";
             case 404 -> "La ruta solicitada no existe";
             case 405 -> "Método HTTP no permitido en esta ruta";
             case 415 -> "Tipo de contenido no soportado";
-            default -> cuerpo instanceof ProblemDetail detalle && detalle.getDetail() != null
-                    ? detalle.getDetail()
+            default -> body instanceof ProblemDetail detail && detail.getDetail() != null
+                    ? detail.getDetail()
                     : "No se pudo procesar la solicitud";
         };
     }
 
-    private static String obtenerRuta(WebRequest peticion) {
-        return peticion instanceof ServletWebRequest peticionServlet
-                ? peticionServlet.getRequest().getRequestURI()
+    private static String pathOf(WebRequest request) {
+        return request instanceof ServletWebRequest servletRequest
+                ? servletRequest.getRequest().getRequestURI()
                 : "";
     }
 }

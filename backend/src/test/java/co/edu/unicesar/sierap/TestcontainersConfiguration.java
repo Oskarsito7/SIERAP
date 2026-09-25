@@ -18,7 +18,7 @@ import org.testcontainers.utility.DockerImageName;
 public class TestcontainersConfiguration {
 
     /** Misma imagen que {@code docker-compose.yml}, para no probar contra otra versión. */
-    private static final String IMAGEN_POSTGRES = "postgres:17-alpine";
+    private static final String POSTGRES_IMAGE = "postgres:17-alpine";
 
     /**
      * Contenedor de PostgreSQL compartido por el contexto de pruebas.
@@ -27,7 +27,7 @@ public class TestcontainersConfiguration {
      */
     @Bean
     @ServiceConnection
-    public PostgreSQLContainer<?> contenedorPostgres() {
-        return new PostgreSQLContainer<>(DockerImageName.parse(IMAGEN_POSTGRES));
+    public PostgreSQLContainer<?> postgresContainer() {
+        return new PostgreSQLContainer<>(DockerImageName.parse(POSTGRES_IMAGE));
     }
 }

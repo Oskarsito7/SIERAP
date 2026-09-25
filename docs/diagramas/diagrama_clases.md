@@ -1,296 +1,303 @@
-# Diagrama de clases (vigente · Etapa 1)
+# Class diagram (current · Stage 1)
 
-Modelo de dominio de SIERAP con herencia, clases abstractas, interfaces,
-enumeraciones y relaciones de composición, agregación, asociación y dependencia.
-GitHub renderiza este diagrama directamente a partir del código Mermaid.
+SIERAP domain model with inheritance, abstract classes, interfaces, enumerations and
+composition, aggregation, association and dependency relationships. GitHub renders
+this diagram directly from the Mermaid code.
 
-> **Este es el diagrama vigente** y el contrato de la Etapa 1: incorpora las
-> decisiones del 2026-09-24 (ver `docs/04`, sección "Decisiones del equipo", y los
-> ADR-009 a ADR-012). La versión con diseño detallado
-> ([`diagrama_clases_mejorado.png`](diagrama_clases_mejorado.png) · editable en
-> [`diagrama_clases_mejorado.drawio`](diagrama_clases_mejorado.drawio)) corresponde
-> a la Fase 2 y se regenera al cerrar la Etapa 1. El diagrama preliminar de la
-> Fase 1 sigue en [`diagrama_clases.drawio`](diagrama_clases.drawio).
+> **This is the current diagram** and the Stage 1 contract: it includes the
+> 2026-09-24 decisions (see `docs/04`, "Team decisions" section, and ADR-009 to
+> ADR-014). Class and attribute names are in English (ADR-014); the Spanish → English
+> name table is in [`../03-entidades-dominio.md`](../03-entidades-dominio.md). The
+> detailed-design version ([`diagrama_clases_mejorado.png`](diagrama_clases_mejorado.png)
+> · editable in [`diagrama_clases_mejorado.drawio`](diagrama_clases_mejorado.drawio))
+> belongs to Phase 2 and is regenerated when Stage 1 closes. The Phase 1 preliminary
+> diagram is still in [`diagrama_clases.drawio`](diagrama_clases.drawio).
 
 ```mermaid
 classDiagram
 direction TB
 
-%% ================= Usuarios y roles (D1) =================
-class Usuario {
+%% ================= Users and roles (D1) =================
+class User {
   <<abstract>>
   -id: Long
-  -nombres: String
-  -apellidos: String
-  -tipoDocumento: TipoDocumento
-  -numeroDocumento: String
-  -correo: String
+  -firstNames: String
+  -lastNames: String
+  -documentType: DocumentType
+  -documentNumber: String
+  -email: String
   -passwordHash: String
-  -activo: boolean
-  -fechaCreacion: LocalDateTime
-  +getRol()* RolUsuario
-  +getNombreCompleto() String
-  +estaActivo() boolean
+  -active: boolean
+  -createdAt: LocalDateTime
+  +getRole()* UserRole
+  +getFullName() String
+  +isActive() boolean
 }
-class Evaluador {
+class Evaluator {
   <<interface>>
-  +calificar(grupo: Grupo) Evaluacion
-  +getGruposAsignados() List~Grupo~
-  +puedeEvaluar(grupo: Grupo, hoy: LocalDate) boolean
+  +grade(group: ProjectGroup) Evaluation
+  +getAssignedGroups() List~ProjectGroup~
+  +canEvaluate(group: ProjectGroup, today: LocalDate) boolean
 }
-class RolUsuario {
+class UserRole {
   <<enumeration>>
   SUPER_ADMIN
   ADMIN
-  DOCENTE
-  ESTUDIANTE
-  EVALUADOR_EXTERNO
+  TEACHER
+  STUDENT
+  EXTERNAL_EVALUATOR
 }
-class TipoDocumento {
+class DocumentType {
   <<enumeration>>
   CC
   TI
   CE
-  PASAPORTE
+  PASSPORT
 }
 class SuperAdmin {
-  +getRol() RolUsuario
+  +getRole() UserRole
 }
 class Admin {
-  -facultad: Facultad
-  +getRol() RolUsuario
+  -faculty: Faculty
+  +getRole() UserRole
 }
-class Docente {
-  -facultad: Facultad
-  +getRol() RolUsuario
+class Teacher {
+  -faculty: Faculty
+  +getRole() UserRole
 }
-class Estudiante {
-  -codigoEstudiante: String
-  -semestreActual: int
-  -programa: Programa
-  +getRol() RolUsuario
+class Student {
+  -studentCode: String
+  -currentSemester: int
+  -program: Program
+  +getRole() UserRole
 }
-class EvaluadorExterno {
-  -tipoEvaluador: TipoEvaluador
-  -organizacion: String
-  -cargo: String
-  -anioGraduacion: Integer
-  -programaEgreso: Programa
-  +getRol() RolUsuario
+class ExternalEvaluator {
+  -evaluatorType: EvaluatorType
+  -organization: String
+  -position: String
+  -graduationYear: Integer
+  -graduationProgram: Program
+  +getRole() UserRole
 }
-class TipoEvaluador {
+class EvaluatorType {
   -id: Long
-  -nombre: String
-  -descripcion: String
-  -activo: boolean
+  -name: String
+  -description: String
+  -active: boolean
 }
 
-%% ================= Estructura académica y configuración (D2) =================
-class ParametroGlobal {
-  -clave: String
-  -valor: String
-  -descripcion: String
+%% ================= Academic structure and configuration (D2) =================
+class GlobalParameter {
+  -key: String
+  -value: String
+  -description: String
 }
-class Facultad {
+class Faculty {
   -id: Long
-  -nombre: String
-  -programas: List~Programa~
+  -code: String
+  -name: String
+  -programs: List~Program~
 }
-class Programa {
+class Program {
   -id: Long
-  -codigo: String
-  -nombre: String
-  -facultad: Facultad
+  -code: String
+  -name: String
+  -faculty: Faculty
+  -moments: List~Moment~
 }
-class PeriodoAcademico {
+class AcademicPeriod {
   -id: Long
-  -codigo: String
-  -fechaInicio: LocalDate
-  -fechaFin: LocalDate
-  -fechaLimiteEvaluacionUPC: LocalDate
-  +contiene(fecha: LocalDate) boolean
+  -code: String
+  -startDate: LocalDate
+  -endDate: LocalDate
+  -upcEvaluationDeadline: LocalDate
+  +contains(date: LocalDate) boolean
 }
-class Momento {
+class Moment {
   -id: Long
-  -numero: int
-  -nombre: String
-  -asignatura: String
-  -semestreDesde: int
-  -semestreHasta: int
-  -nivelExigencia: String
-  -minIntegrantes: int
-  -maxIntegrantes: int
-  -estado: EstadoMomento
-  -inicioConformacion: LocalDate
-  -finConformacion: LocalDate
-  -inicioEntregas: LocalDate
-  -finEntregas: LocalDate
-  -inicioCalificacion: LocalDate
-  -finCalificacion: LocalDate
-  -programa: Programa
-  -periodo: PeriodoAcademico
-  -raps: List~RAP~
-  +lanzar() void
-  +estaEnConformacion(hoy: LocalDate) boolean
-  +estaEnEntregas(hoy: LocalDate) boolean
-  +estaEnCalificacion(hoy: LocalDate) boolean
+  -number: int
+  -name: String
+  -subject: String
+  -semesterFrom: int
+  -semesterTo: int
+  -requirementLevel: String
+  -minMembers: int
+  -maxMembers: int
+  -status: MomentStatus
+  -groupFormationStart: LocalDate
+  -groupFormationEnd: LocalDate
+  -submissionStart: LocalDate
+  -submissionEnd: LocalDate
+  -gradingStart: LocalDate
+  -gradingEnd: LocalDate
+  -program: Program
+  -period: AcademicPeriod
+  -learningOutcomes: List~LearningOutcome~
+  +launch() void
+  +isInGroupFormation(today: LocalDate) boolean
+  +isInSubmission(today: LocalDate) boolean
+  +isInGrading(today: LocalDate) boolean
+  +getMaxScore() BigDecimal
 }
-class EstadoMomento {
+class MomentStatus {
   <<enumeration>>
-  CONFIGURACION
-  LANZADO
+  CONFIGURATION
+  LAUNCHED
 }
-class RAP {
+class LearningOutcome {
   -id: Long
-  -codigo: String
-  -descripcion: String
-  -criterios: List~CriterioEvaluacion~
-  +getPuntajeMaximo() double
+  -code: String
+  -description: String
+  -criteria: List~EvaluationCriterion~
+  +getMaxScore() BigDecimal
 }
-class CriterioEvaluacion {
+class EvaluationCriterion {
   -id: Long
-  -descripcion: String
-  -orden: int
-  -niveles: List~NivelDesempeno~
-  +getPuntajeMaximo() double
+  -description: String
+  -displayOrder: int
+  -levels: List~PerformanceLevel~
+  +getMaxScore() BigDecimal
 }
-class NivelDesempeno {
+class PerformanceLevel {
   -id: Long
-  -nombre: String
-  -descripcion: String
-  -puntaje: double
-  -orden: int
+  -name: String
+  -description: String
+  -score: BigDecimal
+  -displayOrder: int
 }
 
-%% ================= Estructura operativa (D3) =================
-class Grupo {
+%% ================= Operations (D3) =================
+class ProjectGroup {
   -id: Long
-  -nombre: String
-  -tituloProyecto: String
-  -momento: Momento
-  -docente: Docente
-  -integrantes: List~Estudiante~
-  -evaluadores: List~EvaluadorExterno~
-  -fechaLimiteEntrega: LocalDate
-  -fechaEvaluacion: LocalDate
-  +inscribir(e: Estudiante) void
-  +estaCompleto() boolean
-  +getUltimaEntrega() Entrega
-  +getNotaFinal() double
+  -name: String
+  -projectTitle: String
+  -moment: Moment
+  -teacher: Teacher
+  -members: List~Student~
+  -evaluators: List~ExternalEvaluator~
+  -submissionDeadline: LocalDate
+  -evaluationDate: LocalDate
+  +enroll(s: Student) void
+  +isFull() boolean
+  +getLatestSubmission() Submission
+  +getFinalGrade() BigDecimal
 }
-class Entrega {
+class Submission {
   -id: Long
-  -numeroVersion: int
-  -rutaArchivoZip: String
-  -rutaPresentacion: String
-  -fechaSubida: LocalDateTime
-  +fueATiempo(limite: LocalDate) boolean
+  -versionNumber: int
+  -zipFilePath: String
+  -presentationPath: String
+  -submittedAt: LocalDateTime
+  +wasOnTime(deadline: LocalDate) boolean
 }
 
-%% ================= Evaluación y reportería (D3) =================
-class Evaluacion {
+%% ================= Evaluation and reporting (D3) =================
+class Evaluation {
   -id: Long
-  -fecha: LocalDateTime
-  -comentario: String
-  -calificaciones: List~CalificacionCriterio~
-  +calcularNotaTotal() double
-  +calcularNotaPorRAP(rap: RAP) double
+  -date: LocalDateTime
+  -comment: String
+  -grades: List~CriterionGrade~
+  +calculateTotalGrade() BigDecimal
+  +calculateGradeByOutcome(outcome: LearningOutcome) BigDecimal
 }
-class CalificacionCriterio {
+class CriterionGrade {
   -id: Long
-  -criterio: CriterioEvaluacion
-  -nivelElegido: NivelDesempeno
-  -puntaje: double
+  -criterion: EvaluationCriterion
+  -selectedLevel: PerformanceLevel
+  -score: BigDecimal
 }
-class Reporte {
+class Report {
   <<abstract>>
-  -fechaGeneracion: LocalDateTime
-  -periodo: PeriodoAcademico
-  +generar()* byte[]
+  -generatedAt: LocalDateTime
+  -period: AcademicPeriod
+  +generate()* byte[]
 }
-class ReporteIndividual {
-  -estudiante: Estudiante
-  +generar() byte[]
+class IndividualReport {
+  -student: Student
+  +generate() byte[]
 }
-class ReporteGrupal {
-  -grupo: Grupo
-  +generar() byte[]
+class GroupReport {
+  -group: ProjectGroup
+  +generate() byte[]
 }
-class ReporteComparativo {
-  -periodoA: PeriodoAcademico
-  -periodoB: PeriodoAcademico
-  +generar() byte[]
+class ComparativeReport {
+  -periodA: AcademicPeriod
+  -periodB: AcademicPeriod
+  +generate() byte[]
 }
 
-%% ================= Relaciones =================
-Usuario <|-- SuperAdmin
-Usuario <|-- Admin
-Usuario <|-- Docente
-Usuario <|-- Estudiante
-Usuario <|-- EvaluadorExterno
-Evaluador <|.. Docente
-Evaluador <|.. EvaluadorExterno
-Usuario ..> RolUsuario : «use»
-Usuario ..> TipoDocumento : «use»
+%% ================= Relationships =================
+User <|-- SuperAdmin
+User <|-- Admin
+User <|-- Teacher
+User <|-- Student
+User <|-- ExternalEvaluator
+Evaluator <|.. Teacher
+Evaluator <|.. ExternalEvaluator
+User ..> UserRole : «use»
+User ..> DocumentType : «use»
 
-SuperAdmin ..> ParametroGlobal : «gestiona»
-SuperAdmin ..> PeriodoAcademico : «gestiona»
-SuperAdmin ..> TipoEvaluador : «gestiona»
-Admin "1" -- "1" Facultad : administra
-Docente "*" -- "1" Facultad : pertenece a
-Estudiante "*" -- "1" Programa : cursa
-EvaluadorExterno "*" -- "1" TipoEvaluador : es de tipo
-EvaluadorExterno "*" -- "0..1" Programa : egresó de
+SuperAdmin ..> GlobalParameter : «manages»
+SuperAdmin ..> AcademicPeriod : «manages»
+SuperAdmin ..> EvaluatorType : «manages»
+Admin "1" -- "1" Faculty : administers
+Teacher "*" -- "1" Faculty : belongs to
+Student "*" -- "1" Program : studies
+ExternalEvaluator "*" -- "1" EvaluatorType : is of type
+ExternalEvaluator "*" -- "0..1" Program : graduated from
 
-Facultad "1" *-- "1..*" Programa
-Programa "1" *-- "*" Momento
-Momento "*" -- "1" PeriodoAcademico : se configura en
-Momento ..> EstadoMomento : «use»
-Momento "1" *-- "1..*" RAP
-RAP "1" *-- "1..*" CriterioEvaluacion
-CriterioEvaluacion "1" *-- "1..*" NivelDesempeno
+Faculty "1" *-- "1..*" Program
+Program "1" *-- "*" Moment
+Moment "*" -- "1" AcademicPeriod : configured in
+Moment ..> MomentStatus : «use»
+Moment "1" *-- "1..*" LearningOutcome
+LearningOutcome "1" *-- "1..*" EvaluationCriterion
+EvaluationCriterion "1" *-- "1..*" PerformanceLevel
 
-Momento "1" *-- "*" Grupo
-Docente "1" -- "*" Grupo : habilita
-Grupo "*" o-- "min..max" Estudiante : un grupo por momento
-Grupo "*" -- "*" EvaluadorExterno : designados
-Grupo "1" *-- "0..*" Entrega
+Moment "1" *-- "*" ProjectGroup
+Teacher "1" -- "*" ProjectGroup : enables
+ProjectGroup "*" o-- "min..max" Student : one group per moment
+ProjectGroup "*" -- "*" ExternalEvaluator : assigned
+ProjectGroup "1" *-- "0..*" Submission
 
-Grupo "1" *-- "0..*" Evaluacion
-Evaluacion "*" -- "1" Evaluador : realizada por
-Evaluacion "1" *-- "1..*" CalificacionCriterio
-CalificacionCriterio "*" -- "1" CriterioEvaluacion : califica
-CalificacionCriterio "*" -- "1" NivelDesempeno : nivel elegido
+ProjectGroup "1" *-- "0..*" Evaluation
+Evaluation "*" -- "1" Evaluator : made by
+Evaluation "1" *-- "1..*" CriterionGrade
+CriterionGrade "*" -- "1" EvaluationCriterion : grades
+CriterionGrade "*" -- "1" PerformanceLevel : selected level
 
-Reporte <|-- ReporteIndividual
-Reporte <|-- ReporteGrupal
-Reporte <|-- ReporteComparativo
-Reporte ..> Evaluacion : «use»
+Report <|-- IndividualReport
+Report <|-- GroupReport
+Report <|-- ComparativeReport
+Report ..> Evaluation : «use»
 ```
 
-## Cambios de la Etapa 1 (decisiones del 2026-09-24)
+## Stage 1 changes (2026-09-24 decisions)
 
-| Cambio | Motivo |
+| Change | Reason |
 |---|---|
-| `Usuario`: `nombre` → `nombres` + `apellidos`; nuevos `tipoDocumento` y `numeroDocumento`; enum `TipoDocumento` | Guardar el documento de identidad además del correo, que es el dato de inicio de sesión. |
-| `Empresario` y `Egresado` → una sola subclase `EvaluadorExterno` con `TipoEvaluador` (catálogo) | Se deben poder crear más tipos de evaluador sin programar (ADR-011). |
-| `Docente` pertenece a una `Facultad` | Solo usan SIERAP los docentes con proyecto de aula, que dictan en su facultad. |
-| `Estudiante` pierde `grupo` y gana `programa` | Un estudiante tiene un grupo por momento con historial; la relación queda del lado de `Grupo`. |
-| `Momento` pertenece a un `PeriodoAcademico`; `nivelExigencia` pasa a texto libre | La configuración se versiona por periodo y no hay niveles estándar (ADR-010). |
-| `Momento` gana `estado` (`EstadoMomento`), integrantes mín./máx. y tres ventanas de fechas | Ciclo de vida del momento: configuración → lanzar → entregas → calificación (ADR-012). |
-| `RAP` pertenece a un `Momento` (composición) y pierde `pesoEvaluativo` | Cada momento tiene sus propios RAP; el peso lo dan los puntajes de sus criterios. |
-| Nuevas `CriterioEvaluacion` y `NivelDesempeno` (entidad) | Estructura de la rúbrica de la UPC: cada RAP tiene criterios y cada criterio niveles con puntaje, todo configurable. |
-| `Grupo` y `ProyectoAula` se fusionan; `Grupo` pertenece a un `Momento` | Cada grupo tiene un solo proyecto; el docente habilita grupos dentro de un momento. |
-| `CalificacionRAP` → `CalificacionCriterio` | El evaluador elige un nivel por criterio; el desempeño por RAP se calcula sumando. |
-| Se eliminan los enums `NivelExigencia` y `NivelDesempeno` | Nada estándar en el código (ADR-010). |
-| Sin autoevaluación del estudiante | `Estudiante` no implementa `Evaluador`. |
+| Every class, attribute and method moves to English (`Facultad` → `Faculty`, `Momento` → `Moment`, `RAP` → `LearningOutcome`, `CriterioEvaluacion` → `EvaluationCriterion`, `NivelDesempeno` → `PerformanceLevel`, `Grupo` → `ProjectGroup`…); the full table is in `docs/03` | Code and documentation in English; screens, error messages and Javadoc in Spanish (ADR-014). |
+| `Faculty` gains `code` (unique, required) | Institutional code of the faculty (e.g. `04`), like `Program.code` (e.g. `108`). |
+| Scores (`score`, `getMaxScore()`, grades) as `BigDecimal` instead of `double` | Exact sums: Moment 1 must add up to 5.00, not 4.9999… (ADR-013). |
+| `User`: `name` → `firstNames` + `lastNames`; new `documentType` and `documentNumber`; `DocumentType` enum | Store the identity document besides the email, which is the login field. |
+| `Empresario` and `Egresado` → a single `ExternalEvaluator` subclass with an `EvaluatorType` (catalog) | More evaluator types must be creatable without programming (ADR-011). |
+| `Teacher` belongs to a `Faculty` | Only teachers with a classroom project use SIERAP, and they teach in their faculty. |
+| `Student` loses `group` and gains `program` | A student has one group per moment with history; the relationship lives on the `ProjectGroup` side. |
+| `Moment` belongs to an `AcademicPeriod`; `requirementLevel` becomes free text | The configuration is versioned per period and there are no standard levels (ADR-010). |
+| `Moment` gains `status` (`MomentStatus`), min./max. members and three date windows | Moment lifecycle: configuration → launch → submissions → grading (ADR-012). |
+| `LearningOutcome` (RAP) belongs to a `Moment` (composition) and loses its evaluative weight | Each moment has its own RAP; the weight comes from the scores of its criteria. |
+| New `EvaluationCriterion` and `PerformanceLevel` (entity) | Structure of the UPC rubric: each RAP has criteria and each criterion levels with scores, all configurable. |
+| Group and classroom project merge into `ProjectGroup`, which belongs to a `Moment` | Each group has a single project; the teacher enables groups within a moment. |
+| Per-RAP grade → `CriterionGrade` | The evaluator picks one level per criterion; the performance per RAP is a sum. |
+| The `NivelExigencia` and `NivelDesempeno` enums are removed | Nothing standard in the code (ADR-010). |
+| No student self-assessment | `Student` does not implement `Evaluator`. |
 
-## Cambios frente al diagrama preliminar (Fase 1)
+## Changes compared with the preliminary diagram (Phase 1)
 
-| Cambio | Motivo |
+| Change | Reason |
 |---|---|
-| `PeriodoAcademico` (nueva) | RF 9 exige validar que la fecha de evaluación caiga en el rango de la UPC, y RF 12 compara resultados entre semestres y años: ambos necesitan el periodo como entidad. |
-| `ParametroGlobal` (nueva) | RF 11: el super_admin define parámetros globales (p. ej. integrantes por grupo) sin hardcodearlos. |
-| `Reporte` pasa a ser abstracta con 3 subclases | Cada tipo de reporte implementa su propio `generar()`: polimorfismo en lugar de un `switch` por tipo. Resuelve el pendiente de la Fase 1 sobre reportería. |
-| `Usuario.getRol()` abstracto | Cada rol lo sobrescribe; `iniciarSesion()` sale del dominio y pasa a `AuthService` (capa de servicio). |
-| Multiplicidad `3..5` en `Grupo`—`Estudiante` | Confirma la cardinalidad de la guía oficial que estaba pendiente. |
+| `AcademicPeriod` (new) | RF 9 requires validating that the evaluation date falls within the UPC range, and RF 12 compares results across semesters and years: both need the period as an entity. |
+| `GlobalParameter` (new) | RF 11: the super_admin defines global parameters without hard-coding them. |
+| `Report` becomes abstract with 3 subclasses | Each report type implements its own `generate()`: polymorphism instead of a `switch` by type. Resolves the Phase 1 open item about reporting. |
+| Abstract `User.getRole()` | Each role overrides it; login leaves the domain and moves to `AuthService` (service layer). |
+| Multiplicity `min..max` on `ProjectGroup`—`Student` | The number of members is configured per moment (Moment 1: 3 to 5). |

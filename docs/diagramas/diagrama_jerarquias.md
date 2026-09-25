@@ -1,82 +1,82 @@
-# Diagrama de jerarquías
+# Hierarchy diagram
 
-Cuatro jerarquías que estructuran SIERAP. GitHub renderiza cada bloque
-directamente a partir del código Mermaid.
+Four hierarchies that structure SIERAP. GitHub renders each block directly from the
+Mermaid code.
 
-> Versión con diseño detallado (los cuatro paneles en una sola lámina):
-> [`diagrama_jerarquias.png`](diagrama_jerarquias.png) · editable en
-> [`diagrama_jerarquias.drawio`](diagrama_jerarquias.drawio).
+> Detailed-design version (the four panels on a single sheet, still with the Spanish
+> names from before ADR-014): [`diagrama_jerarquias.png`](diagrama_jerarquias.png) ·
+> editable in [`diagrama_jerarquias.drawio`](diagrama_jerarquias.drawio).
 
-## 1. Jerarquía de herencia — Usuarios
+## 1. Inheritance hierarchy — Users
 
-Abstracción + herencia + interfaz: la base de la POO del proyecto.
+Abstraction + inheritance + interface: the basis of the project's OOP.
 
 ```mermaid
 classDiagram
 direction BT
-class Usuario {
+class User {
   <<abstract>>
-  -nombres: String
-  -apellidos: String
-  -correo: String
-  -activo: boolean
-  +getRol()* RolUsuario
+  -firstNames: String
+  -lastNames: String
+  -email: String
+  -active: boolean
+  +getRole()* UserRole
 }
-class Evaluador {
+class Evaluator {
   <<interface>>
-  +calificar(grupo) Evaluacion
-  +getGruposAsignados() List~Grupo~
+  +grade(group) Evaluation
+  +getAssignedGroups() List~ProjectGroup~
 }
-class SuperAdmin { +getRol() RolUsuario }
-class Admin { +getRol() RolUsuario }
-class Estudiante { +getRol() RolUsuario }
-class Docente { +getRol() RolUsuario }
-class EvaluadorExterno {
-  -tipoEvaluador: TipoEvaluador
-  +getRol() RolUsuario
+class SuperAdmin { +getRole() UserRole }
+class Admin { +getRole() UserRole }
+class Student { +getRole() UserRole }
+class Teacher { +getRole() UserRole }
+class ExternalEvaluator {
+  -evaluatorType: EvaluatorType
+  +getRole() UserRole
 }
 
-SuperAdmin --|> Usuario
-Admin --|> Usuario
-Estudiante --|> Usuario
-Docente --|> Usuario
-EvaluadorExterno --|> Usuario
-Docente ..|> Evaluador
-EvaluadorExterno ..|> Evaluador
+SuperAdmin --|> User
+Admin --|> User
+Student --|> User
+Teacher --|> User
+ExternalEvaluator --|> User
+Teacher ..|> Evaluator
+ExternalEvaluator ..|> Evaluator
 ```
 
-- `Usuario` es abstracta: no existe un "usuario genérico", solo los cinco roles concretos.
-- `getRol()` es polimórfico: cada subclase lo sobrescribe y Spring Security decide los permisos con ese valor.
-- Docente y EvaluadorExterno califican grupos, pero no comparten un padre propio
-  para eso: el comportamiento común se expresa con la interfaz `Evaluador`.
-- Empresario, egresado y los tipos que se creen después no son clases: son valores del
-  catálogo `TipoEvaluador` de un `EvaluadorExterno` (ADR-011).
-- Estudiante, Admin y SuperAdmin no evalúan, por eso no implementan `Evaluador`.
-- En JPA la herencia se mapea con `@Inheritance(JOINED)`: tabla `usuario` + una tabla por rol (ADR-009).
+- `User` is abstract: there is no "generic user", only the five concrete roles.
+- `getRole()` is polymorphic: each subclass overrides it and Spring Security decides permissions with that value.
+- `Teacher` and `ExternalEvaluator` grade groups, but they do not share a parent of
+  their own for that: the common behavior is expressed with the `Evaluator` interface.
+- Business person, alumnus and the types created later are not classes: they are values
+  of the `EvaluatorType` catalog of an `ExternalEvaluator` (ADR-011).
+- `Student`, `Admin` and `SuperAdmin` do not grade, so they do not implement `Evaluator`.
+- In JPA the inheritance is mapped with `@Inheritance(JOINED)`: an `app_user` table + one table per role (ADR-009).
 
-## 2. Jerarquías de herencia — Reportes y excepciones
+## 2. Inheritance hierarchies — Reports and exceptions
 
-Polimorfismo en la reportería y manejo centralizado de errores con `@ControllerAdvice`.
+Polymorphism in reporting and centralized error handling with `@ControllerAdvice`.
 
 ```mermaid
 classDiagram
 direction BT
-class Reporte {
+class Report {
   <<abstract>>
-  +generar()* byte[]
+  +generate()* byte[]
 }
-class ReporteIndividual {
-  +generar() byte[]
+class IndividualReport {
+  +generate() byte[]
 }
-class ReporteGrupal {
-  +generar() byte[]
+class GroupReport {
+  +generate() byte[]
 }
-class ReporteComparativo {
-  +generar() byte[]
+class ComparativeReport {
+  +generate() byte[]
 }
-ReporteIndividual --|> Reporte : por estudiante y RAP
-ReporteGrupal --|> Reporte : por grupo
-ReporteComparativo --|> Reporte : semestre X vs. Y
+IndividualReport --|> Report : per student and RAP
+GroupReport --|> Report : per group
+ComparativeReport --|> Report : semester X vs. Y
 ```
 
 ```mermaid
@@ -87,50 +87,46 @@ class RuntimeException {
 }
 class SierapException {
   <<abstract>>
-  -codigo: String
+  +getHttpStatus()* HttpStatus
 }
 class GlobalExceptionHandler {
   <<ControllerAdvice>>
-  +manejar(ex: SierapException)
+  +handleSierapException(ex: SierapException)
 }
-class RecursoNoEncontradoException {
+class ResourceNotFoundException {
   HTTP 404
 }
-class AccesoDenegadoException {
+class ForbiddenAccessException {
   HTTP 403
 }
-class FueraDeFechaException {
+class BusinessRuleException {
   HTTP 422
 }
-class ReglaNegocioException {
-  HTTP 400
-}
 SierapException --|> RuntimeException
-RecursoNoEncontradoException --|> SierapException
-AccesoDenegadoException --|> SierapException
-FueraDeFechaException --|> SierapException
-ReglaNegocioException --|> SierapException
-GlobalExceptionHandler ..> SierapException : «maneja»
+ResourceNotFoundException --|> SierapException
+ForbiddenAccessException --|> SierapException
+BusinessRuleException --|> SierapException
+GlobalExceptionHandler ..> SierapException : «handles»
 ```
 
-## 3. Jerarquía institucional y académica
+## 3. Institutional and academic hierarchy
 
-Configuración (super_admin / admin) → operación de cada momento (docente, estudiantes, evaluadores).
+Configuration (super_admin / admin) → operation of each moment (teacher, students, evaluators).
 
 ```mermaid
 flowchart TD
-  UPC["<b>Universidad Popular del Cesar</b><br/>institución · la configura el super_admin"]
-  FAC["<b>Facultad</b><br/>la administra un admin (decano)"]
-  PROG["<b>Programa</b><br/>ej. Ingeniería de Sistemas"]
-  OTROS["<b>Otros programas</b><br/>con su propia configuración"]
-  PER["<b>Periodo académico</b><br/>ej. 2026-2 · la configuración<br/>se define por periodo"]
-  M1["<b>Momento I</b><br/>ej. Programación II<br/>exigencia: la define el admin"]
-  M2["<b>Momento II</b><br/>ej. Ingeniería de Software II"]
-  M3["<b>Momento III</b><br/>ej. Electiva de profundización III"]
-  R1["<b>RAP</b> propios del momento<br/>el admin los crea, edita o elimina"]
-  R2["RAP propios del momento"]
-  R3["RAP propios del momento"]
-  CRI["<b>Criterios</b> de cada RAP<br/>→ <b>niveles</b> con su puntaje"]
+  UPC["<b>Universidad Popular del Cesar</b><br/>institution · configured by the super_admin"]
+  FAC["<b>Faculty</b><br/>managed by an admin (dean)"]
+  PROG["<b>Program</b><br/>e.g. Ingeniería de Sistemas"]
+  OTROS["<b>Other programs</b><br/>with their own configuration"]
+  PER["<b>Academic period</b><br/>e.g. 2026-2 · the configuration<br/>is defined per period"]
+  M1["<b>Moment I</b><br/>e.g. Programación II<br/>requirement level set by the admin"]
+  M2["<b>Moment II</b><br/>e.g. Ingeniería de Software II"]
+  M3["<b>Moment III</b><br/>e.g. Electiva de profundización III"]
+  R1["The moment's own <b>RAP</b><br/>created, edited or deleted by the admin"]
+  R2["The moment's own RAP"]
+  R3["The moment's own RAP"]
+  CRI["<b>Criteria</b> of each RAP<br/>→ <b>levels</b> with their score"]
 
   UPC --> FAC --> PROG --> PER
   FAC -.-> OTROS
@@ -139,15 +135,15 @@ flowchart TD
   M2 --> R2
   M3 --> R3
 
-  subgraph OP["Operación de un momento (ej. Momento I)"]
+  subgraph OP["Operation of a moment (e.g. Moment I)"]
     direction LR
-    GRP["<b>Grupo = proyecto de aula</b><br/>lo habilita un docente;<br/>los estudiantes se inscriben"]
-    GRP --> ENT["<b>Entregas</b><br/>v1, v2 … vn (historial)"]
-    GRP --> EV["<b>Evaluaciones</b><br/>docente · evaluadores externos"]
-    EV --> CAL["<b>Calificación por criterio</b><br/>nivel elegido y su puntaje"]
+    GRP["<b>Group = classroom project</b><br/>enabled by a teacher;<br/>students join it"]
+    GRP --> ENT["<b>Submissions</b><br/>v1, v2 … vn (history)"]
+    GRP --> EV["<b>Evaluations</b><br/>teacher · external evaluators"]
+    EV --> CAL["<b>Grade per criterion</b><br/>picked level and its score"]
   end
   M1 --> GRP
-  CAL -. contra los criterios .-> CRI
+  CAL -. against the criteria .-> CRI
 
   classDef acad fill:#DCFCE7,stroke:#2F855A,color:#1F2937
   classDef oper fill:#FEF3C7,stroke:#B7791F,color:#1F2937
@@ -161,26 +157,26 @@ flowchart TD
   class EV,CAL eval
 ```
 
-Cada momento tiene sus propios RAP, criterios y niveles con puntaje, definidos por el
-admin en cada periodo académico; nada viene fijo en el código (ADR-010). La nota de una
-evaluación es la suma de los puntajes de los niveles elegidos en cada criterio.
+Each moment has its own RAP, criteria and levels with scores, defined by the admin in
+each academic period; nothing is fixed in the code (ADR-010). The grade of an
+evaluation is the sum of the scores of the levels picked in each criterion.
 
-## 4. Jerarquía de roles y alcance de acceso
+## 4. Role hierarchy and access scope
 
-Cada nivel ve solo un subconjunto de lo que ve el nivel superior. El filtrado se aplica
-en la capa de servicio, no en la interfaz.
+Each level sees only a subset of what the level above sees. Filtering is applied in the
+service layer, not in the user interface.
 
 ```mermaid
 flowchart TD
-  SA["<b>Super Admin</b><br/>Alcance: toda la institución<br/>Parámetros, periodos, facultades,<br/>tipos de evaluador"]
-  AD["<b>Admin (decano)</b><br/>Alcance: su facultad<br/>Configura y lanza los momentos"]
-  DC["<b>Docente</b><br/>Alcance: los grupos que habilitó<br/>Fechas y evaluadores de sus grupos"]
-  ES["<b>Estudiante</b><br/>Ve los grupos del momento,<br/>se inscribe, entrega, consulta su nota"]
-  EX["<b>Evaluador externo</b><br/>empresario · egresado · …<br/>Alcance: grupos designados"]
+  SA["<b>Super Admin</b><br/>Scope: the whole institution<br/>Parameters, periods, faculties,<br/>evaluator types"]
+  AD["<b>Admin (dean)</b><br/>Scope: their faculty<br/>Configures and launches the moments"]
+  DC["<b>Teacher</b><br/>Scope: the groups they enabled<br/>Dates and evaluators of their groups"]
+  ES["<b>Student</b><br/>Sees the groups of the moment,<br/>joins, submits, checks their grade"]
+  EX["<b>External evaluator</b><br/>business person · alumnus · …<br/>Scope: assigned groups"]
 
   SA --> AD --> DC
-  DC -. habilita grupos para .-> ES
-  DC -- crea y designa --> EX
+  DC -. enables groups for .-> ES
+  DC -- creates and assigns --> EX
 
   classDef rol fill:#DBEAFE,stroke:#3B6FB6,color:#1F2937
   class SA,AD,DC,ES,EX rol
@@ -188,12 +184,12 @@ flowchart TD
 
 ```mermaid
 flowchart TB
-  subgraph I["Institución — super_admin"]
-    subgraph F["Facultad — admin"]
-      subgraph D["Grupos que habilitó el docente — docente"]
-        subgraph G["Grupo"]
-          E1["Estudiante<br/>su propio grupo"]
-          E2["Evaluador externo<br/>solo los grupos designados"]
+  subgraph I["Institution — super_admin"]
+    subgraph F["Faculty — admin"]
+      subgraph D["Groups the teacher enabled — teacher"]
+        subgraph G["Group"]
+          E1["Student<br/>their own group"]
+          E2["External evaluator<br/>only the assigned groups"]
         end
       end
     end

@@ -20,4 +20,4 @@ server:
 sierap:
   version: '@project.version@'
   # Las reglas de fechas (entregas, ventana de evaluación) se evalúan en esta zona.
-  zona-horaria: America/Bogota
+  time-zone: America/Bogota

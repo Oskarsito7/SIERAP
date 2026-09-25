@@ -15,10 +15,10 @@ public abstract class SierapException extends RuntimeException {
     /**
      * Crea la excepción con un mensaje legible por el usuario final.
      *
-     * @param mensaje descripción del error, en español
+     * @param message descripción del error, en español
      */
-    protected SierapException(String mensaje) {
-        super(mensaje);
+    protected SierapException(String message) {
+        super(message);
     }
 
     /**
@@ -26,5 +26,5 @@ public abstract class SierapException extends RuntimeException {
      *
      * @return estado HTTP con el que responde la API
      */
-    public abstract HttpStatus getEstadoHttp();
+    public abstract HttpStatus getHttpStatus();
 }
