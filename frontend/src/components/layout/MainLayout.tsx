@@ -1,10 +1,17 @@
+import { LogOut } from 'lucide-react'
 import { Link, Outlet } from 'react-router'
 
+import { useAuth } from '@/auth/authContext'
+import { Button } from '@/components/ui/button'
+
 /**
- * Estructura común de todas las páginas: encabezado, contenido y pie.
- * En la Etapa 2 se reemplaza por un layout por rol (menú distinto según `UserRole`).
+ * Estructura común de todas las páginas: encabezado (con el usuario y el botón de
+ * cerrar sesión cuando hay sesión), contenido y pie.
+ * Más adelante se reemplaza por un layout por rol (menú distinto según `UserRole`).
  */
 export function MainLayout() {
+  const { user, logout } = useAuth()
+
   return (
     <div className="flex min-h-svh flex-col">
       <header className="border-b">
@@ -15,6 +22,15 @@ export function MainLayout() {
           <span className="text-muted-foreground hidden text-sm sm:inline">
             Sistema Integral Evaluador de Resultados de Aprendizajes por Programa
           </span>
+          {user && (
+            <div className="ml-auto flex items-center gap-3">
+              <span className="hidden text-sm md:inline">{user.fullName}</span>
+              <Button variant="outline" size="sm" onClick={() => void logout()}>
+                <LogOut aria-hidden />
+                Cerrar sesión
+              </Button>
+            </div>
+          )}
         </div>
       </header>
 
