@@ -45,6 +45,10 @@ moment" and "Team decisions" sections) and in ADR-009 to ADR-014 of
 | TipoEvaluador | `EvaluatorType` | `evaluator_type` |
 | Evaluador (interfaz) | `Evaluator` (interface) | — |
 | RolUsuario | `UserRole` | column `app_user.role` |
+| CodigoRegistro | `RegistrationCode` | `registration_code` |
+| TokenRenovacion (sesión) | `RefreshToken` | `refresh_token` |
+| EnlaceContrasena | `PasswordToken` | `password_token` |
+| PropositoEnlace (CREAR_CUENTA, RECUPERAR) | `PasswordTokenPurpose` (`ACCOUNT_SETUP`, `PASSWORD_RESET`) | column `password_token.purpose` |
 | TipoDocumento | `DocumentType` | — |
 | Grupo (= proyecto de aula) | `ProjectGroup` | `project_group` (`group` is reserved in SQL) |
 | Entrega | `Submission` | `submission` |
@@ -64,11 +68,11 @@ one table per role (ADR-009). Every user logs in with their **email**.
 
 | Class | Spanish name | Attributes | Description |
 |---|---|---|---|
-| `User` (abstract) | Usuario | firstNames, lastNames, documentType, documentNumber (unique), email (unique, login), passwordHash, role, active, createdAt | Data common to every user of the system. The five roles inherit from it. |
+| `User` (abstract) | Usuario | firstNames, lastNames, documentType, documentNumber (unique), email (unique, login), passwordHash, role, active, mustChangePassword, createdBy (optional), createdAt | Data common to every user of the system. The five roles inherit from it. `passwordHash` is empty until the person creates their password with the emailed link; `mustChangePassword` forces a temporary password to be changed; `createdBy` is the user who created the account, and it sets who can manage it (ADR-017). |
 | `SuperAdmin` | Super administrador | — | Global permissions: system parameters, academic periods, faculties and the evaluator type catalog. |
 | `Admin` | Administrador (decano) | faculty | User of a `Faculty` (dean role); a faculty can have **several** admins, all with the same permissions. Creates and configures the `Moment`s of the programs of their faculty and **launches** them. |
 | `Teacher` | Docente | faculty | Belongs to **one** `Faculty` (SIERAP only includes teachers with a classroom project, and they teach in their faculty). **Enables** groups in a moment, creates and assigns external evaluators to them, sets their dates and grades **only the groups they enabled**. |
-| `Student` | Estudiante | studentCode (unique), currentSemester, program | Belongs to a `Program`. Sees the groups of **all** the teachers of a moment of their program and joins one (**one group per moment**, with history). Uploads submissions and checks their performance per RAP. |
+| `Student` | Estudiante | studentCode (unique), currentSemester, program, registrationCode (optional) | Belongs to a `Program`. Created by a teacher (or a role above), or self-registered with a teacher's `RegistrationCode`, which is kept to know how they joined. Sees the groups of **all** the teachers of a moment of their program and joins one (**one group per moment**, with history). Uploads submissions and checks their performance per RAP. |
 | `ExternalEvaluator` | Evaluador externo | evaluatorType, organization, position, graduationYear, graduationProgram (the last four optional) | Evaluator who is not a teacher (today business people and alumni). Created by a teacher; grades only the groups they were assigned to (ADR-011). |
 | `EvaluatorType` | Tipo de evaluador | name, description, active | Catalog of external evaluator types maintained by the super_admin (seed data: "Empresario" and "Egresado"). Creating a new type requires no programming. |
 
@@ -86,6 +90,17 @@ implement `Evaluator`: there is no self-assessment in SIERAP.
   evaluation date with the injected `Clock`.
 - `Evaluation.evaluator` is typed as `User`, because JPA cannot map an interface; the
   service checks that the user is an `Evaluator` that can evaluate the group.
+
+## Authentication and accounts · D1 (Stage 2, ADR-017)
+
+| Class | Spanish name | Attributes | Description |
+|---|---|---|---|
+| `RegistrationCode` | Código de registro | code (unique, 8 characters), teacher, program, expiresOn, active, createdAt | Code a teacher shares with their students so they register themselves in a `Program` of the teacher's faculty. Reusable until it expires or is deactivated; a deactivated code cannot be reactivated. |
+| `RefreshToken` | Token de renovación (sesión) | user, tokenHash (unique), expiresAt, rotatedAt, createdAt | One login session. Only the SHA-256 hash of the cookie value is stored. Each renewal marks it as rotated and creates a new one; if a rotated token comes back, it was probably stolen and every session of the user is closed. Logging out, changing the password or deactivating the account delete the rows. |
+| `PasswordToken` | Enlace de contraseña | user, tokenHash (unique), purpose, expiresAt, usedAt, createdAt | Single-use link sent by email to create the password of a new account (72 h) or recover a forgotten one (1 h). Issuing a new link invalidates the pending ones of the same purpose. |
+
+The first `SuperAdmin` (`sierap@unicesar.edu.co`) is created by the migration with a
+temporary password that must be changed on the first login.
 
 ## Academic structure and assessment configuration · D2
 
@@ -136,6 +151,7 @@ none on time.
 | `DocumentType` | `CC`, `TI`, `CE`, `PASSPORT` | Identity document type of the user (citizenship ID, identity card, foreigner ID, passport). |
 | `MomentStatus` | `CONFIGURATION`, `LAUNCHED` | Lifecycle status of the moment (ADR-012). It is system flow, not an assessment business value. |
 | `EvaluationStatus` | `DRAFT`, `SUBMITTED` | Status of an evaluation: saved half done or submitted. System flow, like `MomentStatus`. |
+| `PasswordTokenPurpose` | `ACCOUNT_SETUP`, `PASSWORD_RESET` | Why a password link was sent: to create the password of a new account or to recover a forgotten one. |
 
 The Phase 2 enums `NivelExigencia` and `NivelDesempeno` **were removed** (the
 requirement level is free text in `Moment` and performance levels are the
@@ -150,7 +166,8 @@ configurable `PerformanceLevel` entity, ADR-010), and so were the `EMPRESARIO` a
 - **Composition:** `Faculty`—`Program`; `Program`—`Moment`; `Moment`—`LearningOutcome`;
   `LearningOutcome`—`EvaluationCriterion`; `EvaluationCriterion`—`PerformanceLevel`;
   `Moment`—`ProjectGroup`; `ProjectGroup`—`Submission`; `ProjectGroup`—`Evaluation`;
-  `Evaluation`—`CriterionGrade` (the whole controls the lifecycle of its parts).
+  `Evaluation`—`CriterionGrade`; `User`—`RefreshToken`; `User`—`PasswordToken` (the
+  whole controls the lifecycle of its parts).
 - **Aggregation:** `ProjectGroup`—`Student` (the student exists without the group
   and goes through several groups during the program, one per moment).
 - **Association:** `Moment`—`AcademicPeriod`; `Admin`—`Faculty` (several admins per faculty); `Teacher`—`Faculty`;
@@ -158,7 +175,9 @@ configurable `PerformanceLevel` entity, ADR-010), and so were the `EMPRESARIO` a
   `ProjectGroup`—`ExternalEvaluator` (assigned evaluators);
   `ExternalEvaluator`—`EvaluatorType`; `Student`—`Program`;
   `ExternalEvaluator`—`Program` (graduation program, optional);
-  `CriterionGrade`—`EvaluationCriterion`; `CriterionGrade`—`PerformanceLevel`.
+  `CriterionGrade`—`EvaluationCriterion`; `CriterionGrade`—`PerformanceLevel`;
+  `User`—`User` (`createdBy`); `RegistrationCode`—`Teacher`; `RegistrationCode`—`Program`;
+  `Student`—`RegistrationCode` (optional).
 - **Dependency:** `Report` depends on `Evaluation` (the report consumes evaluation
   data without owning it).
 

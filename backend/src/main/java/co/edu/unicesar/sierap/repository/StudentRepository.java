@@ -26,4 +26,20 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
      * @return estudiantes del programa
      */
     List<Student> findByProgramId(Long programId);
+
+    /**
+     * Indica si ya existe un estudiante con ese código estudiantil.
+     *
+     * @param studentCode código estudiantil
+     * @return {@code true} si el código ya está registrado
+     */
+    boolean existsByStudentCode(String studentCode);
+
+    /**
+     * Cuenta los estudiantes que se registraron con un código.
+     *
+     * @param registrationCodeId identificador del código de registro
+     * @return cantidad de estudiantes registrados con ese código
+     */
+    long countByRegistrationCodeId(Long registrationCodeId);
 }

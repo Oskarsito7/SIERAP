@@ -123,7 +123,7 @@ para el modelo completo y `docs/diagramas/diagrama_clases.md` para el UML vigent
 ## Comandos
 
 ```bash
-docker compose up -d                                  # PostgreSQL local (sierap/sierap)
+docker compose up -d                                  # PostgreSQL (sierap/sierap) + Mailpit (:8025)
 cd backend && ./mvnw spring-boot:run                  # API en :8080 (perfil dev por defecto)
 cd backend && ./mvnw verify                           # pruebas; las de integración usan Testcontainers (Docker)
 cd frontend && npm run dev                            # app en :5173, proxy /api -> :8080
