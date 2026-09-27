@@ -520,7 +520,10 @@ first super_admin exists.
   - Refresh token: an opaque random value valid for **7 days**, sent in an
     **httpOnly, Secure, SameSite=Strict** cookie limited to `/api/auth`. The database
     stores only its hash (`refresh_token` table), so it can be revoked. Each refresh
-    rotates it (the old one is revoked); logout revokes it.
+    rotates it: the old one is marked as rotated, and if it is presented again (a sign
+    it was stolen) every session of the user is closed. Logout, a password change and
+    deactivating the account delete the sessions instead, so a stale cookie in another
+    tab only gets a `401`.
   - The JWT signing key and the lifetimes come from configuration
     (`SIERAP_JWT_SECRET`, never in the repository).
 - **Who creates accounts:** super_admin → faculty admins; admin → teachers; teacher →
@@ -542,7 +545,7 @@ first super_admin exists.
   accounts cannot be discovered.
 - **First super_admin:** created by a migration with a **temporary password** that
   must be changed at the first login (`must_change_password`). While that flag is on,
-  the API only allows changing the password. The temporary password is written in the
+  the API only allows the `/api/auth` calls (change the password, profile, logout). The temporary password is written in the
   repository, so it must be changed as soon as each environment is deployed.
 - **Email:** Spring Mail over SMTP, configured by environment variables. In
   development, Mailpit in `docker-compose` catches every email (web inbox at
@@ -561,7 +564,8 @@ preferred the migration).
 
 **Consequences:** the API contract is in [`07-contrato-api.md`](07-contrato-api.md).
 New tables: `refresh_token`, `password_token` and `registration_code`, plus
-`app_user.must_change_password`. `password_hash` becomes nullable (accounts waiting for
+`app_user.must_change_password`, `app_user.created_by_id` (who created the account; it
+sets who can manage it) and `student.registration_code_id`. `password_hash` becomes nullable (accounts waiting for
 their password). The UPC must provide the SMTP credentials of an institutional account
 before deployment.
 
