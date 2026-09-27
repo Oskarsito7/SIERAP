@@ -102,7 +102,7 @@ Goal: the remaining stages can assume "there is an authenticated user with a rol
 | Role-based authorization (`@PreAuthorize` / `SecurityFilterChain`) for the 5 roles | D1 |
 | **Scope rules**: a teacher only sees their groups, an admin only their faculty, an evaluator only what was assigned | D1 |
 | Global `@ControllerAdvice` + hierarchy of domain exceptions | D1 |
-| Login + route guards + session persistence on the frontend | D3 |
+| Login + route guards + session persistence on the frontend | D2 |
 | Base layout per role (different menu for each `UserRole`) | D3 |
 
 **Definition of done:** there are tests proving that a teacher **cannot** read
