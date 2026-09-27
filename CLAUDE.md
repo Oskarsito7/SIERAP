@@ -113,6 +113,8 @@ para el modelo completo y `docs/diagramas/diagrama_clases.md` para el UML vigent
 - `docs/05-decisiones-tecnicas.md` — registro de decisiones técnicas (ADRs).
   Añadir una entrada nueva cuando se tome una decisión de arquitectura no trivial
   (elección de librería, patrón, estructura de módulos, etc.).
+- `docs/07-contrato-api.md` — contrato de la API (rutas, DTO y códigos de error)
+  acordado antes de programar; el frontend trabaja contra este contrato.
 - `docs/06-plan-de-trabajo.md` — etapas del desarrollo, reparto entre los tres
   integrantes, estrategia de ramas (`main`/`develop`/`feature/*`), convención de
   commits, checklist de PR y estrategia de pruebas. Consúltalo antes de abrir una

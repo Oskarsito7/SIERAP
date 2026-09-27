@@ -123,9 +123,11 @@ Implementation progress, by stages of [`docs/06-plan-de-trabajo.md`](docs/06-pla
 
 - [x] **Stage 0 — Foundations:** backend and frontend skeleton, PostgreSQL in
   `docker-compose`, CI on GitHub Actions.
-- [ ] Stage 1 — Domain model and persistence (JPA entities + Flyway). D2 part
-  (academic model and seed data) in review.
-- [ ] Stage 2 — Authentication and access control.
+- [ ] Stage 1 — Domain model and persistence (JPA entities + Flyway): V1–V4 merged
+  (academic model, users, operations); pending D2's fixes from the PR #3 review and
+  the regenerated `.drawio` diagram.
+- [ ] Stage 2 — Authentication and access control: designed (ADR-017, API contract in
+  `docs/07-contrato-api.md`).
 
 ## 7. Structure of this repository
 
@@ -140,6 +142,7 @@ SIERAP/
 │   ├── 04-requerimientos-funcionales.md ← 12 requirements by role (formalized brainstorming)
 │   ├── 05-decisiones-tecnicas.md      ← ADRs: why Java/Spring/Postgres/React and the rest
 │   ├── 06-plan-de-trabajo.md          ← stages, split among the 3 devs, branches and tests
+│   ├── 07-contrato-api.md             ← API contract (routes, DTOs, error codes)
 │   ├── diagramas/                     ← class, hierarchy and layer diagrams (Mermaid + .drawio + PNG)
 │   └── entregas/                      ← formal delivery documents (includes presentacion-sierap.pptx)
 ├── backend/                           ← Java 21 + Spring Boot 3 API (Maven)

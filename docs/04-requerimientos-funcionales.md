@@ -7,7 +7,10 @@
 
 ## Student
 
-1. Can log in to the system (with their email).
+1. Can log in to the system (with their email). Gets their account from their teacher
+   (created one by one or by bulk upload) or registers with a **registration code**
+   the teacher shares; either way they set their password through a link sent by
+   email. Can recover a forgotten password the same way.
 2. Can see the groups that **all** the teachers enabled in a moment of their program
    and join the one agreed with their classmates, even if it belongs to a teacher
    other than theirs. They can only be in one group per moment, and the group
@@ -36,7 +39,10 @@ configurable catalog, not fixed roles (ADR-011).
 
 7. Can log in, **enable the groups** of a moment that students will join, and set the
    submission deadline of each one (within the submission window). **The teacher
-   only sees, manages and grades the groups they enabled.**
+   only sees, manages and grades the groups they enabled.** Creates the accounts of
+   their students (one by one or by bulk upload) or generates a **registration
+   code** for one program of their faculty, reusable until the expiry date they set
+   (they can deactivate it earlier).
 8. Can create external evaluators (of any type in the catalog) and assign them
    **only** to the groups they enabled. Can also add to one of their groups a student
    who did not join any group, even after the formation window or the launch, and
@@ -47,7 +53,8 @@ configurable catalog, not fixed roles (ADR-011).
 
 ## Admin (faculty / dean)
 
-10. Creates and configures the moments of each program of their faculty, in each
+10. Creates the teachers of their faculty (and can also create its students and
+    external evaluators). Creates and configures the moments of each program of their faculty, in each
     period: RAP, evaluation criteria, performance levels with their scores, minimum
     and maximum members per group, date windows (group formation, submissions and
     grading) and the weight of each kind of evaluator in the final grade (the teacher
@@ -59,7 +66,7 @@ configurable catalog, not fixed roles (ADR-011).
 
 11. Logs in and defines the global system parameters, the faculties and programs, the
     academic periods (with the UPC evaluation deadline) and the external evaluator
-    type catalog.
+    type catalog. Creates the admins of each faculty (and can create any other user).
 
 ## Cross-cutting — Reporting
 
@@ -104,9 +111,9 @@ program (ADR-012):
 
 | Role | Can see | Can modify |
 |---|---|---|
-| `super_admin` | Everything | Global parameters, faculties, programs, periods, evaluator type catalog |
-| `admin` | Their whole faculty | Moments of the programs of their faculty (configuration and launch) |
-| `teacher` | Only the groups they enabled | Their groups, their dates, the external evaluators of their groups, adding students without a group to their groups, their evaluations |
+| `super_admin` | Everything | Global parameters, faculties, programs, periods, evaluator type catalog; accounts of any role |
+| `admin` | Their whole faculty | Moments of the programs of their faculty (configuration and launch); accounts of teachers, students and external evaluators of their faculty |
+| `teacher` | Only the groups they enabled | Their groups, their dates, the external evaluators of their groups, adding students without a group to their groups, their evaluations; accounts and registration codes of their students |
 | `student` | The groups of the moments of their program; their group and their grades | Their enrollment (during group formation) and their group's submissions |
 | `external_evaluator` | Only the groups they were assigned to | Their own evaluations (on the set date) |
 
@@ -149,11 +156,23 @@ Defined by the project lead on 2026-09-24.
 | Score in each grade | `CriterionGrade` stores a copy of the level score when grading. *(2026-09-25)* |
 | API contract | D1 drafts the routes and DTOs of groups, submissions and evaluation when Stage 1 closes; the lead approves them before the frontend work starts. *(2026-09-25)* |
 | Reviews | Review observations are left as comments on the PR. The GitHub branch protection of `develop` stays as it is; reviewing stays a team agreement. *(2026-09-25)* |
+| Launching early | The admin can launch a moment before the group formation window ends; launching closes group formation. *(2026-09-27)* |
+| UPC deadline | The UPC evaluation deadline always falls within the academic period (between its start and end dates). *(2026-09-27)* |
+| Who creates accounts | super_admin → faculty admins; admin → teachers; teacher → their students (one by one or bulk upload) and external evaluators. Upper roles can also create lower users within their scope (ADR-017). *(2026-09-27)* |
+| Registration code | A teacher can generate a code linked to themselves and one program of their faculty, reusable until the expiry date they set, and deactivate it earlier. Students register with it and land in that program. *(2026-09-27)* |
+| Getting a password | Accounts created by someone else, and self-registered students, receive an **email link** to set their password. "Forgot password" uses the same mechanism (ADR-017). *(2026-09-27)* |
+| First super_admin | Created by a migration with a temporary password that must be changed at the first login (ADR-017). *(2026-09-27)* |
+| Sessions | 15-minute access token kept in memory + 7-day refresh token in an httpOnly cookie (ADR-017). *(2026-09-27)* |
+| Email | Institutional UPC account (SMTP) in production; Mailpit in local development (ADR-017). *(2026-09-27)* |
+| GUI mockups | D1 (with Claude Code) proposes the wireframes of every screen; the team adjusts them. *(2026-09-27)* |
 
 ## Still to be defined with the team
 
-- Who creates teacher and student accounts (super_admin, faculty admin, bulk upload,
-  self-registration)?
+- Bulk upload of students: file format (CSV or Excel) and columns.
+- Must students use their institutional email (`@unicesar.edu.co`) to register with a
+  code?
+- Password rules (minimum length, required characters) and the expiry of the email
+  links.
 - What happens if a teacher needs to reassign a group to another teacher in the
   middle of a moment?
 - Do comparative reports require anonymizing student data, or are they always
