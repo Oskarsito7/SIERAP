@@ -165,14 +165,13 @@ Defined by the project lead on 2026-09-24.
 | Sessions | 15-minute access token kept in memory + 7-day refresh token in an httpOnly cookie (ADR-017). *(2026-09-27)* |
 | Email | Institutional UPC account (SMTP) in production; Mailpit in local development (ADR-017). *(2026-09-27)* |
 | GUI mockups | D1 (with Claude Code) proposes the wireframes of every screen; the team adjusts them. *(2026-09-27)* |
+| Password rules | At least 8 characters, with at least one letter and one number. *(2026-09-27)* |
+| Email link expiry | The link to set the password of a new account expires in **72 hours**; the "forgot password" link, in **1 hour** (both configurable). *(2026-09-27)* |
+| Registration with a code | Only institutional emails (`@unicesar.edu.co`, configurable) are accepted. *(2026-09-27)* |
 
 ## Still to be defined with the team
 
 - Bulk upload of students: file format (CSV or Excel) and columns.
-- Must students use their institutional email (`@unicesar.edu.co`) to register with a
-  code?
-- Password rules (minimum length, required characters) and the expiry of the email
-  links.
 - What happens if a teacher needs to reassign a group to another teacher in the
   middle of a moment?
 - Do comparative reports require anonymizing student data, or are they always

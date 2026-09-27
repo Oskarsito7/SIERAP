@@ -529,15 +529,17 @@ first super_admin exists.
   an admin, teachers, students and external evaluators of their faculty).
 - **How a created user gets a password:** SIERAP sends an **email link** to set it.
   The link carries a one-time random token (stored hashed, `password_token` table)
-  with an expiry; until the password is set, the account cannot log in.
+  that expires in 72 hours; until the password is set, the account cannot log in.
+  Passwords need at least 8 characters, with at least one letter and one number.
 - **Self-registration with a code:** a teacher generates a **registration code**
   linked to **the teacher and one program** of their faculty, reusable until its
   expiry date, and they can deactivate it earlier. A student registers with the code
   and their data, lands in that program, appears in the teacher's student list, and
   receives the same email link to set their password (which also proves they own the
-  email).
-- **Forgot password:** same email link mechanism. The request always answers the same
-  way, whether the email exists or not, so accounts cannot be discovered.
+  email). Only institutional emails (`@unicesar.edu.co`, configurable) are accepted.
+- **Forgot password:** same email link mechanism, with a link that expires in 1 hour.
+  The request always answers the same way, whether the email exists or not, so
+  accounts cannot be discovered.
 - **First super_admin:** created by a migration with a **temporary password** that
   must be changed at the first login (`must_change_password`). While that flag is on,
   the API only allows changing the password. The temporary password is written in the

@@ -57,7 +57,7 @@
 | `POST /api/auth/password/change` | authenticated | `{ "currentPassword", "newPassword" }` | `204`. It is the only call allowed while `mustChangePassword` is `true` (any other answers `403`) |
 | `POST /api/auth/password/forgot` | anyone | `{ "email" }` | Always `204`; if the account exists, an email with a link is sent |
 | `POST /api/auth/password/set` | anyone with a link token | `{ "token", "newPassword" }` | `204`; sets the password of a new account or resets a forgotten one. `422` if the token expired or was already used |
-| `POST /api/auth/register` | anyone with a registration code | `{ "registrationCode", "firstNames", "lastNames", "documentType", "documentNumber", "email", "studentCode", "currentSemester" }` | `202`; creates the student in the program of the code and sends the link to set the password. `422` if the code does not exist, expired or was deactivated |
+| `POST /api/auth/register` | anyone with a registration code | `{ "registrationCode", "firstNames", "lastNames", "documentType", "documentNumber", "email", "studentCode", "currentSemester" }` | `202`; creates the student in the program of the code and sends the link to set the password. `422` if the code does not exist, expired or was deactivated. `400` if the email is not institutional (`@unicesar.edu.co`) |
 
 **Refresh cookie:** name `sierap_refresh`, `HttpOnly`, `SameSite=Strict`,
 `Path=/api/auth`, `Secure` in production (configurable, off in local development over
@@ -71,7 +71,12 @@ retries; if that fails, it goes to the login page. If `user.mustChangePassword` 
 `true`, the only screen shown is "change password".
 
 **Email links** point to the frontend: `/set-password?token=...` (new account or
-forgotten password). The frontend page calls `POST /api/auth/password/set`.
+forgotten password). The frontend page calls `POST /api/auth/password/set`. The link of
+a new account expires in 72 hours and the "forgot password" one in 1 hour.
+
+**Password rules** (`newPassword` in every call): at least 8 characters, with at least
+one letter and one number. Otherwise the answer is `400` with the message in
+`fieldErrors.newPassword`.
 
 ## Stage 2 — Accounts
 
