@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -38,10 +39,10 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  *   <li>Cualquier otra excepción → {@code 500}, sin exponer detalles internos.</li>
  * </ul>
  *
- * <p>Nota para la Etapa 2: las excepciones de Spring Security lanzadas dentro de
- * un controller (p. ej. {@code AccessDeniedException} por {@code @PreAuthorize})
- * necesitan su propio {@code @ExceptionHandler}; si no, caen en el manejador
- * genérico y responden {@code 500} en lugar de {@code 403}.</p>
+ * <p>Los 401 y 403 que ocurren en los filtros de seguridad, antes de llegar a un
+ * controller, los escribe {@code security.SecurityErrorWriter} con este mismo
+ * formato. Los {@code AccessDeniedException} de {@code @PreAuthorize}, que sí ocurren
+ * dentro del controller, los maneja esta clase.</p>
  */
 @RestControllerAdvice
 public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
@@ -97,6 +98,24 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .body(buildBody(status,
                         "No se puede completar la operación porque entra en conflicto con información "
                                 + "existente (datos duplicados o relacionados).",
+                        request.getRequestURI(), Map.of()));
+    }
+
+    /**
+     * Maneja los accesos denegados por {@code @PreAuthorize} dentro de los
+     * controllers. Sin este método caerían en el manejador genérico y responderían
+     * {@code 500} en lugar de {@code 403}.
+     *
+     * @param exception acceso denegado por Spring Security
+     * @param request   petición HTTP que lo originó
+     * @return respuesta {@code 403 Forbidden}
+     */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException exception,
+                                                            HttpServletRequest request) {
+        HttpStatus status = HttpStatus.FORBIDDEN;
+        return ResponseEntity.status(status)
+                .body(buildBody(status, "No tiene permisos para realizar esta operación.",
                         request.getRequestURI(), Map.of()));
     }
 

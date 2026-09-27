@@ -15,6 +15,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.annotation.Bean;
@@ -32,8 +33,12 @@ import org.springframework.web.bind.annotation.RestController;
  * Verifica que {@link GlobalExceptionHandler} traduzca cada tipo de error al
  * código HTTP correcto y al formato uniforme de
  * {@link co.edu.unicesar.sierap.dto.response.ErrorResponse}.
+ *
+ * <p>Los filtros de seguridad se desactivan: aquí solo se prueba el manejador de
+ * errores, no la autenticación (esa la cubre {@code AuthIntegrationTest}).</p>
  */
 @WebMvcTest(controllers = GlobalExceptionHandlerTest.TestController.class)
+@AutoConfigureMockMvc(addFilters = false)
 @Import({GlobalExceptionHandlerTest.TestController.class, GlobalExceptionHandlerTest.TestClock.class})
 class GlobalExceptionHandlerTest {
 

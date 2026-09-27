@@ -4,6 +4,15 @@ spring:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+  # Cuenta institucional de la UPC (ADR-017): MAIL_HOST, MAIL_PORT, MAIL_USERNAME,
+  # MAIL_PASSWORD y MAIL_FROM llegan por entorno.
+  mail:
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 logging:
   level:

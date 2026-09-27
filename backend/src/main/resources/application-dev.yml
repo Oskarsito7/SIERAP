@@ -10,7 +10,18 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  # Permite aplicar una migración con número menor que otra ya aplicada (p. ej. la V5
+  # del D2 si llega después de la V6), sin tener que reiniciar la base local.
+  flyway:
+    out-of-order: true
 
 logging:
   level:
     co.edu.unicesar.sierap: DEBUG
+
+sierap:
+  auth:
+    # Solo para desarrollo local. En producción llega por SIERAP_JWT_SECRET.
+    jwt-secret: ${SIERAP_JWT_SECRET:clave-de-desarrollo-sierap-no-usar-en-produccion-0123456789}
+    # En local el frontend y la API van por http://localhost.
+    refresh-cookie-secure: false

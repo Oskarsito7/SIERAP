@@ -17,4 +17,12 @@ public interface ExternalEvaluatorRepository extends JpaRepository<ExternalEvalu
      * @return evaluadores externos de ese tipo
      */
     List<ExternalEvaluator> findByEvaluatorTypeId(Long evaluatorTypeId);
+
+    /**
+     * Lista los evaluadores externos que creó un usuario.
+     *
+     * @param createdById identificador de quien los creó
+     * @return evaluadores externos creados por ese usuario
+     */
+    List<ExternalEvaluator> findByCreatedByIdOrderByLastNamesAsc(Long createdById);
 }

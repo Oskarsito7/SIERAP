@@ -153,7 +153,7 @@ SIERAP/
 │       ├── entity/  entity/enums/              ← domain entities
 │       └── security/  exception/  config/      ← cross-cutting
 ├── frontend/                          ← React + TypeScript app (Vite, Tailwind, shadcn/ui)
-├── docker-compose.yml                 ← PostgreSQL for local development
+├── docker-compose.yml                 ← PostgreSQL and Mailpit for local development
 └── .github/workflows/ci.yml           ← CI: backend and frontend build and tests
 ```
 
@@ -164,7 +164,8 @@ Windows/macOS). There is no need to install Maven: the repo ships the Maven Wrap
 (`mvnw`).
 
 ```bash
-# 1. Database (PostgreSQL 17 on localhost:5432, user/password: sierap/sierap)
+# 1. Database (PostgreSQL 17 on localhost:5432, user/password: sierap/sierap) and
+#    Mailpit (test mailbox: catches the emails, web inbox on http://localhost:8025)
 docker compose up -d
 
 # 2. Backend — API on http://localhost:8080   (Windows PowerShell: .\mvnw.cmd spring-boot:run)
@@ -180,6 +181,18 @@ npm run dev
 If everything is fine, the home page shows **"API conectada"** and **"Base de datos
 disponible"**. It can also be checked with `curl http://localhost:8080/api/status`.
 
+**First login (ADR-017):** the migration creates the first super_admin,
+`sierap@unicesar.edu.co`, with the temporary password **`Sierap-Inicio-2026`**. On the
+first login the only thing allowed is changing it (`POST /api/auth/password/change`).
+From there the super_admin creates the admins, and so on down the chain. New accounts
+receive an email with a link to create their password: in development those emails
+land in Mailpit (http://localhost:8025). The API is described in
+`docs/07-contrato-api.md`.
+
+> **Production:** this temporary password is public (it is in this repository). Change
+> it **right after the first deployment**, before announcing the URL: until then,
+> whoever logs in first takes the super_admin account.
+
 **Tests:**
 
 ```bash
@@ -193,6 +206,15 @@ cd frontend && npm run lint && npm test && npm run build
 `./mvnw spring-boot:run -Dspring-boot.run.profiles=dev,local`. If port 5432 is already
 taken by another PostgreSQL: `DB_PORT=5433 docker compose up -d` and
 `DB_URL=jdbc:postgresql://localhost:5433/sierap`.
+
+**Environment variables for production (`prod` profile):** besides the `DB_*` ones,
+
+| Variable | What it is |
+|---|---|
+| `SIERAP_JWT_SECRET` | Key that signs the access tokens: random, at least 32 characters, never committed. The API refuses to start without it. In `dev` there is a development default. |
+| `SIERAP_FRONTEND_URL` | Public URL of the frontend; the links sent by email point to it. |
+| `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` | UPC SMTP server (in development, Mailpit on `localhost:1025` without credentials). |
+| `MAIL_FROM` | Sender of the emails (default `SIERAP <no-reply@unicesar.edu.co>`). |
 
 **Migrations:** the schema is created by Flyway at startup. A migration that is already
 in `develop` is never edited; if your local database has an older version of a migration

@@ -37,6 +37,11 @@ public class Student extends User {
     @JoinColumn(name = "program_id", nullable = false)
     private Program program;
 
+    /** Código de registro con el que se registró, o {@code null} si lo creó alguien más. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "registration_code_id")
+    private RegistrationCode registrationCode;
+
     /** Constructor requerido por JPA. */
     protected Student() {
     }
@@ -97,5 +102,15 @@ public class Student extends User {
     /** @param program nuevo programa */
     public void setProgram(Program program) {
         this.program = program;
+    }
+
+    /** @return código de registro que usó, o {@code null} */
+    public RegistrationCode getRegistrationCode() {
+        return registrationCode;
+    }
+
+    /** @param registrationCode código de registro con el que se registró */
+    public void setRegistrationCode(RegistrationCode registrationCode) {
+        this.registrationCode = registrationCode;
     }
 }

@@ -1,0 +1,5 @@
+# Perfil de pruebas: valores fijos para que las pruebas no dependan del entorno.
+sierap:
+  auth:
+    jwt-secret: clave-de-pruebas-sierap-solo-para-tests-0123456789
+    refresh-cookie-secure: false

@@ -11,11 +11,14 @@ import jakarta.persistence.DiscriminatorType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Inheritance;
 import jakarta.persistence.InheritanceType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
 /**
@@ -62,9 +65,27 @@ public abstract class User {
     @Column(nullable = false, unique = true, length = 150)
     private String email;
 
-    /** Hash de la contraseña (nunca la contraseña en texto plano). */
-    @Column(name = "password_hash", nullable = false, length = 100)
+    /**
+     * Hash BCrypt de la contraseña (nunca la contraseña en texto plano). Es
+     * {@code null} mientras el usuario no haya usado el enlace para crearla (ADR-017).
+     */
+    @Column(name = "password_hash", length = 100)
     private String passwordHash;
+
+    /**
+     * Indica que la contraseña es temporal y debe cambiarse antes de usar el sistema
+     * (el primer super_admin, ADR-017).
+     */
+    @Column(name = "must_change_password", nullable = false)
+    private boolean mustChangePassword;
+
+    /**
+     * Usuario que creó esta cuenta, o el docente dueño del código con el que se
+     * registró el estudiante. Es {@code null} para el primer super_admin.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "created_by_id")
+    private User createdBy;
 
     /** Indica si la cuenta puede iniciar sesión. */
     @Column(nullable = false)
@@ -86,7 +107,8 @@ public abstract class User {
      * @param documentType   tipo de documento de identidad
      * @param documentNumber número de documento de identidad
      * @param email          correo de inicio de sesión
-     * @param passwordHash   hash de la contraseña
+     * @param passwordHash   hash de la contraseña, o {@code null} si el usuario la
+     *                       creará con el enlace enviado por correo
      * @param createdAt      fecha y hora de creación, obtenida del {@code Clock} inyectado
      */
     protected User(String firstNames, String lastNames, DocumentType documentType, String documentNumber,
@@ -176,7 +198,7 @@ public abstract class User {
         this.email = email == null ? null : email.trim().toLowerCase(Locale.ROOT);
     }
 
-    /** @return hash de la contraseña */
+    /** @return hash de la contraseña, o {@code null} si aún no la ha creado */
     public String getPasswordHash() {
         return passwordHash;
     }
@@ -184,6 +206,47 @@ public abstract class User {
     /** @param passwordHash nuevo hash de la contraseña */
     public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
+    }
+
+    /**
+     * Indica si el usuario ya creó su contraseña (las cuentas nuevas no pueden iniciar
+     * sesión hasta usar el enlace enviado por correo).
+     *
+     * @return {@code true} si tiene contraseña
+     */
+    public boolean hasPassword() {
+        return passwordHash != null;
+    }
+
+    /**
+     * Reemplaza la contraseña por una definitiva elegida por el usuario: guarda el
+     * nuevo hash y quita la marca de contraseña temporal.
+     *
+     * @param newPasswordHash hash BCrypt de la nueva contraseña
+     */
+    public void changePassword(String newPasswordHash) {
+        this.passwordHash = newPasswordHash;
+        this.mustChangePassword = false;
+    }
+
+    /** @return {@code true} si la contraseña es temporal y debe cambiarse */
+    public boolean isMustChangePassword() {
+        return mustChangePassword;
+    }
+
+    /** @param mustChangePassword {@code true} para exigir el cambio de contraseña */
+    public void setMustChangePassword(boolean mustChangePassword) {
+        this.mustChangePassword = mustChangePassword;
+    }
+
+    /** @return usuario que creó la cuenta, o {@code null} */
+    public User getCreatedBy() {
+        return createdBy;
+    }
+
+    /** @param createdBy usuario que crea la cuenta */
+    public void setCreatedBy(User createdBy) {
+        this.createdBy = createdBy;
     }
 
     /** @return {@code true} si la cuenta puede iniciar sesión */
