@@ -501,6 +501,76 @@ to the user.
 
 ---
 
+## ADR-017 — Authentication, sessions and account onboarding
+
+**Date:** 2026-09-27 (Stage 2).
+**Status:** Accepted (decisions of the project lead; technical details proposed by D1).
+
+**Context:** Stage 2 needs login, sessions and a way to create accounts for the five
+roles. The lead decided who creates whom, how people get their password and how the
+first super_admin exists.
+
+**Decision:**
+
+- **Stateless Spring Security with JWT.** Passwords are stored with BCrypt.
+- **Sessions: short access token + refresh token.**
+  - Access token: JWT signed with HS256, valid for **15 minutes**, with the user id,
+    role and email as claims. The frontend keeps it **in memory** (never in
+    `localStorage`) and sends it as `Authorization: Bearer`.
+  - Refresh token: an opaque random value valid for **7 days**, sent in an
+    **httpOnly, Secure, SameSite=Strict** cookie limited to `/api/auth`. The database
+    stores only its hash (`refresh_token` table), so it can be revoked. Each refresh
+    rotates it: the old one is marked as rotated, and if it is presented again (a sign
+    it was stolen) every session of the user is closed. Logout, a password change and
+    deactivating the account delete the sessions instead, so a stale cookie in another
+    tab only gets a `401`.
+  - The JWT signing key and the lifetimes come from configuration
+    (`SIERAP_JWT_SECRET`, never in the repository).
+- **Who creates accounts:** super_admin → faculty admins; admin → teachers; teacher →
+  their students (one by one or by bulk upload) and their external evaluators. Upper
+  roles can also create lower users **within their scope** (the super_admin anyone;
+  an admin, teachers, students and external evaluators of their faculty).
+- **How a created user gets a password:** SIERAP sends an **email link** to set it.
+  The link carries a one-time random token (stored hashed, `password_token` table)
+  that expires in 72 hours; until the password is set, the account cannot log in.
+  Passwords need at least 8 characters, with at least one letter and one number.
+- **Self-registration with a code:** a teacher generates a **registration code**
+  linked to **the teacher and one program** of their faculty, reusable until its
+  expiry date, and they can deactivate it earlier. A student registers with the code
+  and their data, lands in that program, appears in the teacher's student list, and
+  receives the same email link to set their password (which also proves they own the
+  email). Only institutional emails (`@unicesar.edu.co`, configurable) are accepted.
+- **Forgot password:** same email link mechanism, with a link that expires in 1 hour.
+  The request always answers the same way, whether the email exists or not, so
+  accounts cannot be discovered.
+- **First super_admin:** created by a migration with a **temporary password** that
+  must be changed at the first login (`must_change_password`). While that flag is on,
+  the API only allows the `/api/auth` calls (change the password, profile, logout). The temporary password is written in the
+  repository, so it must be changed as soon as each environment is deployed.
+- **Email:** Spring Mail over SMTP, configured by environment variables. In
+  development, Mailpit in `docker-compose` catches every email (web inbox at
+  <http://localhost:8025>). In production, an **institutional UPC account**.
+- **Authorization:** role checks with `@PreAuthorize`; scope checks (own faculty,
+  own groups…) in the services, which throw `ForbiddenAccessException`. Missing or
+  invalid tokens answer 401 and denied access 403, both with the uniform
+  `ErrorResponse`.
+
+**Alternatives considered:** a single 8-hour token in `localStorage` (simpler, but a
+stolen token stays valid for hours and `localStorage` is readable by any injected
+script); temporary passwords handed over by the creator (no mail server needed, but
+the password travels outside the system); creating the first super_admin from
+environment variables at startup (keeps the password out of the repository; the lead
+preferred the migration).
+
+**Consequences:** the API contract is in [`07-contrato-api.md`](07-contrato-api.md).
+New tables: `refresh_token`, `password_token` and `registration_code`, plus
+`app_user.must_change_password`, `app_user.created_by_id` (who created the account; it
+sets who can manage it) and `student.registration_code_id`. `password_hash` becomes nullable (accounts waiting for
+their password). The UPC must provide the SMTP credentials of an institutional account
+before deployment.
+
+---
+
 ## Template for new entries
 
 ```
