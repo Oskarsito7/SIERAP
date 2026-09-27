@@ -103,7 +103,21 @@ Goal: the remaining stages can assume "there is an authenticated user with a rol
 | **Scope rules**: a teacher only sees their groups, an admin only their faculty, an evaluator only what was assigned | D1 |
 | Global `@ControllerAdvice` + hierarchy of domain exceptions | D1 |
 | Login + route guards + session persistence on the frontend | D2 |
-| Base layout per role (different menu for each `UserRole`) | D3 |
+| Base layout per role (different menu for each `UserRole`, see below) | D3 |
+| Account screens of `super_admin` and `admin`: admins and teachers (create, list, deactivate, resend the link) | D2 |
+| Account screens of `teacher`: "my students" and registration codes (the admin uses the same codes page with a teacher selector) | D3 |
+
+**Menu per role** (approved by the lead on 2026-09-27; options whose page does not
+exist yet show a "coming soon" screen):
+
+| Role | Menu |
+|---|---|
+| `super_admin` | Faculties and programs · Academic periods · Global parameters · Evaluator types · Admins |
+| `admin` | Moments · Teachers · Registration codes · Reports |
+| `teacher` | My groups · My students · External evaluators · Registration codes · Reports (their groups) |
+| `student` | Groups of the moment · My group and submissions · My grades |
+| `external_evaluator` | Assigned groups |
+| All | My account (change password) · Log out |
 
 **Definition of done:** there are tests proving that a teacher **cannot** read
 someone else's group and an admin **cannot** touch another faculty (403, not a 200

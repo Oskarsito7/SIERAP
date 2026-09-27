@@ -149,12 +149,13 @@ Defined by the project lead on 2026-09-24.
 | Students without a group | A student who did not join a group can be added by a teacher to one of their groups, even after the formation window or the launch, and even above the maximum. *(2026-09-25)* |
 | Switching groups | Free while the group formation window is open (leave a group, join another one with room). *(2026-09-25)* |
 | Evaluation drafts | An evaluation can be saved as a draft (`DRAFT`) and submitted later (`SUBMITTED`). Only submitted evaluations count; they can be corrected while the grading window is open. *(2026-09-25)* |
+| Submitting an evaluation | It can only be submitted with a level picked in **every** criterion of the moment; otherwise the API answers `422` and it stays as a draft. *(2026-09-27)* |
 | Group final grade | Weighted by kind of evaluator (the teacher and each evaluator type), with weights the admin sets in each moment. Several evaluators of the same kind are averaged within that kind; if a kind has no submitted evaluation, its weight is redistributed among the present kinds in proportion to their weights. *(2026-09-25)* |
 | Late submissions | Accepted while the submission window is open, marked as late. The graded version is the last on-time one; if there is none, the last late one. The evaluator sees the late mark and decides the levels. *(2026-09-25)* |
 | Submission files | Stored on the server disk (ADR-015). `.zip` up to 100 MB; presentation `.pdf`, `.docx` or `.pptx` up to 30 MB. *(2026-09-25)* |
 | `Evaluator` interface | `canEvaluate(ProjectGroup)` is abstract and each class implements its own rule (teacher: the groups they enabled; external evaluator: the groups assigned to them). Dates are checked in the service with the `Clock`. *(2026-09-25)* |
 | Score in each grade | `CriterionGrade` stores a copy of the level score when grading. *(2026-09-25)* |
-| API contract | D1 drafts the routes and DTOs of groups, submissions and evaluation when Stage 1 closes; the lead approves them before the frontend work starts. *(2026-09-25)* |
+| API contract | D1 drafts the routes and DTOs of groups, submissions and evaluation; the lead approves them before the frontend work starts. *(2026-09-25)* It is written **before** the wireframes and without waiting for Stage 1 to close, so D3 can start Stage 4. *(2026-09-27)* |
 | Reviews | Review observations are left as comments on the PR. The GitHub branch protection of `develop` stays as it is; reviewing stays a team agreement. *(2026-09-25)* |
 | Launching early | The admin can launch a moment before the group formation window ends; launching closes group formation. *(2026-09-27)* |
 | UPC deadline | The UPC evaluation deadline always falls within the academic period (between its start and end dates). *(2026-09-27)* |

@@ -126,8 +126,9 @@ Implementation progress, by stages of [`docs/06-plan-de-trabajo.md`](docs/06-pla
 - [ ] Stage 1 — Domain model and persistence (JPA entities + Flyway): V1–V4 merged
   (academic model, users, operations); pending D2's fixes from the PR #3 review and
   the regenerated `.drawio` diagram.
-- [ ] Stage 2 — Authentication and access control: designed (ADR-017, API contract in
-  `docs/07-contrato-api.md`).
+- [ ] Stage 2 — Authentication and access control: backend and login screens done
+  (ADR-017, API contract in `docs/07-contrato-api.md`); the layout per role and the
+  account screens are pending.
 
 ## 7. Structure of this repository
 
