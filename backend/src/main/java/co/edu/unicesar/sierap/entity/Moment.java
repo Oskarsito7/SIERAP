@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.List;
 
 import co.edu.unicesar.sierap.entity.enums.MomentStatus;
+import co.edu.unicesar.sierap.exception.BusinessRuleException;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -33,6 +34,10 @@ import jakarta.persistence.UniqueConstraint;
  * lanzarlo ({@link MomentStatus#LAUNCHED}) la configuración queda bloqueada y las
  * ventanas indican cuándo se entrega y cuándo se califica. Las ventanas pueden
  * estar vacías mientras el momento se configura.</p>
+ *
+ * <p>El estado solo cambia con {@link #launch()}, que valida que la configuración
+ * esté completa; después de lanzar, los setters de configuración y los métodos
+ * para agregar o quitar RAP lanzan {@link BusinessRuleException}.</p>
  *
  * <p>Es dueño de sus RAP (composición) y se asocia a un periodo, que existe
  * independientemente del momento.</p>
@@ -116,12 +121,92 @@ public class Moment {
     @OrderBy("code")
     private List<LearningOutcome> learningOutcomes = new ArrayList<>();
 
+    /** Constructor requerido por JPA. */
+    protected Moment() {
+    }
+
     /**
-     * Crea un momento vacío en estado {@link MomentStatus#CONFIGURATION}. Sus datos
-     * se completan con los setters y se asocia a su programa con
-     * {@link Program#addMoment(Moment)}.
+     * Crea un momento en estado {@link MomentStatus#CONFIGURATION}, sin RAP ni
+     * ventanas de fechas. Se asocia a su programa con {@link Program#addMoment(Moment)}.
+     *
+     * @param period           periodo académico en el que se configura
+     * @param number           número del momento dentro del programa y el periodo
+     * @param name             nombre visible, p. ej. "Momento 1"
+     * @param subject          asignatura en la que se evalúa
+     * @param semesterFrom     primer semestre que abarca
+     * @param semesterTo       último semestre que abarca
+     * @param requirementLevel nivel de exigencia en texto libre
+     * @param minMembers       mínimo de estudiantes por grupo
+     * @param maxMembers       máximo de estudiantes por grupo
      */
-    public Moment() {
+    public Moment(AcademicPeriod period, int number, String name, String subject,
+                  int semesterFrom, int semesterTo, String requirementLevel,
+                  int minMembers, int maxMembers) {
+        this.period = period;
+        this.number = number;
+        this.name = name;
+        this.subject = subject;
+        this.semesterFrom = semesterFrom;
+        this.semesterTo = semesterTo;
+        this.requirementLevel = requirementLevel;
+        this.minMembers = minMembers;
+        this.maxMembers = maxMembers;
+    }
+
+    /**
+     * Lanza el momento (ADR-012): valida que la configuración esté completa y pasa a
+     * {@link MomentStatus#LAUNCHED}, con lo que la configuración queda bloqueada.
+     *
+     * <p>Exige las tres ventanas de fechas completas, cada una con inicio antes o
+     * igual a su fin, ordenadas y sin solaparse (conformación, luego entregas, luego
+     * calificación), la de calificación terminando a más tardar en el límite de
+     * evaluación de la UPC del periodo, y al menos un RAP en el que cada criterio
+     * tenga niveles de desempeño. Se puede lanzar antes de que termine la ventana de
+     * conformación: lanzar cierra la conformación de grupos.</p>
+     *
+     * @throws BusinessRuleException si el momento ya fue lanzado o su configuración
+     *                               está incompleta o es inválida
+     */
+    public void launch() {
+        requireConfiguration();
+        if (groupFormationStart == null || groupFormationEnd == null
+                || submissionStart == null || submissionEnd == null
+                || gradingStart == null || gradingEnd == null) {
+            throw new BusinessRuleException(
+                    "Para lanzar el momento se deben definir las tres ventanas de fechas.");
+        }
+        requireWindow("conformación de grupos", groupFormationStart, groupFormationEnd);
+        requireWindow("entregas", submissionStart, submissionEnd);
+        requireWindow("calificación", gradingStart, gradingEnd);
+        if (!groupFormationEnd.isBefore(submissionStart)) {
+            throw new BusinessRuleException(
+                    "La ventana de entregas debe empezar después de la de conformación de grupos.");
+        }
+        if (!submissionEnd.isBefore(gradingStart)) {
+            throw new BusinessRuleException(
+                    "La ventana de calificación debe empezar después de la de entregas.");
+        }
+        LocalDate upcDeadline = period.getUpcEvaluationDeadline();
+        if (gradingEnd.isAfter(upcDeadline)) {
+            throw new BusinessRuleException("La ventana de calificación debe terminar a más tardar el "
+                    + upcDeadline + ", límite de evaluación de la UPC.");
+        }
+        if (learningOutcomes.isEmpty()) {
+            throw new BusinessRuleException("El momento debe tener al menos un RAP.");
+        }
+        for (LearningOutcome outcome : learningOutcomes) {
+            if (outcome.getCriteria().isEmpty()) {
+                throw new BusinessRuleException(
+                        "El " + outcome.getCode() + " debe tener al menos un criterio.");
+            }
+            for (EvaluationCriterion criterion : outcome.getCriteria()) {
+                if (criterion.getLevels().isEmpty()) {
+                    throw new BusinessRuleException("El criterio \"" + criterion.getDescription()
+                            + "\" del " + outcome.getCode() + " debe tener niveles de desempeño.");
+                }
+            }
+        }
+        status = MomentStatus.LAUNCHED;
     }
 
     /**
@@ -176,8 +261,10 @@ public class Moment {
      * Agrega un RAP al momento y fija el momento del RAP.
      *
      * @param learningOutcome RAP a agregar
+     * @throws BusinessRuleException si el momento ya fue lanzado
      */
     public void addLearningOutcome(LearningOutcome learningOutcome) {
+        requireConfiguration();
         learningOutcomes.add(learningOutcome);
         learningOutcome.setMoment(this);
     }
@@ -186,10 +273,36 @@ public class Moment {
      * Quita un RAP del momento; al guardar, el RAP se elimina con sus criterios.
      *
      * @param learningOutcome RAP a quitar
+     * @throws BusinessRuleException si el momento ya fue lanzado
      */
     public void removeLearningOutcome(LearningOutcome learningOutcome) {
+        requireConfiguration();
         learningOutcomes.remove(learningOutcome);
         learningOutcome.setMoment(null);
+    }
+
+    /**
+     * Rechaza cambios de configuración si el momento ya fue lanzado (ADR-012).
+     *
+     * @throws BusinessRuleException si el momento está en {@link MomentStatus#LAUNCHED}
+     */
+    private void requireConfiguration() {
+        if (status == MomentStatus.LAUNCHED) {
+            throw new BusinessRuleException(
+                    "El momento ya fue lanzado: su configuración no se puede modificar.");
+        }
+    }
+
+    /**
+     * Verifica que una ventana de fechas empiece antes o el mismo día en que termina.
+     *
+     * @throws BusinessRuleException si el inicio es posterior al fin
+     */
+    private static void requireWindow(String window, LocalDate start, LocalDate end) {
+        if (start.isAfter(end)) {
+            throw new BusinessRuleException(
+                    "La ventana de " + window + " no puede terminar antes de empezar.");
+        }
     }
 
     /**
@@ -226,8 +339,12 @@ public class Moment {
         return period;
     }
 
-    /** @param period periodo académico en el que se configura el momento */
+    /**
+     * @param period periodo académico en el que se configura el momento
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
     public void setPeriod(AcademicPeriod period) {
+        requireConfiguration();
         this.period = period;
     }
 
@@ -236,8 +353,12 @@ public class Moment {
         return number;
     }
 
-    /** @param number nuevo número del momento */
+    /**
+     * @param number nuevo número del momento
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
     public void setNumber(int number) {
+        requireConfiguration();
         this.number = number;
     }
 
@@ -246,8 +367,12 @@ public class Moment {
         return name;
     }
 
-    /** @param name nuevo nombre visible */
+    /**
+     * @param name nuevo nombre visible
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
     public void setName(String name) {
+        requireConfiguration();
         this.name = name;
     }
 
@@ -256,8 +381,12 @@ public class Moment {
         return subject;
     }
 
-    /** @param subject nueva asignatura */
+    /**
+     * @param subject nueva asignatura
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
     public void setSubject(String subject) {
+        requireConfiguration();
         this.subject = subject;
     }
 
@@ -266,8 +395,12 @@ public class Moment {
         return semesterFrom;
     }
 
-    /** @param semesterFrom nuevo primer semestre */
+    /**
+     * @param semesterFrom nuevo primer semestre
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
     public void setSemesterFrom(int semesterFrom) {
+        requireConfiguration();
         this.semesterFrom = semesterFrom;
     }
 
@@ -276,8 +409,12 @@ public class Moment {
         return semesterTo;
     }
 
-    /** @param semesterTo nuevo último semestre */
+    /**
+     * @param semesterTo nuevo último semestre
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
     public void setSemesterTo(int semesterTo) {
+        requireConfiguration();
         this.semesterTo = semesterTo;
     }
 
@@ -286,8 +423,12 @@ public class Moment {
         return requirementLevel;
     }
 
-    /** @param requirementLevel nuevo nivel de exigencia */
+    /**
+     * @param requirementLevel nuevo nivel de exigencia
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
     public void setRequirementLevel(String requirementLevel) {
+        requireConfiguration();
         this.requirementLevel = requirementLevel;
     }
 
@@ -296,8 +437,12 @@ public class Moment {
         return minMembers;
     }
 
-    /** @param minMembers nuevo mínimo de estudiantes por grupo */
+    /**
+     * @param minMembers nuevo mínimo de estudiantes por grupo
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
     public void setMinMembers(int minMembers) {
+        requireConfiguration();
         this.minMembers = minMembers;
     }
 
@@ -306,8 +451,12 @@ public class Moment {
         return maxMembers;
     }
 
-    /** @param maxMembers nuevo máximo de estudiantes por grupo */
+    /**
+     * @param maxMembers nuevo máximo de estudiantes por grupo
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
     public void setMaxMembers(int maxMembers) {
+        requireConfiguration();
         this.maxMembers = maxMembers;
     }
 
@@ -316,18 +465,17 @@ public class Moment {
         return status;
     }
 
-    /** @param status nuevo estado del ciclo de vida */
-    public void setStatus(MomentStatus status) {
-        this.status = status;
-    }
-
     /** @return primer día de la ventana de conformación, o {@code null} */
     public LocalDate getGroupFormationStart() {
         return groupFormationStart;
     }
 
-    /** @param groupFormationStart primer día de la ventana de conformación */
+    /**
+     * @param groupFormationStart primer día de la ventana de conformación
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
     public void setGroupFormationStart(LocalDate groupFormationStart) {
+        requireConfiguration();
         this.groupFormationStart = groupFormationStart;
     }
 
@@ -336,8 +484,12 @@ public class Moment {
         return groupFormationEnd;
     }
 
-    /** @param groupFormationEnd último día de la ventana de conformación */
+    /**
+     * @param groupFormationEnd último día de la ventana de conformación
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
     public void setGroupFormationEnd(LocalDate groupFormationEnd) {
+        requireConfiguration();
         this.groupFormationEnd = groupFormationEnd;
     }
 
@@ -346,8 +498,12 @@ public class Moment {
         return submissionStart;
     }
 
-    /** @param submissionStart primer día de la ventana de entregas */
+    /**
+     * @param submissionStart primer día de la ventana de entregas
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
     public void setSubmissionStart(LocalDate submissionStart) {
+        requireConfiguration();
         this.submissionStart = submissionStart;
     }
 
@@ -356,8 +512,12 @@ public class Moment {
         return submissionEnd;
     }
 
-    /** @param submissionEnd último día de la ventana de entregas */
+    /**
+     * @param submissionEnd último día de la ventana de entregas
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
     public void setSubmissionEnd(LocalDate submissionEnd) {
+        requireConfiguration();
         this.submissionEnd = submissionEnd;
     }
 
@@ -366,8 +526,12 @@ public class Moment {
         return gradingStart;
     }
 
-    /** @param gradingStart primer día de la ventana de calificación */
+    /**
+     * @param gradingStart primer día de la ventana de calificación
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
     public void setGradingStart(LocalDate gradingStart) {
+        requireConfiguration();
         this.gradingStart = gradingStart;
     }
 
@@ -376,8 +540,12 @@ public class Moment {
         return gradingEnd;
     }
 
-    /** @param gradingEnd último día de la ventana de calificación */
+    /**
+     * @param gradingEnd último día de la ventana de calificación
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
     public void setGradingEnd(LocalDate gradingEnd) {
+        requireConfiguration();
         this.gradingEnd = gradingEnd;
     }
 
