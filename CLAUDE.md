@@ -48,8 +48,9 @@ RAP) y `evaluador_externo` (empresario, egresado u otro tipo del catálogo
 `Evaluator`; el estudiante **no** se autoevalúa. Todos inician sesión con su correo.
 El flujo de un momento (configuración → conformación de grupos → lanzar → entregas →
 calificación) está en `docs/04` y en el ADR-012. Ver `docs/03-entidades-dominio.md`
-para el modelo completo y `docs/diagramas/diagrama_clases.md` para el UML vigente (el
-`.drawio` se regenera al cerrar la Etapa 1).
+para el modelo completo y `docs/diagramas/diagrama_clases.md` para el UML vigente (su
+versión detallada, `diagrama_clases_mejorado.drawio` + PNG/SVG, se actualiza junto con
+el Mermaid).
 
 ## Reglas de control de acceso a tener siempre presentes
 

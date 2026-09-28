@@ -5,10 +5,11 @@ functional area. Diagrams:
 
 - **Current class diagram (Stage 1):** [`diagramas/diagrama_clases.md`](diagramas/diagrama_clases.md)
   (Mermaid, rendered directly on GitHub). It is the Stage 1 contract.
-- Improved class diagram from Phase 2: [PNG](diagramas/diagrama_clases_mejorado.png) ·
-  [editable .drawio](diagramas/diagrama_clases_mejorado.drawio). **Outdated**
-  relative to the 2026-09-24 decisions: it is regenerated when Stage 1 closes, from
-  what ends up in the code.
+- **Detailed class diagram** (same model, on one sheet, for the delivery document):
+  [PNG](diagramas/diagrama_clases_mejorado.png) · [SVG](diagramas/diagrama_clases_mejorado.svg) ·
+  [editable .drawio](diagramas/diagrama_clases_mejorado.drawio). Regenerated when Stage 1
+  closed (2026-09-28) from the code, plus what is designed but not built yet (marked
+  with a dashed border).
 - **Hierarchy diagram:** [`diagramas/diagrama_jerarquias.md`](diagramas/diagrama_jerarquias.md).
 - **Layer (package) diagram:** [`diagramas/diagrama_capas.md`](diagramas/diagrama_capas.md).
 - Preliminary class diagram (Phase 1): [`diagramas/diagrama_clases.drawio`](diagramas/diagrama_clases.drawio)
