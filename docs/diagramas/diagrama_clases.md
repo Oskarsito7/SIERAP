@@ -208,14 +208,25 @@ class Evaluation {
   -evaluatedAt: LocalDateTime
   -comment: String
   -grades: List~CriterionGrade~
+  -individualGrades: List~IndividualGrade~
   +grade(level: PerformanceLevel) void
   +submit() void
   +isComplete() boolean
   +getTotalScore() BigDecimal
   +getScoreFor(outcome: LearningOutcome) BigDecimal
+  +adjust(s: Student, level: PerformanceLevel) void
+  +getTotalScoreFor(s: Student) BigDecimal
+  +getScoreFor(outcome: LearningOutcome, s: Student) BigDecimal
 }
 class CriterionGrade {
   -id: Long
+  -criterion: EvaluationCriterion
+  -level: PerformanceLevel
+  -score: BigDecimal
+}
+class IndividualGrade {
+  -id: Long
+  -student: Student
   -criterion: EvaluationCriterion
   -level: PerformanceLevel
   -score: BigDecimal
@@ -280,6 +291,10 @@ Evaluation ..> EvaluationStatus : «use»
 Evaluation "1" *-- "1..*" CriterionGrade
 CriterionGrade "*" -- "1" EvaluationCriterion : grades
 CriterionGrade "*" -- "1" PerformanceLevel : selected level
+Evaluation "1" *-- "0..*" IndividualGrade : per-student adjustments
+IndividualGrade "*" -- "1" Student : adjusted student
+IndividualGrade "*" -- "1" EvaluationCriterion
+IndividualGrade "*" -- "1" PerformanceLevel : level for that student
 
 Report <|-- IndividualReport
 Report <|-- GroupReport
@@ -306,6 +321,12 @@ Report ..> Evaluation : «use»
 | Per-RAP grade → `CriterionGrade` | The evaluator picks one level per criterion; the performance per RAP is a sum. |
 | The `NivelExigencia` and `NivelDesempeno` enums are removed | Nothing standard in the code (ADR-010). |
 | No student self-assessment | `Student` does not implement `Evaluator`. |
+
+## Changes of the contract of Stages 4 to 6 (2026-09-28 decisions)
+
+| Change | Reason |
+|---|---|
+| `IndividualGrade` (new), composed by `Evaluation`, with `adjust()`, `getTotalScoreFor()` and an overload of `getScoreFor()` per student | The group is graded once and every member inherits it; an evaluator can change the level of some criteria for one student, so each student has an individual grade besides the group grade (ADR-018). |
 
 ## Changes compared with the preliminary diagram (Phase 1)
 

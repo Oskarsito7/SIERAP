@@ -12,25 +12,28 @@
    the teacher shares; either way they set their password through a link sent by
    email. Can recover a forgotten password the same way.
 2. Can see the groups that **all** the teachers enabled in a moment of their program
-   and join the one agreed with their classmates, even if it belongs to a teacher
-   other than theirs. They can only be in one group per moment, and the group
+   whose semester range includes their current semester, and join the one agreed
+   with their classmates, even if it belongs to a teacher other than theirs. The
+   members write the title of their classroom project. They can only be in one group per moment, and the group
    respects the minimum and maximum number of members the admin set for that moment.
    While the group formation window is open they can leave a group and join another
    one with room.
 3. Can upload the classroom project submissions of their group (`.zip` file, up to
-   100 MB), with versioning/history of every submission made, and also upload their
-   presentation (`.pdf`, `.docx` or `.pptx`, up to 30 MB). Uploads are accepted while
+   100 MB, required in every version), with versioning/history of every submission
+   made, and optionally their presentation (`.pdf`, `.docx` or `.pptx`, up to 30 MB). Uploads are accepted while
    the submission window is open; those after the group's deadline are marked as
    **late**.
-4. Can see their final grade and their individual performance on each RAP.
+4. Can see, once the grading window closes, their final grade (their **individual**
+   grade), their performance on each RAP and the evaluators' comments.
 
 ## External evaluators (today business people and alumni)
 
 5. Can log in and see all the groups they were assigned to.
-6. Can grade those groups, only on the evaluation date set by the teacher, within the
-   grading window of the moment. They can save an evaluation as a draft and submit it
-   later; only submitted evaluations count, and they can be corrected while the
-   grading window is open.
+6. Can grade those groups from the evaluation date set by the teacher until the
+   grading window of the moment closes. They can save an evaluation as a draft and
+   submit it later; only submitted evaluations count, and they can be corrected while
+   the grading window is open. They grade the group once and can adjust the level of
+   a specific student in some criteria (individual grade, ADR-018).
 
 External evaluator types ("Empresario", "Egresado" and any created later) are a
 configurable catalog, not fixed roles (ADR-011).
@@ -43,8 +46,8 @@ configurable catalog, not fixed roles (ADR-011).
    their students (one by one or by bulk upload) or generates a **registration
    code** for one program of their faculty, reusable until the expiry date they set
    (they can deactivate it earlier).
-8. Can create external evaluators (of any type in the catalog) and assign them
-   **only** to the groups they enabled. Can also add to one of their groups a student
+8. Can create external evaluators (of any type in the catalog), or find an existing
+   one by email or document, and assign them **only** to the groups they enabled. Can also add to one of their groups a student
    who did not join any group, even after the formation window or the launch, and
    even above the maximum.
 9. Can set the date on which each of their groups is evaluated, **within the grading
@@ -169,6 +172,15 @@ Defined by the project lead on 2026-09-24.
 | Password rules | At least 8 characters, with at least one letter and one number. *(2026-09-27)* |
 | Email link expiry | The link to set the password of a new account expires in **72 hours**; the "forgot password" link, in **1 hour** (both configurable). *(2026-09-27)* |
 | Registration with a code | Only institutional emails (`@unicesar.edu.co`, configurable) are accepted. *(2026-09-27)* |
+| Who joins a moment's groups | Only students of the program whose **current semester** is within the moment's range see and join its groups. The teacher can add any student of the program by hand (rule of students without a group). *(2026-09-28)* |
+| Shared external evaluators | When assigning evaluators, a teacher can find an existing one by exact email or document and assign them without creating a new account. Each teacher still manages (deactivate, resend link) only the evaluators they created. *(2026-09-28)* |
+| Teacher changes after the launch | The teacher can still change the submission deadline and the evaluation date of their groups (within the windows) and assign or remove external evaluators while the grading window is open. Groups cannot be created or deleted after the launch. *(2026-09-28)* |
+| Project title | The members of the group write the project title and can change it until the submission window ends; the teacher can edit it too. The teacher sets the group name. *(2026-09-28)* |
+| Submission contents | Each version needs the `.zip`; the presentation is optional. If a version has none, the latest presentation of an earlier version is shown. *(2026-09-28)* |
+| Grading period of a group | Teacher and external evaluators grade a group from its evaluation date until the grading window closes; in that span they save drafts, submit and correct. *(2026-09-28)* |
+| What the student sees | After the grading window closes: their final grade, their performance per RAP and the evaluators' comments, without the levels each evaluator picked. *(2026-09-28)* |
+| Group grade and individual grade | The group is graded **once** and every member inherits those levels. Any evaluator can open one student and change the level of the criteria where that student did better or worse; that student's individual grade then differs from the others'. There are two grades: the group grade and each member's individual grade, which is their final grade (ADR-018). *(2026-09-28)* |
+| Grade reviews | Disagreements are handled outside SIERAP: the student talks to their teacher and the evaluator adjusts the individual grade while the grading window is open. *(2026-09-28)* |
 
 ## Still to be defined with the team
 

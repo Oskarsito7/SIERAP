@@ -571,6 +571,47 @@ before deployment.
 
 ---
 
+## ADR-018 — Group grade with individual adjustments
+
+**Date:** 2026-09-28 (API contract of Stages 4 to 6).
+**Status:** Accepted (decided by the project lead).
+
+**Context:** evaluators grade the group once (one level per criterion), but the grade
+is individual: the official UPC guide says the presentation is graded per student
+(`docs/00`), and a teacher may want to recognize that a member did better or worse
+than the rest.
+
+**Decision:**
+
+- The group is graded **once**: one `CriterionGrade` per criterion in each
+  `Evaluation`. Every member **inherits** those levels.
+- Any evaluator (the teacher and the assigned external evaluators) can open one
+  student and change the level of the criteria where that student did better or
+  worse. Each change is an `IndividualGrade` (evaluation, student, criterion, level and
+  a copy of its score); a criterion without an adjustment keeps the group's level.
+  Adjustments pick configured levels, never free numbers.
+- Two grades come out of it: the **group grade** (group levels only) and each member's
+  **individual grade** (group levels replaced by their adjustments), which is the
+  student's final grade. Both use the same formula: weighted by kind of evaluator,
+  averaging several evaluators of the same kind and redistributing the weight of a
+  kind without submitted evaluations.
+- Adjustments follow the rules of the evaluation they belong to: they are made in the
+  grading period of the group and only count once the evaluation is submitted.
+  Setting the same level as the group's removes the adjustment.
+
+**Alternatives considered:** marking each criterion as group or individual and
+grading every student in the individual ones (more work per evaluation, even when
+nobody stands out); a free individual grade set by the teacher and combined with the
+group grade by weights (loses the link to RAP and levels); grading every criterion
+twice, for the group and for each student (multiplies the grading work).
+
+**Consequences:** a new entity `IndividualGrade` (table `individual_grade`, migration
+V7 in Stage 6) composed by `Evaluation`, which gains the methods to compute the score
+of one student in total and per RAP. Completeness for submitting still refers to the
+group levels only. Reports can compare group and individual grades.
+
+---
+
 ## Template for new entries
 
 ```
