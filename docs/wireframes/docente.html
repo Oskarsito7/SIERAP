@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SIERAP · Docente</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="wireframes.css">
+<style>
+  .crit { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-top: 1px solid var(--w-line); }
+  .crit:first-child { border-top: 0; padding-top: 0; }
+  .same { display: flex; justify-content: space-between; gap: 10px; padding: 8px 0; border-top: 1px solid var(--w-line); font-size: 13px; }
+</style>
+</head>
+<body>
+<div class="wf-page">
+  <header class="wf-header">
+    <span class="wf-eyebrow">SIERAP · Wireframes de media fidelidad</span>
+    <h1>Docente</h1>
+    <p>Habilita sus grupos en cada momento, fija sus fechas, asigna evaluadores externos, agrega estudiantes sin grupo y califica sus grupos, con ajustes individuales cuando un estudiante se destaca o se queda atrás (RF 7, 8, 9 y 4, 6). Solo ve los grupos que él habilitó.</p>
+    <nav class="wf-roles" aria-label="Roles">
+      <a href="index.html">Inicio</a>
+      <a href="acceso.html">Acceso</a>
+      <a href="super-admin.html">Super admin</a>
+      <a href="admin.html">Admin</a>
+      <a href="docente.html" aria-current="page">Docente</a>
+      <a href="estudiante.html">Estudiante</a>
+      <a href="evaluador-externo.html">Evaluador externo</a>
+    </nav>
+    <ul class="wf-toc">
+      <li><a href="#do-01"><code>DO-01</code>Mis grupos</a></li>
+      <li><a href="#do-02"><code>DO-02</code>Detalle del grupo</a></li>
+      <li><a href="#do-03"><code>DO-03</code>Asignar evaluador</a></li>
+      <li><a href="#do-04"><code>DO-04</code>Entregas del grupo</a></li>
+      <li><a href="#do-05"><code>DO-05</code>Calificar grupo</a></li>
+      <li><a href="#do-06"><code>DO-06</code>Ajuste individual</a></li>
+      <li><a href="#do-07"><code>DO-07</code>Resultados del grupo</a></li>
+      <li><a href="#do-08"><code>DO-08</code>Mis estudiantes</a></li>
+      <li><a href="#do-09"><code>DO-09</code>Evaluadores externos</a></li>
+      <li><a href="#do-10"><code>DO-10</code>Códigos de registro</a></li>
+    </ul>
+  </header>
+
+  <!-- DO-01 -->
+  <section class="wf-screen" id="do-01">
+    <div class="wf-caption"><span class="wf-code">DO-01</span><h2>Mis grupos</h2><span class="wf-ref">RF 7 · Etapa 4</span></div>
+    <ul class="wf-notes">
+      <li>Solo aparecen los grupos que el docente habilitó. Habilitar, renombrar o eliminar un grupo solo se puede antes de lanzar el momento; eliminarlo, además, solo si no tiene integrantes.</li>
+      <li>El título del proyecto lo escriben los integrantes.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="teacher" data-active="groups" data-title="Mis grupos" data-crumb="Ingeniería de Sistemas · 2026-2" data-path="/grupos">
+        <div class="w-between">
+          <div class="w-row"><div class="w-input select" style="width:300px">Momento 1 · Ingeniería de Sistemas</div><span class="w-chip solid">Conformación abierta hasta el 24/08</span></div>
+          <span class="w-muted w-small">Grupos de 3 a 5 integrantes</span>
+        </div>
+        <div class="w-grid-side" style="grid-template-columns:1fr 300px">
+          <div class="w-grid-3" style="grid-template-columns:repeat(2,1fr)">
+            <div class="w-card"><div class="w-card-body">
+              <div class="w-between"><span class="w-h2">Grupo 1</span><span class="w-chip soft">Completo</span></div>
+              <span>SIERAP</span>
+              <div class="w-stack" style="gap:4px"><div class="w-between w-small"><span class="w-muted">Integrantes</span><span class="w-num">5 de 5</span></div><div class="w-bar"><i style="width:100%"></i></div></div>
+              <table class="w-table">
+                <tr><td class="w-muted">Entrega hasta</td><td class="w-num">15/11/2026</td></tr>
+                <tr><td class="w-muted">Evaluación</td><td class="w-num">24/11/2026</td></tr>
+                <tr><td class="w-muted">Evaluadores</td><td>2 asignados</td></tr>
+              </table>
+              <span class="w-btn outline sm" style="align-self:flex-start">Abrir grupo</span>
+            </div></div>
+            <div class="w-card"><div class="w-card-body">
+              <div class="w-between"><span class="w-h2">Grupo 2</span><span class="w-chip">Con cupo</span></div>
+              <span>Biblioteca digital</span>
+              <div class="w-stack" style="gap:4px"><div class="w-between w-small"><span class="w-muted">Integrantes</span><span class="w-num">4 de 5</span></div><div class="w-bar"><i style="width:80%"></i></div></div>
+              <table class="w-table">
+                <tr><td class="w-muted">Entrega hasta</td><td class="w-num">15/11/2026</td></tr>
+                <tr><td class="w-muted">Evaluación</td><td class="w-num">25/11/2026</td></tr>
+                <tr><td class="w-muted">Evaluadores</td><td>1 asignado</td></tr>
+              </table>
+              <span class="w-btn outline sm" style="align-self:flex-start">Abrir grupo</span>
+            </div></div>
+            <div class="w-card"><div class="w-card-body">
+              <div class="w-between"><span class="w-h2">Grupo 3</span><span class="w-chip dashed">Bajo el mínimo</span></div>
+              <span class="w-muted">Sin título todavía</span>
+              <div class="w-stack" style="gap:4px"><div class="w-between w-small"><span class="w-muted">Integrantes</span><span class="w-num">2 de 5</span></div><div class="w-bar"><i style="width:40%"></i></div></div>
+              <table class="w-table">
+                <tr><td class="w-muted">Entrega hasta</td><td class="w-muted">Sin fijar</td></tr>
+                <tr><td class="w-muted">Evaluación</td><td class="w-muted">Sin fijar</td></tr>
+                <tr><td class="w-muted">Evaluadores</td><td class="w-muted">Ninguno</td></tr>
+              </table>
+              <span class="w-btn outline sm" style="align-self:flex-start">Abrir grupo</span>
+            </div></div>
+          </div>
+          <div class="w-card">
+            <div class="w-card-head"><span class="w-h2">Habilitar grupo</span></div>
+            <div class="w-card-body">
+              <div class="w-field"><label>Nombre del grupo</label><div class="w-input">Grupo 4</div></div>
+              <span class="w-help">Los estudiantes del Momento 1 lo verán enseguida y podrán inscribirse mientras la conformación esté abierta.</span>
+              <span class="w-btn block">Habilitar</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DO-02 -->
+  <section class="wf-screen" id="do-02">
+    <div class="wf-caption"><span class="wf-code">DO-02</span><h2>Detalle del grupo · Integrantes, fechas y evaluadores</h2><span class="wf-ref">RF 7, 8, 9 · Etapa 4</span></div>
+    <ul class="wf-notes">
+      <li>La fecha límite de entrega va dentro de la ventana de entregas; la de evaluación, dentro de la de calificación. Ninguna puede ser anterior a hoy.</li>
+      <li>Después de lanzar, el docente aún cambia fechas y evaluadores hasta que cierra la calificación, y agrega estudiantes sin grupo aunque se pase del máximo.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="teacher" data-active="groups" data-title="Grupo 1 · SIERAP" data-crumb="Mis grupos / Momento 1" data-path="/grupos/7">
+        <div class="w-between">
+          <div class="w-row"><span class="w-chip solid">Momento lanzado</span><span class="w-muted">Entregas abiertas del 01/10 al 20/11 · calificación del 21/11 al 28/11</span></div>
+        </div>
+        <div class="w-tabs"><span class="is-active">Resumen</span><span>Entregas</span><span>Mi calificación</span><span>Resultados</span></div>
+        <div class="w-grid-side" style="grid-template-columns:1fr 360px">
+          <div class="w-card">
+            <div class="w-card-head"><span class="w-h2">Integrantes (5 de 5)</span><span class="w-btn outline sm">Agregar estudiante sin grupo</span></div>
+            <table class="w-table">
+              <thead><tr><th>Nombre</th><th>Código</th><th>Correo</th><th></th></tr></thead>
+              <tbody>
+                <tr><td>Juan Rojas</td><td class="w-num">20261001</td><td>juan.rojas@unicesar.edu.co</td><td class="actions"><span class="w-btn ghost sm">Quitar</span></td></tr>
+                <tr><td>Ana Gómez</td><td class="w-num">20261014</td><td>ana.gomez@unicesar.edu.co</td><td class="actions"><span class="w-btn ghost sm">Quitar</span></td></tr>
+                <tr><td>Luis Martínez</td><td class="w-num">20261022</td><td>luis.martinez@unicesar.edu.co</td><td class="actions"><span class="w-btn ghost sm">Quitar</span></td></tr>
+                <tr><td>Sara Castro</td><td class="w-num">20261037</td><td>sara.castro@unicesar.edu.co</td><td class="actions"><span class="w-btn ghost sm">Quitar</span></td></tr>
+                <tr><td>Pedro Núñez</td><td class="w-num">20261045</td><td>pedro.nunez@unicesar.edu.co</td><td class="actions"><span class="w-btn ghost sm">Quitar</span></td></tr>
+              </tbody>
+            </table>
+            <div class="w-card-body"><span class="w-help">Quitar un integrante solo se puede mientras el grupo no tenga evaluaciones enviadas.</span></div>
+          </div>
+          <div class="w-stack">
+            <div class="w-card">
+              <div class="w-card-head"><span class="w-h2">Fechas del grupo</span></div>
+              <div class="w-card-body">
+                <div class="w-field"><label>Fecha límite de entrega</label><div class="w-input">15/11/2026</div><span class="w-help">Entre el 01/10 y el 20/11. Lo que llegue después se marca como tardío.</span></div>
+                <div class="w-field"><label>Fecha de evaluación</label><div class="w-input">24/11/2026</div><span class="w-help">Entre el 21/11 y el 28/11. Desde ese día se puede calificar.</span></div>
+                <span class="w-btn sm" style="align-self:flex-start">Guardar fechas</span>
+              </div>
+            </div>
+            <div class="w-card">
+              <div class="w-card-head"><span class="w-h2">Evaluadores externos</span><span class="w-btn outline sm">Asignar</span></div>
+              <table class="w-table">
+                <tr><td>Sofía Vega<div class="w-muted w-small">Empresario · Tecnosoft S.A.S.</div></td><td class="actions"><span class="w-btn ghost sm">Quitar</span></td></tr>
+                <tr><td>Carlos Pérez<div class="w-muted w-small">Egresado · Ing. de Sistemas 2019</div></td><td class="actions"><span class="w-btn ghost sm">Quitar</span></td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DO-03 -->
+  <section class="wf-screen" id="do-03">
+    <div class="wf-caption"><span class="wf-code">DO-03</span><h2>Asignar evaluador externo</h2><span class="wf-ref">RF 8 · Etapa 4</span></div>
+    <ul class="wf-notes">
+      <li>Primero se busca por correo o documento exactos: si otro docente ya creó al evaluador, se reutiliza su cuenta. La búsqueda no lista ni recorre evaluadores.</li>
+      <li>Si no existe, "Crear evaluador" abre el formulario de DO-09 y lo asigna al terminar. No se puede quitar a un evaluador que ya tiene una evaluación del grupo.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="teacher" data-active="groups" data-title="Grupo 1 · SIERAP" data-crumb="Mis grupos / Momento 1" data-path="/grupos/7">
+        <div class="w-tabs"><span class="is-active">Resumen</span><span>Entregas</span><span>Mi calificación</span><span>Resultados</span></div>
+        <div class="w-placeholder" style="height:420px">Resumen del grupo (DO-02)</div>
+        <div class="w-dim">
+          <div class="w-dialog" style="width:540px">
+            <div class="w-dialog-head"><span class="w-h2">Asignar evaluador externo al Grupo 1</span><span class="w-sub">Escribe el correo o el número de documento completos.</span></div>
+            <div class="w-dialog-body">
+              <div class="w-row" style="flex-wrap:nowrap"><div class="w-input" style="flex:1">sofia.vega@tecnosoft.co</div><span class="w-btn outline">Buscar</span></div>
+              <div class="w-card is-soft"><div class="w-card-body" style="padding:12px 14px">
+                <div class="w-between">
+                  <div><b>Sofía Vega</b><div class="w-muted w-small">Empresario · Gerente de proyectos, Tecnosoft S.A.S.</div><div class="w-muted w-small">sofia.vega@tecnosoft.co</div></div>
+                  <span class="w-btn sm">Asignar</span>
+                </div>
+              </div></div>
+              <span class="w-help">¿No aparece? <span class="w-link">Crear evaluador nuevo</span></span>
+            </div>
+            <div class="w-dialog-foot"><span class="w-btn outline">Cerrar</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DO-04 -->
+  <section class="wf-screen" id="do-04">
+    <div class="wf-caption"><span class="wf-code">DO-04</span><h2>Entregas del grupo</h2><span class="wf-ref">RF 3 · ADR-015 · Etapa 5</span></div>
+    <ul class="wf-notes">
+      <li>Cada subida es una versión nueva; nada se sobrescribe. Se califica la última versión a tiempo o, si no hay, la última tardía.</li>
+      <li>La presentación es opcional en cada versión: se muestra la más reciente que se haya subido.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame short" data-role="teacher" data-active="groups" data-title="Grupo 1 · SIERAP" data-crumb="Mis grupos / Momento 1" data-path="/grupos/7/entregas">
+        <div class="w-tabs"><span>Resumen</span><span class="is-active">Entregas</span><span>Mi calificación</span><span>Resultados</span></div>
+        <div class="w-grid-side" style="grid-template-columns:1fr 320px">
+          <div class="w-card">
+            <table class="w-table">
+              <thead><tr><th>Versión</th><th>Subida</th><th>Proyecto (.zip)</th><th>Presentación</th><th>Estado</th><th></th></tr></thead>
+              <tbody>
+                <tr><td><b>v4</b></td><td class="w-num">18/11/2026 09:12</td><td>sierap-final.zip · 42 MB</td><td class="w-muted">—</td><td><span class="w-chip dashed">Tarde</span></td><td class="actions"><span class="w-btn ghost sm">Descargar</span></td></tr>
+                <tr><td><b>v3</b></td><td class="w-num">14/11/2026 22:41</td><td>sierap-v3.zip · 38 MB</td><td class="w-muted">—</td><td><span class="w-chip solid">A calificar</span></td><td class="actions"><span class="w-btn ghost sm">Descargar</span></td></tr>
+                <tr><td><b>v2</b></td><td class="w-num">10/11/2026 18:05</td><td>sierap-v2.zip · 35 MB</td><td>sustentacion.pdf · 4 MB</td><td><span class="w-chip">A tiempo</span></td><td class="actions"><span class="w-btn ghost sm">Descargar</span></td></tr>
+                <tr><td><b>v1</b></td><td class="w-num">20/10/2026 11:30</td><td>sierap-v1.zip · 21 MB</td><td class="w-muted">—</td><td><span class="w-chip">A tiempo</span></td><td class="actions"><span class="w-btn ghost sm">Descargar</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="w-card is-soft"><div class="w-card-body">
+            <b>Presentación actual</b>
+            <div class="w-placeholder" style="height:120px">sustentacion.pdf</div>
+            <span class="w-muted w-small">Subida con la v2 el 10/11/2026.</span>
+            <span class="w-btn outline sm" style="align-self:flex-start">Descargar presentación</span>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DO-05 -->
+  <section class="wf-screen" id="do-05">
+    <div class="wf-caption"><span class="wf-code">DO-05</span><h2>Calificar grupo (mi evaluación)</h2><span class="wf-ref">RF 6 · ADR-018 · Etapa 6</span></div>
+    <ul class="wf-notes">
+      <li>Se califica al grupo una vez: un nivel por criterio. Desde la fecha de evaluación del grupo hasta el cierre de la ventana se guarda como borrador, se envía y se corrige.</li>
+      <li>Solo se puede enviar con todos los criterios calificados (si falta alguno, la API responde 422). Los ajustes por estudiante se hacen desde la lista de integrantes (DO-06).</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="teacher" data-active="groups" data-title="Grupo 1 · SIERAP" data-crumb="Mis grupos / Momento 1" data-path="/grupos/7/calificacion">
+        <div class="w-tabs"><span>Resumen</span><span>Entregas</span><span class="is-active">Mi calificación</span><span>Resultados</span></div>
+        <div class="w-grid-side" style="grid-template-columns:1fr 300px">
+          <div class="w-stack">
+            <div class="w-alert"><b>Se califica la v3 (14/11/2026, a tiempo)</b><span class="w-small">Puedes calificar hasta el 28/11/2026. <span class="w-link">Descargar la v3</span></span></div>
+            <div class="w-card">
+              <div class="w-card-head"><div><span class="w-h2">RAP1</span><span class="w-muted w-small"> · INTEGRA las ciencias básicas… · máx. 0,60</span></div><span class="w-chip soft">1 de 1</span></div>
+              <div class="w-card-body">
+                <div class="crit">
+                  <b>Identificación del problema</b>
+                  <div class="w-levels">
+                    <div class="w-level"><b>Bajo <span class="w-num">0,00</span></b><span class="w-muted">No identifica una problemática real.</span></div>
+                    <div class="w-level"><b>Básico <span class="w-num">0,36</span></b><span class="w-muted">Sin causas ni consecuencias.</span></div>
+                    <div class="w-level"><b>Alto <span class="w-num">0,48</span></b><span class="w-muted">Causas o consecuencias, no ambas.</span></div>
+                    <div class="w-level is-picked"><b>Sobresaliente <span class="w-num">0,60</span></b><span class="w-muted">Problema central, causas y consecuencias.</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="w-card">
+              <div class="w-card-head"><div><span class="w-h2">RAP2</span><span class="w-muted w-small"> · DESARROLLA productos de software… · máx. 1,20</span></div><span class="w-chip soft">2 de 2</span></div>
+              <div class="w-card-body">
+                <div class="crit">
+                  <b>Implementación de arquitectura por capas</b>
+                  <div class="w-levels">
+                    <div class="w-level"><b>Bajo <span class="w-num">0,00</span></b><span class="w-muted">No aplica capas.</span></div>
+                    <div class="w-level"><b>Básico <span class="w-num">0,36</span></b><span class="w-muted">Solo una capa.</span></div>
+                    <div class="w-level"><b>Alto <span class="w-num">0,48</span></b><span class="w-muted">Entre dos y tres capas.</span></div>
+                    <div class="w-level is-picked"><b>Sobresaliente <span class="w-num">0,60</span></b><span class="w-muted">Capas completas en Java.</span></div>
+                  </div>
+                </div>
+                <div class="crit">
+                  <b>Uso de técnicas generales de POO</b>
+                  <div class="w-levels">
+                    <div class="w-level"><b>Bajo <span class="w-num">0,00</span></b><span class="w-muted">Sin POO.</span></div>
+                    <div class="w-level"><b>Básico <span class="w-num">0,36</span></b><span class="w-muted">Encapsulamiento y sobrecarga.</span></div>
+                    <div class="w-level is-picked"><b>Alto <span class="w-num">0,48</span></b><span class="w-muted">+ herencia y polimorfismo.</span></div>
+                    <div class="w-level"><b>Sobresaliente <span class="w-num">0,60</span></b><span class="w-muted">+ gestión de excepciones.</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="w-card is-soft"><div class="w-card-body" style="padding:10px 16px"><div class="w-between"><span><b>RAP3</b> <span class="w-muted">· Análisis y diseño</span></span><span class="w-chip soft">1 de 1</span></div></div></div>
+            <div class="w-card is-soft"><div class="w-card-body" style="padding:10px 16px"><div class="w-between"><span><b>RAP4</b> <span class="w-muted">· Funcionalidad · Buenas prácticas</span></span><span class="w-chip soft">2 de 2</span></div></div></div>
+            <div class="w-card is-soft"><div class="w-card-body" style="padding:10px 16px"><div class="w-between"><span><b>RAP5</b> <span class="w-muted">· Descripción de la solución · Sustentación</span></span><span class="w-chip dashed">1 de 2 · falta Sustentación</span></div></div></div>
+          </div>
+          <div class="w-stack">
+            <div class="w-card"><div class="w-card-body">
+              <div class="w-between"><span class="w-chip">Borrador</span><span class="w-muted w-small">Guardado 24/11 10:15</span></div>
+              <div class="w-kpi"><b>3,96</b><span>de 5,00 · 7 de 8 criterios calificados</span></div>
+              <div class="w-bar"><i style="width:87.5%"></i></div>
+              <div class="w-field"><label>Comentario para el grupo</label><div class="w-input area">Buen trabajo en equipo; falta documentar las excepciones.</div><span class="w-help">Los estudiantes lo ven al cierre, sin tu nombre.</span></div>
+              <span class="w-btn outline block">Guardar borrador</span>
+              <span class="w-btn block is-disabled">Enviar evaluación</span>
+              <span class="w-help">Para enviar, califica los 8 criterios.</span>
+            </div></div>
+            <div class="w-card">
+              <div class="w-card-head"><span class="w-h2">Integrantes</span></div>
+              <table class="w-table">
+                <tr><td>Juan Rojas<div class="w-muted w-small">Igual al grupo</div></td><td class="actions"><span class="w-btn outline sm">Ajustar</span></td></tr>
+                <tr><td>Ana Gómez<div class="w-muted w-small">Igual al grupo</div></td><td class="actions"><span class="w-btn outline sm">Ajustar</span></td></tr>
+                <tr><td>Luis Martínez<div class="w-muted w-small">Igual al grupo</div></td><td class="actions"><span class="w-btn outline sm">Ajustar</span></td></tr>
+                <tr><td>Sara Castro<div class="w-muted w-small">Igual al grupo</div></td><td class="actions"><span class="w-btn outline sm">Ajustar</span></td></tr>
+                <tr><td>Pedro Núñez<div class="w-muted w-small">Igual al grupo</div></td><td class="actions"><span class="w-btn outline sm">Ajustar</span></td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DO-06 -->
+  <section class="wf-screen" id="do-06">
+    <div class="wf-caption"><span class="wf-code">DO-06</span><h2>Ajuste individual de un estudiante</h2><span class="wf-ref">RF 4, 6 · ADR-018 · Etapa 6</span></div>
+    <ul class="wf-notes">
+      <li>El estudiante parte con los mismos niveles del grupo. El evaluador cambia solo los criterios en los que se destacó o se quedó atrás; lo demás queda igual al grupo.</li>
+      <li>Elegir el mismo nivel del grupo quita el ajuste. La nota individual es la nota final del estudiante.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="teacher" data-active="groups" data-title="Grupo 1 · SIERAP" data-crumb="Mis grupos / Momento 1 / Mi calificación" data-path="/grupos/7/calificacion/estudiantes/40">
+        <div class="w-between">
+          <div><span class="w-h1">Ajuste individual · Juan Rojas</span><p class="w-sub">Parte de las calificaciones del grupo. Cambia solo lo que este estudiante hizo mejor o peor.</p></div>
+          <div class="w-row"><span class="w-btn ghost">Quitar ajustes</span><span class="w-btn outline">Volver al grupo</span><span class="w-btn">Guardar ajuste</span></div>
+        </div>
+        <div class="w-grid-side" style="grid-template-columns:1fr 300px">
+          <div class="w-stack">
+            <div class="w-card">
+              <div class="w-card-head"><div><span class="w-h2">RAP5 · Sustentación y/o nivel de dominio</span></div><span class="w-chip solid">Ajustado</span></div>
+              <div class="w-card-body">
+                <div class="w-levels">
+                  <div class="w-level"><b>Bajo <span class="w-num">0,00</span></b><span class="w-muted">No realiza la sustentación.</span></div>
+                  <div class="w-level"><b>Básico <span class="w-num">0,48</span></b><span class="w-muted">Dominio del problema.</span></div>
+                  <div class="w-level is-group"><b>Alto <span class="w-num">0,64</span></b><span class="w-muted">Nivel del grupo.</span></div>
+                  <div class="w-level is-picked"><b>Sobresaliente <span class="w-num">0,80</span></b><span class="w-muted">+ dominio del código desarrollado.</span></div>
+                </div>
+                <span class="w-help">Borde punteado: nivel del grupo. Borde grueso: nivel de este estudiante.</span>
+              </div>
+            </div>
+            <div class="w-card">
+              <div class="w-card-head"><span class="w-h2">Criterios iguales al grupo</span><span class="w-muted w-small">Elige uno para ajustarlo</span></div>
+              <div class="w-card-body" style="gap:0">
+                <div class="same"><span>RAP1 · Identificación del problema</span><span class="w-muted">Sobresaliente · 0,60</span></div>
+                <div class="same"><span>RAP2 · Implementación de arquitectura por capas</span><span class="w-muted">Sobresaliente · 0,60</span></div>
+                <div class="same"><span>RAP2 · Uso de técnicas generales de POO</span><span class="w-muted">Alto · 0,48</span></div>
+                <div class="same"><span>RAP3 · Análisis y diseño (diagrama de clases UML)</span><span class="w-muted">Alto · 0,48</span></div>
+                <div class="same"><span>RAP4 · Funcionalidad de la solución desarrollada</span><span class="w-muted">Sobresaliente · 0,60</span></div>
+                <div class="same"><span>RAP4 · Uso de buenas prácticas en escritura de código</span><span class="w-muted">Sobresaliente · 0,60</span></div>
+                <div class="same"><span>RAP5 · Descripción de la solución</span><span class="w-muted">Sobresaliente · 0,60</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="w-card"><div class="w-card-body">
+            <b>En tu evaluación</b>
+            <table class="w-table">
+              <tr><td class="w-muted">Nota del grupo</td><td class="r w-num">4,60</td></tr>
+              <tr><td class="w-muted">Nota de Juan</td><td class="r w-num"><b>4,76</b></td></tr>
+              <tr><td class="w-muted">Diferencia</td><td class="r w-num">+0,16</td></tr>
+            </table>
+            <span class="w-help">La nota final combina tu evaluación con las de los evaluadores externos según los pesos del momento.</span>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DO-07 -->
+  <section class="wf-screen" id="do-07">
+    <div class="wf-caption"><span class="wf-code">DO-07</span><h2>Resultados del grupo</h2><span class="wf-ref">RF 4, 6 · ADR-018 · Etapa 6</span></div>
+    <ul class="wf-notes">
+      <li>Solo cuentan las evaluaciones enviadas. Pesos del momento: docente 60 %, empresario 20 %, egresado 20 %; como el egresado no ha enviado, su peso se reparte (75 % y 25 %).</li>
+      <li>Es una vista previa hasta que cierra la calificación; entonces las notas quedan definitivas y el estudiante las ve.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="teacher" data-active="groups" data-title="Grupo 1 · SIERAP" data-crumb="Mis grupos / Momento 1" data-path="/grupos/7/resultados">
+        <div class="w-tabs"><span>Resumen</span><span>Entregas</span><span>Mi calificación</span><span class="is-active">Resultados</span></div>
+        <div class="w-alert"><b>Vista previa</b><span class="w-small">Las notas son definitivas al cerrar la calificación, el 28/11/2026.</span></div>
+        <div class="w-grid-side" style="grid-template-columns:260px 1fr">
+          <div class="w-card"><div class="w-card-body">
+            <div class="w-kpi"><b>4,51</b><span>Nota grupal · de 5,00</span></div>
+            <table class="w-table">
+              <tr><td>RAP1</td><td class="r w-num">0,57 / 0,60</td></tr>
+              <tr><td>RAP2</td><td class="r w-num">1,05 / 1,20</td></tr>
+              <tr><td>RAP3</td><td class="r w-num">0,48 / 0,60</td></tr>
+              <tr><td>RAP4</td><td class="r w-num">1,17 / 1,20</td></tr>
+              <tr><td>RAP5</td><td class="r w-num">1,24 / 1,40</td></tr>
+            </table>
+          </div></div>
+          <div class="w-stack">
+            <div class="w-card">
+              <div class="w-card-head"><span class="w-h2">Evaluaciones</span><span class="w-muted w-small">2 enviadas · 1 pendiente</span></div>
+              <table class="w-table">
+                <thead><tr><th>Evaluador</th><th>Tipo</th><th>Estado</th><th class="r">Nota del grupo</th></tr></thead>
+                <tbody>
+                  <tr><td>Marta Díaz</td><td>Docente</td><td><span class="w-chip solid">Enviada</span></td><td class="r w-num">4,60</td></tr>
+                  <tr><td>Sofía Vega</td><td>Empresario</td><td><span class="w-chip solid">Enviada</span></td><td class="r w-num">4,24</td></tr>
+                  <tr><td>Carlos Pérez</td><td>Egresado</td><td><span class="w-chip">Borrador</span></td><td class="r w-muted">—</td></tr>
+                </tbody>
+              </table>
+            </div>
+            <div class="w-card">
+              <div class="w-card-head"><span class="w-h2">Notas individuales</span></div>
+              <table class="w-table">
+                <thead><tr><th>Estudiante</th><th class="r">RAP1</th><th class="r">RAP2</th><th class="r">RAP3</th><th class="r">RAP4</th><th class="r">RAP5</th><th class="r">Nota final</th></tr></thead>
+                <tbody>
+                  <tr><td>Juan Rojas <span class="w-chip soft">Ajustado</span></td><td class="r w-num">0,57</td><td class="r w-num">1,05</td><td class="r w-num">0,48</td><td class="r w-num">1,17</td><td class="r w-num">1,36</td><td class="r w-num"><b>4,63</b></td></tr>
+                  <tr><td>Ana Gómez <span class="w-chip soft">Ajustado</span></td><td class="r w-num">0,57</td><td class="r w-num">1,05</td><td class="r w-num">0,48</td><td class="r w-num">1,17</td><td class="r w-num">1,12</td><td class="r w-num"><b>4,39</b></td></tr>
+                  <tr><td>Luis Martínez</td><td class="r w-num">0,57</td><td class="r w-num">1,05</td><td class="r w-num">0,48</td><td class="r w-num">1,17</td><td class="r w-num">1,24</td><td class="r w-num"><b>4,51</b></td></tr>
+                  <tr><td>Sara Castro</td><td class="r w-num">0,57</td><td class="r w-num">1,05</td><td class="r w-num">0,48</td><td class="r w-num">1,17</td><td class="r w-num">1,24</td><td class="r w-num"><b>4,51</b></td></tr>
+                  <tr><td>Pedro Núñez</td><td class="r w-num">0,57</td><td class="r w-num">1,05</td><td class="r w-num">0,48</td><td class="r w-num">1,17</td><td class="r w-num">1,24</td><td class="r w-num"><b>4,51</b></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DO-08 -->
+  <section class="wf-screen" id="do-08">
+    <div class="wf-caption"><span class="wf-code">DO-08</span><h2>Mis estudiantes</h2><span class="wf-ref">RF 7 · ADR-017 · Etapa 2</span></div>
+    <ul class="wf-notes">
+      <li>El docente crea estudiantes de los programas de su facultad o comparte un código (DO-10). La carga masiva espera que se defina el formato del archivo (pendiente en docs/04).</li>
+      <li>El filtro "Sin grupo" ayuda a agregar a un grupo a quienes no se inscribieron (DO-02).</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="teacher" data-active="students" data-title="Mis estudiantes" data-crumb="Facultad de Ingenierías y Tecnologías" data-path="/estudiantes">
+        <div class="w-between">
+          <div class="w-row"><div class="w-input select" style="width:240px">Ingeniería de Sistemas</div><div class="w-input select" style="width:220px">Sin grupo en Momento 1</div><div class="w-input is-empty" style="width:220px">Buscar por nombre o código</div></div>
+          <div class="w-row"><span class="w-btn outline is-disabled">Carga masiva</span><span class="w-btn">Nuevo estudiante</span></div>
+        </div>
+        <div class="w-card">
+          <table class="w-table">
+            <thead><tr><th>Nombre</th><th>Código</th><th>Semestre</th><th>Correo</th><th>Cómo llegó</th><th>Estado</th><th></th></tr></thead>
+            <tbody>
+              <tr><td>Camila Torres</td><td class="w-num">20261053</td><td class="w-num">2</td><td>camila.torres@unicesar.edu.co</td><td>Código K7MQ4TZP</td><td><span class="w-chip solid">Activa</span></td><td class="actions"><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
+              <tr><td>Andrés Molina</td><td class="w-num">20252210</td><td class="w-num">3</td><td>andres.molina@unicesar.edu.co</td><td>Creado por mí</td><td><span class="w-chip solid">Activo</span></td><td class="actions"><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
+              <tr><td>Valentina Rivas</td><td class="w-num">20261068</td><td class="w-num">1</td><td>valentina.rivas@unicesar.edu.co</td><td>Código K7MQ4TZP</td><td><span class="w-chip solid">Activa</span></td><td class="actions"><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DO-09 -->
+  <section class="wf-screen" id="do-09">
+    <div class="wf-caption"><span class="wf-code">DO-09</span><h2>Evaluadores externos</h2><span class="wf-ref">RF 8 · ADR-011, ADR-017 · Etapa 4</span></div>
+    <ul class="wf-notes">
+      <li>Lista los evaluadores que creó el docente. El tipo sale del catálogo (SA-04); el correo puede ser personal. Año y programa de grado aplican a los egresados.</li>
+      <li>Antes de crear uno, conviene buscarlo (DO-03): si otro docente ya lo creó, se reutiliza.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="teacher" data-active="evaluators" data-title="Evaluadores externos" data-path="/evaluadores">
+        <div class="w-between">
+          <div class="w-input is-empty" style="width:320px">Buscar por nombre u organización</div>
+          <span class="w-btn">Nuevo evaluador</span>
+        </div>
+        <div class="w-card">
+          <table class="w-table">
+            <thead><tr><th>Nombre</th><th>Tipo</th><th>Organización y cargo</th><th>Correo</th><th class="r">Grupos</th><th></th></tr></thead>
+            <tbody>
+              <tr><td>Sofía Vega</td><td>Empresario</td><td>Tecnosoft S.A.S. · Gerente de proyectos</td><td>sofia.vega@tecnosoft.co</td><td class="r w-num">2</td><td class="actions"><span class="w-btn ghost sm">Reenviar enlace</span></td></tr>
+              <tr><td>Carlos Pérez</td><td>Egresado</td><td>Ing. de Sistemas, 2019</td><td>carlos.perez@gmail.com</td><td class="r w-num">1</td><td class="actions"><span class="w-btn ghost sm">Reenviar enlace</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="w-dim">
+          <div class="w-dialog" style="width:600px">
+            <div class="w-dialog-head"><span class="w-h2">Nuevo evaluador externo</span><span class="w-sub">Recibirá un correo para crear su contraseña.</span></div>
+            <div class="w-dialog-body">
+              <div class="w-grid-2">
+                <div class="w-field"><label>Nombres</label><div class="w-input">Carlos Andrés</div></div>
+                <div class="w-field"><label>Apellidos</label><div class="w-input">Pérez Luna</div></div>
+                <div class="w-field"><label>Tipo de documento</label><div class="w-input select">Cédula de ciudadanía</div></div>
+                <div class="w-field"><label>Número de documento</label><div class="w-input">1 065 800 221</div></div>
+              </div>
+              <div class="w-field"><label>Correo</label><div class="w-input">carlos.perez@gmail.com</div></div>
+              <div class="w-grid-2">
+                <div class="w-field"><label>Tipo de evaluador</label><div class="w-input select">Egresado</div></div>
+                <div class="w-field"><label>Organización (opcional)</label><div class="w-input is-empty">Empresa donde trabaja</div></div>
+                <div class="w-field"><label>Año de grado (opcional)</label><div class="w-input">2019</div></div>
+                <div class="w-field"><label>Programa de grado (opcional)</label><div class="w-input select">Ingeniería de Sistemas</div></div>
+              </div>
+            </div>
+            <div class="w-dialog-foot"><span class="w-btn outline">Cancelar</span><span class="w-btn">Crear y enviar enlace</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DO-10 -->
+  <section class="wf-screen" id="do-10">
+    <div class="wf-caption"><span class="wf-code">DO-10</span><h2>Códigos de registro</h2><span class="wf-ref">RF 7 · ADR-017 · Etapa 2</span></div>
+    <ul class="wf-notes">
+      <li>Un código queda ligado al docente y a un programa de su facultad, sirve para muchos registros hasta que vence y se puede desactivar antes (no se reactiva).</li>
+      <li>El estudiante lo usa en AU-04 con su correo institucional.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="teacher" data-active="codes" data-title="Códigos de registro" data-path="/codigos">
+        <div class="w-grid-side" style="grid-template-columns:1fr 320px">
+          <div class="w-stack">
+            <div class="w-card is-mine"><div class="w-card-body">
+              <div class="w-between"><span class="w-chip solid">Activo</span><span class="w-muted w-small">Vence el 15/10/2026</span></div>
+              <div class="w-between">
+                <span class="w-code-big">K7MQ4TZP</span>
+                <div class="w-row"><span class="w-btn outline sm">Copiar código</span><span class="w-btn ghost sm">Desactivar</span></div>
+              </div>
+              <div class="w-row w-muted"><span>Ingeniería de Sistemas</span><span>·</span><span class="w-num">27 estudiantes registrados</span></div>
+              <span class="w-help">Comparte también la dirección de registro: sierap.unicesar.edu.co/register</span>
+            </div></div>
+            <div class="w-card">
+              <table class="w-table">
+                <thead><tr><th>Código</th><th>Programa</th><th>Vence</th><th class="r">Registrados</th><th>Estado</th></tr></thead>
+                <tbody>
+                  <tr><td class="w-num" style="font-family:var(--font-mono)">B8WJ3NQA</td><td>Ingeniería de Sistemas</td><td class="w-num">30/08/2026</td><td class="r w-num">12</td><td><span class="w-chip">Vencido</span></td></tr>
+                  <tr><td class="w-num" style="font-family:var(--font-mono)">T5CZ7KMD</td><td>Ingeniería de Sistemas</td><td class="w-num">30/08/2026</td><td class="r w-num">3</td><td><span class="w-chip dashed">Desactivado</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="w-card">
+            <div class="w-card-head"><span class="w-h2">Generar código</span></div>
+            <div class="w-card-body">
+              <div class="w-field"><label>Programa</label><div class="w-input select">Ingeniería de Sistemas</div></div>
+              <div class="w-field"><label>Vence el</label><div class="w-input">30/10/2026</div></div>
+              <span class="w-btn block">Generar</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="wireframes.js"></script>
+</body>
+</html>

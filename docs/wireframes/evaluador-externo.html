@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SIERAP · Evaluador externo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="wireframes.css">
+</head>
+<body>
+<div class="wf-page">
+  <header class="wf-header">
+    <span class="wf-eyebrow">SIERAP · Wireframes de media fidelidad</span>
+    <h1>Evaluador externo</h1>
+    <p>Empresarios, egresados u otro tipo del catálogo. Solo ve los grupos a los que un docente lo asignó y los califica desde la fecha de evaluación de cada grupo hasta el cierre de la ventana (RF 5 y 6). Usa el mismo formulario de calificación que el docente (DO-05 y DO-06).</p>
+    <nav class="wf-roles" aria-label="Roles">
+      <a href="index.html">Inicio</a>
+      <a href="acceso.html">Acceso</a>
+      <a href="super-admin.html">Super admin</a>
+      <a href="admin.html">Admin</a>
+      <a href="docente.html">Docente</a>
+      <a href="estudiante.html">Estudiante</a>
+      <a href="evaluador-externo.html" aria-current="page">Evaluador externo</a>
+    </nav>
+    <ul class="wf-toc">
+      <li><a href="#ev-01"><code>EV-01</code>Grupos asignados</a></li>
+      <li><a href="#ev-02"><code>EV-02</code>Corregir una evaluación enviada</a></li>
+    </ul>
+  </header>
+
+  <!-- EV-01 -->
+  <section class="wf-screen" id="ev-01">
+    <div class="wf-caption"><span class="wf-code">EV-01</span><h2>Grupos asignados</h2><span class="wf-ref">RF 5, 6 · Etapa 6</span></div>
+    <ul class="wf-notes">
+      <li>Solo los grupos asignados, que pueden ser de varios docentes y programas. "Calificar" se habilita desde la fecha de evaluación del grupo.</li>
+      <li>Ve la versión a calificar de cada grupo y su evaluación; no ve las evaluaciones de los demás.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="external_evaluator" data-active="assigned" data-title="Grupos asignados" data-path="/asignados">
+        <div class="w-alert"><b>Hoy es 25/11/2026</b><span class="w-small">Puedes calificar cada grupo desde su fecha de evaluación hasta el 28/11/2026, cuando cierra la calificación del Momento 1.</span></div>
+        <div class="w-card">
+          <table class="w-table">
+            <thead><tr><th>Grupo</th><th>Momento</th><th>Docente</th><th>Evaluación</th><th>Mi evaluación</th><th></th></tr></thead>
+            <tbody>
+              <tr><td><b>Grupo 1</b><div class="w-muted w-small">SIERAP</div></td><td>Momento 1 · Ing. de Sistemas</td><td>Marta Díaz</td><td class="w-num">24/11/2026</td><td><span class="w-chip solid">Enviada · 4,24</span></td><td class="actions"><span class="w-btn outline sm">Ver o corregir</span></td></tr>
+              <tr><td><b>Grupo 2</b><div class="w-muted w-small">Biblioteca digital</div></td><td>Momento 1 · Ing. de Sistemas</td><td>Marta Díaz</td><td class="w-num">25/11/2026</td><td><span class="w-chip">Borrador · 5 de 8</span></td><td class="actions"><span class="w-btn sm">Continuar</span></td></tr>
+              <tr><td><b>Grupo 4</b><div class="w-muted w-small">App de turnos</div></td><td>Momento 1 · Ing. de Sistemas</td><td>Rafael Ospino</td><td class="w-num">27/11/2026</td><td><span class="w-chip dashed">Desde el 27/11</span></td><td class="actions"><span class="w-btn sm is-disabled">Calificar</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EV-02 -->
+  <section class="wf-screen" id="ev-02">
+    <div class="wf-caption"><span class="wf-code">EV-02</span><h2>Corregir una evaluación enviada</h2><span class="wf-ref">RF 6 · ADR-018 · Etapa 6</span></div>
+    <ul class="wf-notes">
+      <li>Mismo formulario que DO-05. Una evaluación enviada se puede corregir hasta el cierre y sigue enviada, así que debe seguir completa.</li>
+      <li>El evaluador externo también puede ajustar a un estudiante (DO-06); su evaluación pesa según su tipo.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="external_evaluator" data-active="assigned" data-title="Grupo 1 · SIERAP" data-crumb="Grupos asignados / Momento 1" data-path="/asignados/7">
+        <div class="w-grid-side" style="grid-template-columns:1fr 300px">
+          <div class="w-stack">
+            <div class="w-alert"><b>Se califica la v3 (14/11/2026, a tiempo)</b><span class="w-small"><span class="w-link">Descargar la v3</span> · <span class="w-link">Descargar la presentación</span></span></div>
+            <div class="w-card">
+              <div class="w-card-head"><div><span class="w-h2">RAP5</span><span class="w-muted w-small"> · EMPRENDE aplicando ciencia, tecnología e innovación… · máx. 1,40</span></div><span class="w-chip soft">2 de 2</span></div>
+              <div class="w-card-body">
+                <div class="w-stack" style="gap:8px">
+                  <b>Descripción de la solución</b>
+                  <div class="w-levels">
+                    <div class="w-level"><b>Bajo <span class="w-num">0,00</span></b><span class="w-muted">No describe la solución.</span></div>
+                    <div class="w-level"><b>Básico <span class="w-num">0,36</span></b><span class="w-muted">Sin alcance ni requerimientos.</span></div>
+                    <div class="w-level"><b>Alto <span class="w-num">0,48</span></b><span class="w-muted">Sin factor diferenciador.</span></div>
+                    <div class="w-level is-picked"><b>Sobresaliente <span class="w-num">0,60</span></b><span class="w-muted">Completa.</span></div>
+                  </div>
+                </div>
+                <div class="w-stack" style="gap:8px;border-top:1px solid var(--w-line);padding-top:12px">
+                  <b>Sustentación y/o nivel de dominio</b>
+                  <div class="w-levels">
+                    <div class="w-level"><b>Bajo <span class="w-num">0,00</span></b><span class="w-muted">No sustenta.</span></div>
+                    <div class="w-level"><b>Básico <span class="w-num">0,48</span></b><span class="w-muted">Dominio del problema.</span></div>
+                    <div class="w-level is-picked"><b>Alto <span class="w-num">0,64</span></b><span class="w-muted">+ dominio de la solución.</span></div>
+                    <div class="w-level"><b>Sobresaliente <span class="w-num">0,80</span></b><span class="w-muted">+ dominio del código.</span></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="w-card is-soft"><div class="w-card-body" style="padding:10px 16px"><div class="w-between"><span><b>RAP1 a RAP4</b> <span class="w-muted">· 6 criterios</span></span><span class="w-chip soft">6 de 6</span></div></div></div>
+          </div>
+          <div class="w-stack">
+            <div class="w-card"><div class="w-card-body">
+              <div class="w-between"><span class="w-chip solid">Enviada</span><span class="w-muted w-small">24/11 16:40</span></div>
+              <div class="w-kpi"><b>4,24</b><span>de 5,00 · 8 de 8 criterios</span></div>
+              <div class="w-field"><label>Comentario para el grupo</label><div class="w-input area">La solución resuelve un problema real de la universidad. Mejoren la presentación de los reportes.</div></div>
+              <span class="w-btn block">Guardar corrección</span>
+              <span class="w-help">Puedes corregirla hasta el 28/11/2026.</span>
+            </div></div>
+            <div class="w-card">
+              <div class="w-card-head"><span class="w-h2">Integrantes</span></div>
+              <table class="w-table">
+                <tr><td>Juan Rojas<div class="w-muted w-small">Igual al grupo</div></td><td class="actions"><span class="w-btn outline sm">Ajustar</span></td></tr>
+                <tr><td>Ana Gómez<div class="w-muted w-small">Igual al grupo</div></td><td class="actions"><span class="w-btn outline sm">Ajustar</span></td></tr>
+                <tr><td>Luis Martínez<div class="w-muted w-small">Igual al grupo</div></td><td class="actions"><span class="w-btn outline sm">Ajustar</span></td></tr>
+              </table>
+              <div class="w-card-body"><span class="w-help">y 2 integrantes más</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="wireframes.js"></script>
+</body>
+</html>

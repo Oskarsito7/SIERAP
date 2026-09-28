@@ -1,0 +1,224 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SIERAP · Estudiante</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="wireframes.css">
+<style>
+  .members { margin: 0; padding-left: 18px; font-size: 13px; }
+  .rap-row { display: grid; grid-template-columns: 70px 1fr 110px; gap: 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--w-line); }
+  .rap-row:first-child { border-top: 0; }
+</style>
+</head>
+<body>
+<div class="wf-page">
+  <header class="wf-header">
+    <span class="wf-eyebrow">SIERAP · Wireframes de media fidelidad</span>
+    <h1>Estudiante</h1>
+    <p>Ve los grupos de todos los docentes de los momentos de su programa que le corresponden por semestre, se inscribe en uno, sube las entregas versionadas de su grupo y, al cierre, consulta su nota final y su desempeño por RAP (RF 1 a 4).</p>
+    <nav class="wf-roles" aria-label="Roles">
+      <a href="index.html">Inicio</a>
+      <a href="acceso.html">Acceso</a>
+      <a href="super-admin.html">Super admin</a>
+      <a href="admin.html">Admin</a>
+      <a href="docente.html">Docente</a>
+      <a href="estudiante.html" aria-current="page">Estudiante</a>
+      <a href="evaluador-externo.html">Evaluador externo</a>
+    </nav>
+    <ul class="wf-toc">
+      <li><a href="#es-01"><code>ES-01</code>Grupos del momento</a></li>
+      <li><a href="#es-02"><code>ES-02</code>Cambiar de grupo</a></li>
+      <li><a href="#es-03"><code>ES-03</code>Mi grupo y entregas</a></li>
+      <li><a href="#es-04"><code>ES-04</code>Mis notas</a></li>
+      <li><a href="#es-05"><code>ES-05</code>Notas aún no disponibles</a></li>
+    </ul>
+  </header>
+
+  <!-- ES-01 -->
+  <section class="wf-screen" id="es-01">
+    <div class="wf-caption"><span class="wf-code">ES-01</span><h2>Grupos del momento</h2><span class="wf-ref">RF 2 · Etapa 5</span></div>
+    <ul class="wf-notes">
+      <li>Solo ve los momentos de su programa cuyo rango de semestres incluye su semestre actual, con los grupos de todos los docentes.</li>
+      <li>De los otros grupos ve solo el nombre de los integrantes. Se inscribe, sale o cambia mientras la conformación está abierta; un grupo lleno no acepta más.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="student" data-active="moment" data-title="Grupos del momento" data-crumb="Ingeniería de Sistemas · 2026-2" data-path="/momento">
+        <div class="w-card is-soft"><div class="w-card-body">
+          <div class="w-between">
+            <div><span class="w-h2">Momento 1 · Programación II (SS300)</span><div class="w-muted w-small">Semestres 1 a 3 · grupos de 3 a 5 integrantes</div></div>
+            <div class="w-row"><span class="w-chip solid">Conformación abierta hasta el 24/08/2026</span><span class="w-chip">Estás en el Grupo 1</span></div>
+          </div>
+        </div></div>
+        <div class="w-grid-3">
+          <div class="w-card is-mine"><div class="w-card-body">
+            <div class="w-between"><span class="w-h2">Grupo 1</span><span class="w-chip solid">Mi grupo</span></div>
+            <span class="w-muted w-small">Docente: Marta Díaz · Proyecto: SIERAP</span>
+            <ul class="members"><li>Juan Rojas (tú)</li><li>Ana Gómez</li><li>Luis Martínez</li><li>Sara Castro</li><li>Pedro Núñez</li></ul>
+            <div class="w-between w-small"><span class="w-muted">Integrantes</span><span class="w-num">5 de 5</span></div>
+            <span class="w-btn outline block">Salir del grupo</span>
+          </div></div>
+          <div class="w-card"><div class="w-card-body">
+            <div class="w-between"><span class="w-h2">Grupo 2</span><span class="w-chip">Con cupo</span></div>
+            <span class="w-muted w-small">Docente: Marta Díaz · Proyecto: Biblioteca digital</span>
+            <ul class="members"><li>Laura Beltrán</li><li>Felipe Mejía</li><li>Natalia Ortega</li><li>Diego Carrillo</li></ul>
+            <div class="w-between w-small"><span class="w-muted">Integrantes</span><span class="w-num">4 de 5</span></div>
+            <span class="w-btn block">Unirme</span>
+          </div></div>
+          <div class="w-card"><div class="w-card-body">
+            <div class="w-between"><span class="w-h2">Grupo 4</span><span class="w-chip soft">Completo</span></div>
+            <span class="w-muted w-small">Docente: Rafael Ospino · Proyecto: App de turnos</span>
+            <ul class="members"><li>Mateo Díaz</li><li>Sofía Arrieta</li><li>Kevin Suárez</li><li>Daniela Ruiz</li><li>Óscar Maestre</li></ul>
+            <div class="w-between w-small"><span class="w-muted">Integrantes</span><span class="w-num">5 de 5</span></div>
+            <span class="w-btn block is-disabled">Grupo completo</span>
+          </div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ES-02 -->
+  <section class="wf-screen" id="es-02">
+    <div class="wf-caption"><span class="wf-code">ES-02</span><h2>Cambiar de grupo</h2><span class="wf-ref">RF 2 · Etapa 5</span></div>
+    <ul class="wf-notes">
+      <li>Unirse a otro grupo del mismo momento lo saca del anterior en un solo paso; por eso se pide confirmación.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame short" data-role="student" data-active="moment" data-title="Grupos del momento" data-crumb="Ingeniería de Sistemas · 2026-2" data-path="/momento">
+        <div class="w-placeholder" style="height:460px">Grupos del momento (ES-01)</div>
+        <div class="w-dim">
+          <div class="w-dialog" style="width:480px">
+            <div class="w-dialog-head"><span class="w-h2">¿Cambiarte al Grupo 2?</span></div>
+            <div class="w-dialog-body">
+              <p class="w-sub">Saldrás del Grupo 1 (SIERAP, docente Marta Díaz) y quedarás en el Grupo 2 (Biblioteca digital). Puedes volver a cambiar hasta el 24/08/2026 si hay cupo.</p>
+            </div>
+            <div class="w-dialog-foot"><span class="w-btn outline">Cancelar</span><span class="w-btn">Cambiarme al Grupo 2</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ES-03 -->
+  <section class="wf-screen" id="es-03">
+    <div class="wf-caption"><span class="wf-code">ES-03</span><h2>Mi grupo y entregas</h2><span class="wf-ref">RF 3 · ADR-015 · Etapa 5</span></div>
+    <ul class="wf-notes">
+      <li>Los integrantes escriben el título del proyecto hasta que cierra la ventana de entregas.</li>
+      <li>Cada versión lleva el .zip (hasta 100 MB); la presentación (.pdf, .docx o .pptx, hasta 30 MB) es opcional. Después de la fecha límite del grupo se acepta, pero se marca como tardía; al cerrar la ventana ya no se reciben.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="student" data-active="mygroup" data-title="Mi grupo y entregas" data-crumb="Momento 1 · 2026-2" data-path="/mi-grupo">
+        <div class="w-grid-side" style="grid-template-columns:1fr 340px">
+          <div class="w-stack">
+            <div class="w-card">
+              <div class="w-card-head"><span class="w-h2">Subir una versión nueva</span><span class="w-chip solid">Entregas abiertas hasta el 20/11</span></div>
+              <div class="w-card-body">
+                <div class="w-grid-2">
+                  <div class="w-drop"><b>Proyecto (.zip)</b><span>Arrastra el archivo o haz clic · hasta 100 MB</span><span class="w-chip soft">sierap-v4.zip · 41 MB</span></div>
+                  <div class="w-drop"><b>Presentación (opcional)</b><span>.pdf, .docx o .pptx · hasta 30 MB</span></div>
+                </div>
+                <div class="w-between">
+                  <span class="w-help">Será la versión 4. Tu fecha límite es el 15/11/2026: desde el 16/11 las versiones se marcan como tardías.</span>
+                  <span class="w-btn">Subir versión 4</span>
+                </div>
+              </div>
+            </div>
+            <div class="w-card">
+              <div class="w-card-head"><span class="w-h2">Historial de entregas</span></div>
+              <table class="w-table">
+                <thead><tr><th>Versión</th><th>Subida</th><th>Proyecto</th><th>Presentación</th><th>Estado</th><th></th></tr></thead>
+                <tbody>
+                  <tr><td><b>v3</b></td><td class="w-num">14/11/2026 22:41</td><td>sierap-v3.zip</td><td class="w-muted">—</td><td><span class="w-chip">A tiempo</span></td><td class="actions"><span class="w-btn ghost sm">Descargar</span></td></tr>
+                  <tr><td><b>v2</b></td><td class="w-num">10/11/2026 18:05</td><td>sierap-v2.zip</td><td>sustentacion.pdf</td><td><span class="w-chip">A tiempo</span></td><td class="actions"><span class="w-btn ghost sm">Descargar</span></td></tr>
+                  <tr><td><b>v1</b></td><td class="w-num">20/10/2026 11:30</td><td>sierap-v1.zip</td><td class="w-muted">—</td><td><span class="w-chip">A tiempo</span></td><td class="actions"><span class="w-btn ghost sm">Descargar</span></td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <div class="w-stack">
+            <div class="w-card"><div class="w-card-body">
+              <div class="w-between"><span class="w-h2">Grupo 1</span><span class="w-muted w-small">Docente: Marta Díaz</span></div>
+              <div class="w-field"><label>Título del proyecto</label><div class="w-input">SIERAP</div><span class="w-help">Lo pueden cambiar los integrantes hasta el 20/11/2026.</span></div>
+              <span class="w-btn outline sm" style="align-self:flex-start">Guardar título</span>
+            </div></div>
+            <div class="w-card"><div class="w-card-body">
+              <table class="w-table">
+                <tr><td class="w-muted">Entrega hasta</td><td class="w-num">15/11/2026</td></tr>
+                <tr><td class="w-muted">Evaluación</td><td class="w-num">24/11/2026</td></tr>
+              </table>
+              <b class="w-small">Integrantes</b>
+              <ul class="members"><li>Juan Rojas (tú)</li><li>Ana Gómez</li><li>Luis Martínez</li><li>Sara Castro</li><li>Pedro Núñez</li></ul>
+            </div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ES-04 -->
+  <section class="wf-screen" id="es-04">
+    <div class="wf-caption"><span class="wf-code">ES-04</span><h2>Mis notas</h2><span class="wf-ref">RF 4 · ADR-018 · Etapa 6</span></div>
+    <ul class="wf-notes">
+      <li>Aparecen al cerrar la ventana de calificación. La nota final es la individual; la grupal se muestra como referencia.</li>
+      <li>Los comentarios se ven con el tipo de evaluador, sin su nombre, y sin el nivel que eligió cada uno.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="student" data-active="grades" data-title="Mis notas" data-path="/notas">
+        <div class="w-row"><div class="w-input select" style="width:320px">Momento 1 · Programación II · 2026-2</div></div>
+        <div class="w-grid-side" style="grid-template-columns:280px 1fr">
+          <div class="w-stack">
+            <div class="w-card"><div class="w-card-body">
+              <div class="w-kpi"><b>4,63</b><span>Mi nota final · de 5,00</span></div>
+              <div class="w-kpi"><b style="font-size:22px">4,51</b><span>Nota del Grupo 1 (SIERAP)</span></div>
+              <span class="w-help">Tu nota es distinta a la del grupo porque un evaluador ajustó tu calificación en algún criterio.</span>
+            </div></div>
+          </div>
+          <div class="w-stack">
+            <div class="w-card">
+              <div class="w-card-head"><span class="w-h2">Desempeño por RAP</span></div>
+              <div class="w-card-body" style="gap:0">
+                <div class="rap-row"><b>RAP1</b><div class="w-bar"><i style="width:95%"></i></div><span class="w-num r">0,57 / 0,60</span></div>
+                <div class="rap-row"><b>RAP2</b><div class="w-bar"><i style="width:87.5%"></i></div><span class="w-num">1,05 / 1,20</span></div>
+                <div class="rap-row"><b>RAP3</b><div class="w-bar"><i style="width:80%"></i></div><span class="w-num">0,48 / 0,60</span></div>
+                <div class="rap-row"><b>RAP4</b><div class="w-bar"><i style="width:97.5%"></i></div><span class="w-num">1,17 / 1,20</span></div>
+                <div class="rap-row"><b>RAP5</b><div class="w-bar"><i style="width:97.1%"></i></div><span class="w-num">1,36 / 1,40</span></div>
+              </div>
+            </div>
+            <div class="w-card">
+              <div class="w-card-head"><span class="w-h2">Comentarios de los evaluadores</span></div>
+              <div class="w-card-body">
+                <div class="w-alert"><b>Docente</b><span>Buen trabajo en equipo; falta documentar las excepciones.</span></div>
+                <div class="w-alert"><b>Empresario</b><span>La solución resuelve un problema real de la universidad. Mejoren la presentación de los reportes.</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ES-05 -->
+  <section class="wf-screen" id="es-05">
+    <div class="wf-caption"><span class="wf-code">ES-05</span><h2>Notas aún no disponibles</h2><span class="wf-ref">RF 4 · Etapa 6</span></div>
+    <ul class="wf-notes">
+      <li>Mientras la ventana de calificación está abierta, las notas pueden cambiar, así que no se muestran.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame short" data-role="student" data-active="grades" data-title="Mis notas" data-path="/notas">
+        <div class="w-card is-soft" style="min-height:300px;display:grid;place-items:center">
+          <div class="w-stack" style="align-items:center;text-align:center;max-width:460px">
+            <div class="w-placeholder" style="width:64px;height:64px;border-radius:50%"></div>
+            <h1 class="w-h1">Tus notas del Momento 1 aún no están listas</h1>
+            <p class="w-sub">La calificación cierra el 28/11/2026. Desde el 29/11 verás tu nota final, tu desempeño por RAP y los comentarios de los evaluadores.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+<script src="wireframes.js"></script>
+</body>
+</html>

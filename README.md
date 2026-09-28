@@ -116,7 +116,7 @@ API error messages, Javadoc and code comments are in Spanish.
 - [x] Preliminary class diagram in UML notation
 - [x] Improved class, hierarchy and package (layer) diagrams
 - [x] Functional requirements formalized by role with access control
-- [ ] Preliminary GUI design (mockup/wireframe per role)
+- [x] Preliminary GUI design: medium-fidelity wireframes of every screen per role (`docs/wireframes/`)
 - [ ] Code implementation (progress on the diagram classes)
 
 Implementation progress, by stages of [`docs/06-plan-de-trabajo.md`](docs/06-plan-de-trabajo.md):
@@ -145,6 +145,7 @@ SIERAP/
 │   ├── 06-plan-de-trabajo.md          ← stages, split among the 3 devs, branches and tests
 │   ├── 07-contrato-api.md             ← API contract (routes, DTOs, error codes)
 │   ├── diagramas/                     ← class, hierarchy and layer diagrams (Mermaid + .drawio + PNG)
+│   ├── wireframes/                    ← GUI wireframes per role (HTML + PNG for the delivery document)
 │   └── entregas/                      ← formal delivery documents (includes presentacion-sierap.pptx)
 ├── backend/                           ← Java 21 + Spring Boot 3 API (Maven)
 │   └── src/main/java/co/edu/unicesar/sierap/

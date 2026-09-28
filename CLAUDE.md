@@ -119,6 +119,8 @@ para el modelo completo y `docs/diagramas/diagrama_clases.md` para el UML vigent
   integrantes, estrategia de ramas (`main`/`develop`/`feature/*`), convención de
   commits, checklist de PR y estrategia de pruebas. Consúltalo antes de abrir una
   rama o de proponer en qué orden implementar algo.
+- `docs/wireframes/` — wireframes de todas las pantallas por rol (HTML + PNG); el
+  frontend los implementa y cualquier cambio de regla va primero a `docs/04` y `docs/07`.
 - `backend/` — API Spring Boot; `frontend/` — app React (ver `frontend/README.md`);
   `docker-compose.yml` — PostgreSQL local; `.github/workflows/ci.yml` — CI.
 
