@@ -181,6 +181,7 @@ Defined by the project lead on 2026-09-24.
 | What the student sees | After the grading window closes: their final grade, their performance per RAP and the evaluators' comments, without the levels each evaluator picked. *(2026-09-28)* |
 | Group grade and individual grade | The group is graded **once** and every member inherits those levels. Any evaluator can open one student and change the level of the criteria where that student did better or worse; that student's individual grade then differs from the others'. There are two grades: the group grade and each member's individual grade, which is their final grade (ADR-018). *(2026-09-28)* |
 | Grade reviews | Disagreements are handled outside SIERAP: the student talks to their teacher and the evaluator adjusts the individual grade while the grading window is open. *(2026-09-28)* |
+| API contract of Stages 4 to 6 | Approved with the technical details D1 proposed in `docs/07`. *(2026-09-28)* |
 
 ## Still to be defined with the team
 

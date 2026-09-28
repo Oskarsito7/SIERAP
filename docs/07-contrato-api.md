@@ -149,8 +149,10 @@ they created. Out of scope answers `403`.
 ## Stages 4 to 6 — Groups, submissions and evaluation
 
 Rules come from `docs/04` (flow of a moment and team decisions) and ADR-012, ADR-015 and
-ADR-018. Items marked *(proposed)* are technical details D1 proposed in this contract;
-the lead confirms or changes them when approving it.
+ADR-018. The technical details D1 proposed in this contract (what students see of other
+groups, switching groups in one step, when groups, members and evaluators can be
+removed, date limits, the exact evaluator lookup, anonymous comments, the current
+period) were approved by the lead on 2026-09-28.
 
 **Windows.** "Today" is always the date of the injected `Clock` (`America/Bogota`). A
 window is open from its start date to its end date, both included.
@@ -160,7 +162,7 @@ window is open from its start date to its end date, both included.
 | Enable, rename or delete a group | The moment is in `CONFIGURATION` (before the launch) |
 | Join, leave or switch groups (student) | The moment is in `CONFIGURATION` and today is within the group formation window |
 | Change the group dates, assign or remove evaluators (teacher) | Before the launch, or after it until the grading window closes |
-| Add a student without a group (teacher) | Any time until the grading window closes *(proposed)*, even after the launch and above the maximum |
+| Add a student without a group (teacher) | Any time until the grading window closes, even after the launch and above the maximum |
 | Edit the project title (members or teacher) | Until the submission window ends |
 | Upload a submission | The moment is `LAUNCHED` and today is within the submission window |
 | Grade (draft, submit, correct, individual adjustments) | The moment is `LAUNCHED` and today is between the group's `evaluationDate` and the end of the grading window |
@@ -219,7 +221,7 @@ own contract written by D2. Until these two routes exist, D3 mocks them.
 
 | Method and route | Who | Answer |
 |---|---|---|
-| `GET /api/moments?periodId=` | super_admin (all), admin and teacher (programs of their faculty), student (their program, only moments whose semester range includes their current semester) | `200 MomentSummary[]`. Without `periodId`, the current period: the one whose dates include today *(proposed)* |
+| `GET /api/moments?periodId=` | super_admin (all), admin and teacher (programs of their faculty), student (their program, only moments whose semester range includes their current semester) | `200 MomentSummary[]`. Without `periodId`, the current period: the one whose dates include today |
 | `GET /api/moments/{id}` | same scope | `200 MomentDetail`. `403` out of scope |
 
 ### Groups (Stage 4 teacher, Stage 5 student) — D3
@@ -246,7 +248,7 @@ own contract written by D2. Until these two routes exist, D3 mocks them.
 ```
 
 Students see only `fullName` of the members of other groups (to know who is in each
-one), without `studentCode`, `email` or `evaluators` *(proposed)*; in their own group
+one), without `studentCode`, `email` or `evaluators`; in their own group
 they see everything except `evaluators`.
 
 | Method and route | Who | Body | Answer |
@@ -254,23 +256,23 @@ they see everything except `evaluators`.
 | `GET /api/groups?momentId=` | teacher (their groups; `momentId` optional), external evaluator (the groups assigned to them; `momentId` optional), student (all the groups of an eligible moment; `momentId` required), admin (their faculty; required), super_admin (required) | — | `200 Group[]` ordered by name |
 | `GET /api/groups/{id}` | the group's teacher, its members, its assigned evaluators, students of an eligible moment, admin of the faculty, super_admin | — | `200 Group`. `403` out of scope |
 | `POST /api/groups` | teacher of the moment's faculty | `{ "momentId", "name" }` | `201 Group`. `422` if the moment was already launched |
-| `PATCH /api/groups/{id}` | the group's teacher | any of `{ "name", "submissionDeadline", "evaluationDate" }` | `200 Group`. The name only changes before the launch. `submissionDeadline` must be within the submission window and `evaluationDate` within the grading window; neither can be earlier than today *(proposed)*. `422` otherwise |
-| `DELETE /api/groups/{id}` | the group's teacher | — | `204`. Only before the launch and while the group has no members *(proposed)*; otherwise `422` |
+| `PATCH /api/groups/{id}` | the group's teacher | any of `{ "name", "submissionDeadline", "evaluationDate" }` | `200 Group`. The name only changes before the launch. `submissionDeadline` must be within the submission window and `evaluationDate` within the grading window; neither can be earlier than today. `422` otherwise |
+| `DELETE /api/groups/{id}` | the group's teacher | — | `204`. Only before the launch and while the group has no members; otherwise `422` |
 | `PUT /api/groups/{id}/project-title` | the group's members and teacher | `{ "projectTitle" }` (up to 200 characters) | `200 Group`. `422` after the submission window ends |
-| `POST /api/groups/{id}/join` | student of an eligible moment | — | `200 Group`. If they were in another group of the same moment, they leave it in the same step (the screen asks for confirmation) *(proposed)*. `422` if the group is full or the group formation window is not open |
+| `POST /api/groups/{id}/join` | student of an eligible moment | — | `200 Group`. If they were in another group of the same moment, they leave it in the same step (the screen asks for confirmation). `422` if the group is full or the group formation window is not open |
 | `POST /api/groups/{id}/leave` | a member | — | `204`. `422` if the group formation window is not open |
 | `GET /api/moments/{id}/students-without-group` | teacher and admin of the faculty | — | `200 [ { "id", "fullName", "studentCode", "currentSemester" } ]`: students of the program with their semester in range and no group in the moment |
 | `POST /api/groups/{id}/members` | the group's teacher | `{ "studentId" }` | `200 Group`. Any student of the moment's program who has no group in the moment, even outside the semester range, after the launch and above the maximum. `422` if they already have a group |
-| `DELETE /api/groups/{id}/members/{studentId}` | the group's teacher | — | `204`. While the group has no submitted evaluation *(proposed)*; otherwise `422` |
+| `DELETE /api/groups/{id}/members/{studentId}` | the group's teacher | — | `204`. While the group has no submitted evaluation; otherwise `422` |
 | `GET /api/students/me/groups` | student | — | `200 Group[]`: their groups, one per moment, newest first (history) |
 
 **External evaluators of a group** (Stage 4):
 
 | Method and route | Who | Body | Answer |
 |---|---|---|---|
-| `GET /api/external-evaluators/lookup?q=` | teacher, admin, super_admin | — | `200 UserSummary` of the active external evaluator whose email or document number is **exactly** `q`; `404` if there is none. It does not list or search partially, so evaluator accounts cannot be browsed *(proposed)* |
+| `GET /api/external-evaluators/lookup?q=` | teacher, admin, super_admin | — | `200 UserSummary` of the active external evaluator whose email or document number is **exactly** `q`; `404` if there is none. It does not list or search partially, so evaluator accounts cannot be browsed |
 | `POST /api/groups/{id}/evaluators` | the group's teacher | `{ "evaluatorId" }` | `200 Group`. `422` if the evaluator is deactivated or already assigned |
-| `DELETE /api/groups/{id}/evaluators/{evaluatorId}` | the group's teacher | — | `204`. `422` if that evaluator already has an evaluation (draft or submitted) of the group *(proposed)* |
+| `DELETE /api/groups/{id}/evaluators/{evaluatorId}` | the group's teacher | — | `204`. `422` if that evaluator already has an evaluation (draft or submitted) of the group |
 
 Creating an evaluator is the existing `POST /api/external-evaluators` (Stage 2).
 
@@ -294,7 +296,7 @@ Creating an evaluator is the existing `POST /api/external-evaluators` (Stage 2).
 
 | Method and route | Who | Body | Answer |
 |---|---|---|---|
-| `POST /api/groups/{id}/submissions` | a member | `multipart/form-data`: `zip` (required, `.zip`, up to 100 MB) and `presentation` (optional, `.pdf`, `.docx` or `.pptx`, up to 30 MB) | `201 Submission`, a new version (never overwrites). `late` is `true` if today is after the group's `submissionDeadline` (or, if the teacher did not set one, after the end of the window *(proposed)*). `400` wrong type, `413` too large, `422` window closed |
+| `POST /api/groups/{id}/submissions` | a member | `multipart/form-data`: `zip` (required, `.zip`, up to 100 MB) and `presentation` (optional, `.pdf`, `.docx` or `.pptx`, up to 30 MB) | `201 Submission`, a new version (never overwrites). `late` is `true` if today is after the group's `submissionDeadline` (or, if the teacher did not set one, after the end of the window). `400` wrong type, `413` too large, `422` window closed |
 | `GET /api/groups/{id}/submissions` | members, the group's teacher, its assigned evaluators, admin of the faculty, super_admin | — | `200 { "versions": Submission[] (newest first), "currentPresentation": Submission \| null }`. `currentPresentation` is the newest version that has a presentation |
 | `GET /api/submissions/{id}/zip` | same | — | `200` the file (`Content-Disposition: attachment`) |
 | `GET /api/submissions/{id}/presentation` | same | — | `200` the file; `404` if that version has none |
@@ -348,7 +350,7 @@ evaluation per group. They grade the group once and may adjust single students
 | `GET /api/groups/{id}/evaluation` | the group's teacher and its assigned evaluators | — | `200 EvaluationForm` (their own) |
 | `PUT /api/groups/{id}/evaluation` | same, within the grading period of the group | `{ "levels": [ { "criterionId", "levelId" } ], "comment", "adjustments": [ { "studentId", "criterionId", "levelId" } ] }` | `200 EvaluationForm`. Creates the evaluation as a draft the first time (a draft can be partial). `levels` sets the level of each criterion sent; the others keep theirs. `adjustments`, when sent, **replaces** all the previous ones (omit it to keep them); one equal to the group's level is dropped. If it was already submitted, it stays submitted, so it must stay complete (`422` otherwise). `422` if a level does not belong to its criterion or a student is not a member |
 | `POST /api/groups/{id}/evaluation/submit` | same | — | `200 EvaluationForm` with `status: SUBMITTED`. `422` "Falta calificar N criterios." if it is incomplete |
-| `GET /api/groups/{id}/evaluations` | the group's teacher, admin of the faculty, super_admin | — | `200 [ { "id", "evaluator": { "id", "fullName", "kind" }, "status", "evaluatedAt", "totalScore", "comment" } ]`. `kind` is "Docente" or the evaluator type name. External evaluators only see their own evaluation *(proposed)* |
+| `GET /api/groups/{id}/evaluations` | the group's teacher, admin of the faculty, super_admin | — | `200 [ { "id", "evaluator": { "id", "fullName", "kind" }, "status", "evaluatedAt", "totalScore", "comment" } ]`. `kind` is "Docente" or the evaluator type name. External evaluators only see their own evaluation |
 
 ### Results (Stage 6) — D2 + D3
 
@@ -387,7 +389,7 @@ evaluation per group. They grade the group once and may adjust single students
 | Method and route | Who | Answer |
 |---|---|---|
 | `GET /api/groups/{id}/results` | the group's teacher, admin of the faculty, super_admin | `200 GroupResults`, at any time (while the window is open it is a preview with the submitted evaluations so far) |
-| `GET /api/students/me/results` | student | `200 StudentResult[]`, newest first. Before the grading window ends, `available` is `false` and grades and comments are `null`/empty. Comments show the kind of evaluator, not their name *(proposed)*, and never the levels each evaluator picked |
+| `GET /api/students/me/results` | student | `200 StudentResult[]`, newest first. Before the grading window ends, `available` is `false` and grades and comments are `null`/empty. Comments show the kind of evaluator, not their name, and never the levels each evaluator picked |
 
 **Formula** (`docs/03`, ADR-018): only submitted evaluations count. For each kind of
 evaluator (the teacher, and each evaluator type), average the scores of its evaluators;
