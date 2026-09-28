@@ -48,8 +48,9 @@ RAP) y `evaluador_externo` (empresario, egresado u otro tipo del catálogo
 `Evaluator`; el estudiante **no** se autoevalúa. Todos inician sesión con su correo.
 El flujo de un momento (configuración → conformación de grupos → lanzar → entregas →
 calificación) está en `docs/04` y en el ADR-012. Ver `docs/03-entidades-dominio.md`
-para el modelo completo y `docs/diagramas/diagrama_clases.md` para el UML vigente (el
-`.drawio` se regenera al cerrar la Etapa 1).
+para el modelo completo y `docs/diagramas/diagrama_clases.md` para el UML vigente (su
+versión detallada, `diagrama_clases_mejorado.drawio` + PNG/SVG, se actualiza junto con
+el Mermaid).
 
 ## Reglas de control de acceso a tener siempre presentes
 
@@ -119,6 +120,8 @@ para el modelo completo y `docs/diagramas/diagrama_clases.md` para el UML vigent
   integrantes, estrategia de ramas (`main`/`develop`/`feature/*`), convención de
   commits, checklist de PR y estrategia de pruebas. Consúltalo antes de abrir una
   rama o de proponer en qué orden implementar algo.
+- `docs/wireframes/` — wireframes de todas las pantallas por rol (HTML + PNG); el
+  frontend los implementa y cualquier cambio de regla va primero a `docs/04` y `docs/07`.
 - `backend/` — API Spring Boot; `frontend/` — app React (ver `frontend/README.md`);
   `docker-compose.yml` — PostgreSQL local; `.github/workflows/ci.yml` — CI.
 

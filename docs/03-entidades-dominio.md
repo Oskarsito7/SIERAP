@@ -5,10 +5,11 @@ functional area. Diagrams:
 
 - **Current class diagram (Stage 1):** [`diagramas/diagrama_clases.md`](diagramas/diagrama_clases.md)
   (Mermaid, rendered directly on GitHub). It is the Stage 1 contract.
-- Improved class diagram from Phase 2: [PNG](diagramas/diagrama_clases_mejorado.png) ·
-  [editable .drawio](diagramas/diagrama_clases_mejorado.drawio). **Outdated**
-  relative to the 2026-09-24 decisions: it is regenerated when Stage 1 closes, from
-  what ends up in the code.
+- **Detailed class diagram** (same model, on one sheet, for the delivery document):
+  [PNG](diagramas/diagrama_clases_mejorado.png) · [SVG](diagramas/diagrama_clases_mejorado.svg) ·
+  [editable .drawio](diagramas/diagrama_clases_mejorado.drawio). Regenerated when Stage 1
+  closed (2026-09-28) from the code, plus what is designed but not built yet (marked
+  with a dashed border).
 - **Hierarchy diagram:** [`diagramas/diagrama_jerarquias.md`](diagramas/diagrama_jerarquias.md).
 - **Layer (package) diagram:** [`diagramas/diagrama_capas.md`](diagramas/diagrama_capas.md).
 - Preliminary class diagram (Phase 1): [`diagramas/diagrama_clases.drawio`](diagramas/diagrama_clases.drawio)
@@ -54,6 +55,7 @@ moment" and "Team decisions" sections) and in ADR-009 to ADR-014 of
 | Entrega | `Submission` | `submission` |
 | Evaluacion | `Evaluation` | `evaluation` |
 | CalificacionCriterio | `CriterionGrade` | `criterion_grade` |
+| AjusteIndividual | `IndividualGrade` | `individual_grade` |
 | Reporte (Individual / Grupal / Comparativo) | `Report` (`IndividualReport` / `GroupReport` / `ComparativeReport`) | — |
 
 The D1 and D2 names are already in the code. The D3 names are the proposal for its
@@ -123,19 +125,27 @@ opened, the configuration of the previous period is copied as a starting point.
 
 | Class | Spanish name | Attributes | Description |
 |---|---|---|---|
-| `ProjectGroup` | Grupo (= proyecto de aula) | moment, teacher, name, projectTitle, members, evaluators, submissionDeadline, evaluationDate | Group **and** classroom project at the same time (each group has a single project). A `Teacher` enables it in a moment; students join it (between the minimum and maximum of the moment). The teacher assigns external evaluators to it and sets its dates within the moment windows. |
-| `Submission` | Entrega | projectGroup, versionNumber, zipFilePath, presentationPath, submittedAt, late | Version of the group's submission (zip file + presentation). Each upload is a new version; history is kept. Uploads are accepted while the submission window is open; those after the group's deadline are marked `late`. Files are stored on the server disk (ADR-015). |
+| `ProjectGroup` | Grupo (= proyecto de aula) | moment, teacher, name, projectTitle, members, evaluators, submissionDeadline, evaluationDate | Group **and** classroom project at the same time (each group has a single project). A `Teacher` enables it in a moment with a `name`; students of the program whose current semester is within the moment's range join it (between the minimum and maximum of the moment). The members write the `projectTitle` (the teacher can edit it too) until the submission window ends. The teacher assigns external evaluators to it and sets its dates within the moment windows; after the launch they can still change the dates and the evaluators while the grading window is open. |
+| `Submission` | Entrega | projectGroup, versionNumber, zipFilePath, presentationPath (optional), submittedAt, late | Version of the group's submission: the `.zip` is required and the presentation optional (when a version has none, the latest presentation of an earlier version is shown). Each upload is a new version; history is kept. Uploads are accepted while the submission window is open; those after the group's deadline are marked `late`. Files are stored on the server disk (ADR-015). |
 
 ## Evaluation and reporting · D3
 
 | Class | Spanish name | Description |
 |---|---|---|
 | `Evaluation` | Evaluación | Grade that an `Evaluator` (the group's teacher or an assigned external evaluator) gives a `ProjectGroup`; groups one `CriterionGrade` per criterion of the moment. It has a `status` (`DRAFT` → `SUBMITTED`): the evaluator can save it half done and submit it later; only submitted evaluations count, and they can be corrected while the grading window is open. One evaluation per evaluator per group. Attributes: projectGroup, evaluator (`User`: JPA cannot map the `Evaluator` interface), status, evaluatedAt, comment (optional). |
-| `CriterionGrade` | Calificación por criterio | Performance level the evaluator picked in an `EvaluationCriterion`, with a **copy of its score** taken when grading. Performance per RAP is the sum of that RAP's criteria, and the evaluation grade is the sum of all of them. Attributes: evaluation, criterion, level, score. One grade per criterion in each evaluation. |
+| `CriterionGrade` | Calificación por criterio | Performance level the evaluator picked in an `EvaluationCriterion` for the **whole group**, with a **copy of its score** taken when grading. Performance per RAP is the sum of that RAP's criteria, and the evaluation grade is the sum of all of them. Attributes: evaluation, criterion, level, score. One grade per criterion in each evaluation. |
+| `IndividualGrade` | Ajuste individual | Level an evaluator gives **one student** in one criterion when it differs from the group's level (e.g. that student did better in the presentation). By default every member inherits the group's levels; an `IndividualGrade` replaces the group's level only for that student and that criterion, so their individual grade differs from the others' (ADR-018). Attributes: evaluation, student (a member of the group), criterion, level, score (copy). At most one per student and criterion in each evaluation. |
 | `Report` (abstract) | Reporte | Report generated from the recorded `Evaluation`s, filterable by semester, moment, program or year. Defines an abstract `generate()`. |
 | `IndividualReport` / `GroupReport` / `ComparativeReport` | Reporte individual / grupal / comparativo | Subclasses of `Report`: each implements its own `generate()` (per student and RAP, per group, or comparing two periods). |
 
-**Group final grade:** weighted average by kind of evaluator (the teacher and each
+**Group grade and individual grade (ADR-018):** the group is graded once. The
+**group grade** uses the group's levels only; the **individual grade** of each member
+uses the same levels except the criteria where an evaluator adjusted that student
+(`IndividualGrade`). Without adjustments both are equal. The individual grade is the
+one each student sees as their final grade; both feed the reports.
+
+**Final grade formula** (applies to the group grade and to each individual grade):
+weighted average by kind of evaluator (the teacher and each
 `EvaluatorType`), with weights the admin sets in each moment (to be modeled by D2 in
 Stage 3, together with the rest of the moment configuration). Several evaluators of
 the same kind are averaged within that kind; if a kind has no submitted evaluation,
@@ -166,8 +176,8 @@ configurable `PerformanceLevel` entity, ADR-010), and so were the `EMPRESARIO` a
 - **Composition:** `Faculty`—`Program`; `Program`—`Moment`; `Moment`—`LearningOutcome`;
   `LearningOutcome`—`EvaluationCriterion`; `EvaluationCriterion`—`PerformanceLevel`;
   `Moment`—`ProjectGroup`; `ProjectGroup`—`Submission`; `ProjectGroup`—`Evaluation`;
-  `Evaluation`—`CriterionGrade`; `User`—`RefreshToken`; `User`—`PasswordToken` (the
-  whole controls the lifecycle of its parts).
+  `Evaluation`—`CriterionGrade`; `Evaluation`—`IndividualGrade`; `User`—`RefreshToken`;
+  `User`—`PasswordToken` (the whole controls the lifecycle of its parts).
 - **Aggregation:** `ProjectGroup`—`Student` (the student exists without the group
   and goes through several groups during the program, one per moment).
 - **Association:** `Moment`—`AcademicPeriod`; `Admin`—`Faculty` (several admins per faculty); `Teacher`—`Faculty`;
@@ -176,6 +186,8 @@ configurable `PerformanceLevel` entity, ADR-010), and so were the `EMPRESARIO` a
   `ExternalEvaluator`—`EvaluatorType`; `Student`—`Program`;
   `ExternalEvaluator`—`Program` (graduation program, optional);
   `CriterionGrade`—`EvaluationCriterion`; `CriterionGrade`—`PerformanceLevel`;
+  `IndividualGrade`—`Student`; `IndividualGrade`—`EvaluationCriterion`;
+  `IndividualGrade`—`PerformanceLevel`;
   `User`—`User` (`createdBy`); `RegistrationCode`—`Teacher`; `RegistrationCode`—`Program`;
   `Student`—`RegistrationCode` (optional).
 - **Dependency:** `Report` depends on `Evaluation` (the report consumes evaluation

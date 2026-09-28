@@ -103,7 +103,21 @@ Goal: the remaining stages can assume "there is an authenticated user with a rol
 | **Scope rules**: a teacher only sees their groups, an admin only their faculty, an evaluator only what was assigned | D1 |
 | Global `@ControllerAdvice` + hierarchy of domain exceptions | D1 |
 | Login + route guards + session persistence on the frontend | D2 |
-| Base layout per role (different menu for each `UserRole`) | D3 |
+| Base layout per role (different menu for each `UserRole`, see below) | D3 |
+| Account screens of `super_admin` and `admin`: admins and teachers (create, list, deactivate, resend the link) | D2 |
+| Account screens of `teacher`: "my students" and registration codes (the admin uses the same codes page with a teacher selector) | D3 |
+
+**Menu per role** (approved by the lead on 2026-09-27; options whose page does not
+exist yet show a "coming soon" screen):
+
+| Role | Menu |
+|---|---|
+| `super_admin` | Faculties and programs · Academic periods · Global parameters · Evaluator types · Admins |
+| `admin` | Moments · Teachers · Registration codes · Reports |
+| `teacher` | My groups · My students · External evaluators · Registration codes · Reports (their groups) |
+| `student` | Groups of the moment · My group and submissions · My grades |
+| `external_evaluator` | Assigned groups |
+| All | My account (change password) · Log out |
 
 **Definition of done:** there are tests proving that a teacher **cannot** read
 someone else's group and an admin **cannot** touch another faculty (403, not a 200
@@ -121,8 +135,12 @@ factor compared with AULAWEB.
 
 - CRUD of `Faculty` and `Program` (`super_admin`).
 - CRUD of `AcademicPeriod` (`super_admin`) and the `EvaluatorType` catalog.
+- First, the read routes of moments that Stages 4 to 6 use (`GET /api/moments`,
+  `GET /api/moments/{id}`, see `docs/07`).
 - CRUD of `Moment` per program and period: subject, semesters, requirement level,
-  min./max. members and date windows (group formation, submissions, grading).
+  min./max. members, date windows (group formation, submissions, grading) and the
+  weight of each kind of evaluator in the final grade (the teacher and each evaluator
+  type).
 - CRUD of `LearningOutcome`, `EvaluationCriterion` and `PerformanceLevel` with its
   score, only while the moment is in `CONFIGURATION`.
 - **Launch** the moment (validates the configuration is complete and locks it) and
@@ -155,8 +173,9 @@ factor compared with AULAWEB.
 - Upload of a `.zip` submission + `.pdf` / `.docx` presentation.
 - **Versioning**: each upload is a new `Submission`, it does not replace the previous
   one; the history can be queried.
-- Rejection of submissions after the deadline.
-- File storage (decide in an ADR: file system vs. binary column).
+- Submissions after the group's deadline are accepted and marked late; after the
+  submission window closes they are rejected.
+- File storage on the server disk (ADR-015).
 
 **Covers RF:** 2, 3.
 
@@ -170,7 +189,10 @@ factor compared with AULAWEB.
 - `Evaluation` with its `CriterionGrade`s (one picked level per criterion of the
   moment).
 - Time window: grading is only possible within the set date.
-- Calculation of the consolidated group grade and individual performance per RAP.
+- Individual adjustments: the group is graded once and an evaluator can change the
+  level of some criteria for one student (`IndividualGrade`, ADR-018).
+- Calculation of the group grade and each member's individual grade, in total and per
+  RAP (weighted by kind of evaluator).
 - Grading screen (evaluators) and results screen (student).
 
 **Covers RF:** 4, 6. **Rubric:** RAP2 (polymorphism/interfaces), RAP4 (functionality

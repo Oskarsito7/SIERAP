@@ -116,7 +116,7 @@ API error messages, Javadoc and code comments are in Spanish.
 - [x] Preliminary class diagram in UML notation
 - [x] Improved class, hierarchy and package (layer) diagrams
 - [x] Functional requirements formalized by role with access control
-- [ ] Preliminary GUI design (mockup/wireframe per role)
+- [x] Preliminary GUI design: medium-fidelity wireframes of every screen per role (`docs/wireframes/`)
 - [ ] Code implementation (progress on the diagram classes)
 
 Implementation progress, by stages of [`docs/06-plan-de-trabajo.md`](docs/06-plan-de-trabajo.md):
@@ -124,10 +124,11 @@ Implementation progress, by stages of [`docs/06-plan-de-trabajo.md`](docs/06-pla
 - [x] **Stage 0 — Foundations:** backend and frontend skeleton, PostgreSQL in
   `docker-compose`, CI on GitHub Actions.
 - [ ] Stage 1 — Domain model and persistence (JPA entities + Flyway): V1–V4 merged
-  (academic model, users, operations); pending D2's fixes from the PR #3 review and
-  the regenerated `.drawio` diagram.
-- [ ] Stage 2 — Authentication and access control: designed (ADR-017, API contract in
-  `docs/07-contrato-api.md`).
+  (academic model, users, operations) and the detailed class diagram regenerated;
+  pending D2's fixes from the PR #3 review (V5).
+- [ ] Stage 2 — Authentication and access control: backend and login screens done
+  (ADR-017, API contract in `docs/07-contrato-api.md`); the layout per role and the
+  account screens are pending.
 
 ## 7. Structure of this repository
 
@@ -144,6 +145,7 @@ SIERAP/
 │   ├── 06-plan-de-trabajo.md          ← stages, split among the 3 devs, branches and tests
 │   ├── 07-contrato-api.md             ← API contract (routes, DTOs, error codes)
 │   ├── diagramas/                     ← class, hierarchy and layer diagrams (Mermaid + .drawio + PNG)
+│   ├── wireframes/                    ← GUI wireframes per role (HTML + PNG for the delivery document)
 │   └── entregas/                      ← formal delivery documents (includes presentacion-sierap.pptx)
 ├── backend/                           ← Java 21 + Spring Boot 3 API (Maven)
 │   └── src/main/java/co/edu/unicesar/sierap/

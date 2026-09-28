@@ -8,10 +8,13 @@ this diagram directly from the Mermaid code.
 > 2026-09-24 decisions (see `docs/04`, "Team decisions" section, and ADR-009 to
 > ADR-014). Class and attribute names are in English (ADR-014); the Spanish → English
 > name table is in [`../03-entidades-dominio.md`](../03-entidades-dominio.md). The
-> detailed-design version ([`diagrama_clases_mejorado.png`](diagrama_clases_mejorado.png)
-> · editable in [`diagrama_clases_mejorado.drawio`](diagrama_clases_mejorado.drawio))
-> belongs to Phase 2 and is regenerated when Stage 1 closes. The Phase 1 preliminary
-> diagram is still in [`diagrama_clases.drawio`](diagrama_clases.drawio).
+> detailed-design version, with the same model on one sheet, is
+> [`diagrama_clases_mejorado.png`](diagrama_clases_mejorado.png) (also
+> [SVG](diagrama_clases_mejorado.svg); editable in
+> [`diagrama_clases_mejorado.drawio`](diagrama_clases_mejorado.drawio)), regenerated when
+> Stage 1 closed. When the model changes, update this Mermaid code and the `.drawio`
+> together. The Phase 1 preliminary diagram is still in
+> [`diagrama_clases.drawio`](diagrama_clases.drawio).
 
 ```mermaid
 classDiagram
@@ -27,15 +30,18 @@ class User {
   -documentNumber: String
   -email: String
   -passwordHash: String
+  -mustChangePassword: boolean
   -active: boolean
+  -createdBy: User
   -createdAt: LocalDateTime
   +getRole()* UserRole
   +getFullName() String
   +isActive() boolean
+  +hasPassword() boolean
+  +changePassword(newHash: String) void
 }
 class Evaluator {
   <<interface>>
-  +getId() Long
   +canEvaluate(group: ProjectGroup)* boolean
 }
 class UserRole {
@@ -63,11 +69,13 @@ class Admin {
 class Teacher {
   -faculty: Faculty
   +getRole() UserRole
+  +canEvaluate(group: ProjectGroup) boolean
 }
 class Student {
   -studentCode: String
   -currentSemester: int
   -program: Program
+  -registrationCode: RegistrationCode
   +getRole() UserRole
 }
 class ExternalEvaluator {
@@ -77,12 +85,53 @@ class ExternalEvaluator {
   -graduationYear: Integer
   -graduationProgram: Program
   +getRole() UserRole
+  +canEvaluate(group: ProjectGroup) boolean
 }
 class EvaluatorType {
   -id: Long
   -name: String
   -description: String
   -active: boolean
+}
+
+%% ================= Accounts and sessions (D1, Stage 2 · ADR-017) =================
+class RegistrationCode {
+  -id: Long
+  -code: String
+  -teacher: Teacher
+  -program: Program
+  -expiresOn: LocalDate
+  -active: boolean
+  -createdAt: LocalDateTime
+  +isUsableOn(today: LocalDate) boolean
+  +deactivate() void
+}
+class RefreshToken {
+  -id: Long
+  -user: User
+  -tokenHash: String
+  -expiresAt: LocalDateTime
+  -rotatedAt: LocalDateTime
+  -createdAt: LocalDateTime
+  +isActiveAt(now: LocalDateTime) boolean
+  +isRotated() boolean
+  +markRotated(now: LocalDateTime) void
+}
+class PasswordToken {
+  -id: Long
+  -user: User
+  -tokenHash: String
+  -purpose: PasswordTokenPurpose
+  -expiresAt: LocalDateTime
+  -usedAt: LocalDateTime
+  -createdAt: LocalDateTime
+  +isUsableAt(now: LocalDateTime) boolean
+  +markUsed(now: LocalDateTime) void
+}
+class PasswordTokenPurpose {
+  <<enumeration>>
+  ACCOUNT_SETUP
+  PASSWORD_RESET
 }
 
 %% ================= Academic structure and configuration (D2) =================
@@ -208,14 +257,26 @@ class Evaluation {
   -evaluatedAt: LocalDateTime
   -comment: String
   -grades: List~CriterionGrade~
+  -individualGrades: List~IndividualGrade~
   +grade(level: PerformanceLevel) void
   +submit() void
+  +isSubmitted() boolean
   +isComplete() boolean
   +getTotalScore() BigDecimal
   +getScoreFor(outcome: LearningOutcome) BigDecimal
+  +adjust(s: Student, level: PerformanceLevel) void
+  +getTotalScoreFor(s: Student) BigDecimal
+  +getScoreFor(outcome: LearningOutcome, s: Student) BigDecimal
 }
 class CriterionGrade {
   -id: Long
+  -criterion: EvaluationCriterion
+  -level: PerformanceLevel
+  -score: BigDecimal
+}
+class IndividualGrade {
+  -id: Long
+  -student: Student
   -criterion: EvaluationCriterion
   -level: PerformanceLevel
   -score: BigDecimal
@@ -250,6 +311,13 @@ Evaluator <|.. Teacher
 Evaluator <|.. ExternalEvaluator
 User ..> UserRole : «use»
 User ..> DocumentType : «use»
+User "0..1" -- "*" User : created by
+User "1" *-- "*" RefreshToken : sessions
+User "1" *-- "*" PasswordToken : password links
+PasswordToken ..> PasswordTokenPurpose : «use»
+RegistrationCode "*" -- "1" Teacher : owned by
+RegistrationCode "*" -- "1" Program : registers into
+Student "*" -- "0..1" RegistrationCode : registered with
 
 SuperAdmin ..> GlobalParameter : «manages»
 SuperAdmin ..> AcademicPeriod : «manages»
@@ -280,6 +348,10 @@ Evaluation ..> EvaluationStatus : «use»
 Evaluation "1" *-- "1..*" CriterionGrade
 CriterionGrade "*" -- "1" EvaluationCriterion : grades
 CriterionGrade "*" -- "1" PerformanceLevel : selected level
+Evaluation "1" *-- "0..*" IndividualGrade : per-student adjustments
+IndividualGrade "*" -- "1" Student : adjusted student
+IndividualGrade "*" -- "1" EvaluationCriterion
+IndividualGrade "*" -- "1" PerformanceLevel : level for that student
 
 Report <|-- IndividualReport
 Report <|-- GroupReport
@@ -306,6 +378,21 @@ Report ..> Evaluation : «use»
 | Per-RAP grade → `CriterionGrade` | The evaluator picks one level per criterion; the performance per RAP is a sum. |
 | The `NivelExigencia` and `NivelDesempeno` enums are removed | Nothing standard in the code (ADR-010). |
 | No student self-assessment | `Student` does not implement `Evaluator`. |
+
+## Stage 1 close (2026-09-28)
+
+| Change | Reason |
+|---|---|
+| `RegistrationCode`, `RefreshToken`, `PasswordToken` and `PasswordTokenPurpose` (new); `User` gains `mustChangePassword`, `createdBy`, `hasPassword()` and `changePassword()`; `Student` gains `registrationCode` | Stage 2 entities (ADR-017), already in the code and in `docs/03` but missing here. |
+| `Evaluator` declares only `canEvaluate()`; `Teacher` and `ExternalEvaluator` show their own `canEvaluate()` | Same as the code: each class implements its own rule (polymorphism). |
+| `Evaluation` shows `isSubmitted()` | It is in the code. |
+| The detailed `.drawio` is regenerated from this model | It was still the Phase 2 version, with the Spanish names. |
+
+## Changes of the contract of Stages 4 to 6 (2026-09-28 decisions)
+
+| Change | Reason |
+|---|---|
+| `IndividualGrade` (new), composed by `Evaluation`, with `adjust()`, `getTotalScoreFor()` and an overload of `getScoreFor()` per student | The group is graded once and every member inherits it; an evaluator can change the level of some criteria for one student, so each student has an individual grade besides the group grade (ADR-018). |
 
 ## Changes compared with the preliminary diagram (Phase 1)
 
