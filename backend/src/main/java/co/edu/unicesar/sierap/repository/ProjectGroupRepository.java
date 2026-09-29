@@ -4,7 +4,12 @@ import java.util.List;
 import java.util.Optional;
 
 import co.edu.unicesar.sierap.entity.ProjectGroup;
+import jakarta.persistence.LockModeType;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * Acceso a datos de {@link ProjectGroup}.
@@ -68,4 +73,55 @@ public interface ProjectGroupRepository extends JpaRepository<ProjectGroup, Long
      * @return grupos en los que ha estado
      */
     List<ProjectGroup> findByMembersId(Long studentId);
+
+    /**
+     * Grupos que habilitó un docente en todos sus momentos.
+     *
+     * @param teacherId id del docente
+     * @return grupos ordenados por nombre
+     */
+    @EntityGraph(attributePaths = {"moment", "teacher"})
+    List<ProjectGroup> findByTeacherIdOrderByName(Long teacherId);
+
+    /**
+     * Grupos asignados a un evaluador externo, ordenados por nombre.
+     *
+     * @param externalEvaluatorId id del evaluador externo
+     * @return grupos que debe calificar
+     */
+    @EntityGraph(attributePaths = {"moment", "teacher"})
+    List<ProjectGroup> findByEvaluatorsIdOrderByName(Long externalEvaluatorId);
+
+    /**
+     * Grupos asignados a un evaluador externo en un momento.
+     *
+     * @param externalEvaluatorId id del evaluador externo
+     * @param momentId            id del momento
+     * @return grupos ordenados por nombre
+     */
+    @EntityGraph(attributePaths = {"moment", "teacher"})
+    List<ProjectGroup> findByEvaluatorsIdAndMomentIdOrderByName(Long externalEvaluatorId, Long momentId);
+
+    /**
+     * Indica si un docente ya tiene un grupo con ese nombre en el momento (la base de
+     * datos lo impide con {@code uk_project_group_moment_teacher_name}).
+     *
+     * @param momentId  id del momento
+     * @param teacherId id del docente
+     * @param name      nombre del grupo
+     * @return {@code true} si el nombre ya está en uso
+     */
+    boolean existsByMomentIdAndTeacherIdAndNameIgnoreCase(Long momentId, Long teacherId, String name);
+
+    /**
+     * Carga un grupo bloqueando su fila hasta que termine la transacción. Se usa al
+     * cambiar sus integrantes, para que dos inscripciones simultáneas no pasen a la vez
+     * la validación del cupo.
+     *
+     * @param id id del grupo
+     * @return el grupo, si existe
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select g from ProjectGroup g where g.id = :id")
+    Optional<ProjectGroup> findByIdForUpdate(@Param("id") Long id);
 }

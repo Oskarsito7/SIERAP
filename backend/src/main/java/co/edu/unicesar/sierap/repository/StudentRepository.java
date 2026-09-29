@@ -5,6 +5,8 @@ import java.util.Optional;
 
 import co.edu.unicesar.sierap.entity.Student;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 /**
  * Acceso a datos de {@link Student}.
@@ -42,4 +44,27 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
      * @return cantidad de estudiantes registrados con ese código
      */
     long countByRegistrationCodeId(Long registrationCodeId);
+
+    /**
+     * Estudiantes activos de un programa, con su semestre en el rango indicado, que no
+     * tienen grupo en el momento.
+     *
+     * @param programId    programa del momento
+     * @param semesterFrom primer semestre del momento
+     * @param semesterTo   último semestre del momento
+     * @param momentId     momento
+     * @return estudiantes ordenados por apellidos y nombres
+     */
+    @Query("""
+            select s from Student s
+            where s.program.id = :programId
+              and s.active = true
+              and s.currentSemester between :semesterFrom and :semesterTo
+              and not exists (
+                  select 1 from ProjectGroup g join g.members m
+                  where g.moment.id = :momentId and m.id = s.id)
+            order by s.lastNames, s.firstNames
+            """)
+    List<Student> findWithoutGroup(@Param("programId") Long programId, @Param("semesterFrom") int semesterFrom,
+                                   @Param("semesterTo") int semesterTo, @Param("momentId") Long momentId);
 }
