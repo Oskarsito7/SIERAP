@@ -78,9 +78,9 @@ describe('AppLayout', () => {
   })
 
   it('uses the text of the role when two roles share a page', () => {
-    renderAt('/registration-codes', userWith('ADMIN'))
+    renderAt('/reports', userWith('TEACHER'))
 
-    expect(screen.getByText('Los códigos de registro de los docentes de la facultad llega en la Etapa 2.')).toBeInTheDocument()
+    expect(screen.getByText('Los reportes de tus grupos llega en la Etapa 7.')).toBeInTheDocument()
   })
 
   it('does not open a page of another role', () => {

@@ -7,7 +7,7 @@ import { RequireRole } from './RequireRole'
 /**
  * Página de una opción del menú, protegida por rol. Mientras la página real no exista
  * muestra "Próximamente" con el texto de la opción del rol del usuario. Cuando llegue
- * una página, su ruta se declara aparte en `routes.tsx` y deja de pasar por aquí.
+ * una página, se agrega a `MENU_PAGES` en `routes.tsx` y deja de pasar por aquí.
  */
 export function MenuPageRoute({ page }: { page: MenuPage }) {
   const { user } = useAuth()
