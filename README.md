@@ -123,11 +123,11 @@ Implementation progress, by stages of [`docs/06-plan-de-trabajo.md`](docs/06-pla
 
 - [x] **Stage 0 — Foundations:** backend and frontend skeleton, PostgreSQL in
   `docker-compose`, CI on GitHub Actions.
-- [ ] Stage 1 — Domain model and persistence (JPA entities + Flyway): V1–V4 merged
-  (academic model, users, operations) and the detailed class diagram regenerated;
-  pending D2's fixes from the PR #3 review (V5).
-- [ ] Stage 2 — Authentication and access control: backend and login screens done
-  (ADR-017, API contract in `docs/07-contrato-api.md`); the layout per role and the
+- [x] **Stage 1 — Domain model and persistence:** JPA entities and Flyway V1–V5
+  (academic model, users, operations and the CHECK constraints from the PR #3 review);
+  the detailed class, hierarchy and layer diagrams regenerated in English.
+- [ ] Stage 2 — Authentication and access control: backend, login screens and the
+  layout per role done (ADR-017, API contract in `docs/07-contrato-api.md`); the
   account screens are pending.
 
 ## 7. Structure of this repository
