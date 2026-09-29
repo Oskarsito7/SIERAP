@@ -47,4 +47,22 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
      * @return evaluaciones del momento en ese estado
      */
     List<Evaluation> findByProjectGroupMomentIdAndStatus(Long momentId, EvaluationStatus status);
+
+    /**
+     * Indica si un evaluador ya tiene una evaluación (borrador o enviada) del grupo.
+     *
+     * @param projectGroupId id del grupo
+     * @param evaluatorId    id del usuario evaluador
+     * @return {@code true} si ya empezó a calificar
+     */
+    boolean existsByProjectGroupIdAndEvaluatorId(Long projectGroupId, Long evaluatorId);
+
+    /**
+     * Indica si el grupo tiene alguna evaluación en el estado indicado.
+     *
+     * @param projectGroupId id del grupo
+     * @param status         estado buscado
+     * @return {@code true} si hay al menos una
+     */
+    boolean existsByProjectGroupIdAndStatus(Long projectGroupId, EvaluationStatus status);
 }
