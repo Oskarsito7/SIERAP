@@ -38,11 +38,11 @@ function renderAt(path: string, state: AuthState) {
 }
 
 describe('routes', () => {
-  it('shows the home page inside the main layout when there is a session', () => {
+  it('shows the home page inside the role layout when there is a session', () => {
     renderAt('/', { status: 'authenticated', user })
 
     expect(screen.getByRole('heading', { name: 'Bienvenido a SIERAP' })).toBeInTheDocument()
-    expect(screen.getByText('Universidad Popular del Cesar · Ingeniería de Sistemas')).toBeInTheDocument()
+    expect(screen.getByRole('navigation', { name: 'Menú principal' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /cerrar sesión/i })).toBeInTheDocument()
   })
 

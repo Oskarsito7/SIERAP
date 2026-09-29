@@ -5,9 +5,10 @@ import { useAuth } from '@/auth/authContext'
 import { Button } from '@/components/ui/button'
 
 /**
- * Estructura común de todas las páginas: encabezado (con el usuario y el botón de
- * cerrar sesión cuando hay sesión), contenido y pie.
- * Más adelante se reemplaza por un layout por rol (menú distinto según `UserRole`).
+ * Estructura de las páginas públicas (login, registro y enlaces del correo):
+ * encabezado, contenido y pie. Los enlaces del correo se pueden abrir con sesión, por
+ * eso el encabezado muestra al usuario y el botón de cerrar sesión cuando la hay. Las
+ * páginas con sesión usan `AppLayout`, con el menú de cada rol.
  */
 export function MainLayout() {
   const { user, logout } = useAuth()
