@@ -70,11 +70,11 @@ describe('AppLayout', () => {
   it('opens a menu option without a page as coming soon, with its stage', async () => {
     renderAt('/', userWith('TEACHER'))
 
-    await userEvent.click(screen.getByRole('link', { name: 'Mis grupos' }))
+    await userEvent.click(screen.getByRole('link', { name: 'Mis estudiantes' }))
 
     expect(screen.getByRole('heading', { name: 'Próximamente' })).toBeInTheDocument()
-    expect(screen.getByText('La gestión de tus grupos, sus fechas y sus evaluadores llega en la Etapa 4.')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Mis grupos' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByText('La lista de tus estudiantes llega en la Etapa 2.')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Mis estudiantes' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('uses the text of the role when two roles share a page', () => {
