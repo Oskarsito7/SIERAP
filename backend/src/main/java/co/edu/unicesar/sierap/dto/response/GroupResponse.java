@@ -23,7 +23,7 @@ import java.util.List;
  * @param members            integrantes
  * @param submissionDeadline fecha límite de entrega; {@code null} hasta que el docente la fije
  * @param evaluationDate     fecha de evaluación; {@code null} hasta que el docente la fije
- * @param evaluators         evaluadores externos asignados
+ * @param evaluators         evaluadores externos asignados; vacío para los estudiantes
  * @param myGroup            {@code true} si quien consulta es integrante
  */
 public record GroupResponse(

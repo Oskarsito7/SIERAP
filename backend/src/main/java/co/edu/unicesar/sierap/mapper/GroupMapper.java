@@ -1,7 +1,9 @@
 package co.edu.unicesar.sierap.mapper;
 
 import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 
 import co.edu.unicesar.sierap.dto.response.GroupResponse;
 import co.edu.unicesar.sierap.dto.response.GroupResponse.EvaluatorRef;
@@ -26,15 +28,29 @@ public final class GroupMapper {
     }
 
     /**
-     * Vista completa de un grupo: la que ven su docente, sus evaluadores asignados, el
-     * admin de la facultad y el super_admin.
+     * Vista de un grupo según quién consulta ({@code docs/07}, "Groups"):
+     * <ul>
+     *   <li>su docente, sus evaluadores asignados, el admin de la facultad y el
+     *       super_admin lo ven completo;</li>
+     *   <li>sus integrantes lo ven completo, menos los evaluadores;</li>
+     *   <li>los estudiantes de otros grupos solo ven el nombre de cada integrante.</li>
+     * </ul>
      *
      * @param group  grupo
-     * @param viewer usuario que consulta, para calcular {@code myGroup}
-     * @return grupo con integrantes y evaluadores
+     * @param viewer usuario que consulta, para calcular {@code myGroup} y la vista
+     * @return grupo con los datos que le corresponden a quien consulta
      */
     public static GroupResponse toResponse(ProjectGroup group, User viewer) {
         Moment moment = group.getMoment();
+        boolean myGroup = group.getMembers().stream()
+                .anyMatch(member -> Objects.equals(member.getId(), viewer.getId()));
+        boolean student = viewer instanceof Student;
+        Function<Student, MemberResponse> memberView = student && !myGroup
+                ? GroupMapper::toMemberName
+                : GroupMapper::toMember;
+        List<EvaluatorRef> evaluators = student
+                ? List.of()
+                : group.getEvaluators().stream().sorted(BY_NAME).map(GroupMapper::toEvaluator).toList();
         return new GroupResponse(
                 group.getId(),
                 moment.getId(),
@@ -46,11 +62,11 @@ public final class GroupMapper {
                 moment.getMinMembers(),
                 moment.getMaxMembers(),
                 group.isFull(),
-                group.getMembers().stream().sorted(BY_NAME).map(GroupMapper::toMember).toList(),
+                group.getMembers().stream().sorted(BY_NAME).map(memberView).toList(),
                 group.getSubmissionDeadline(),
                 group.getEvaluationDate(),
-                group.getEvaluators().stream().sorted(BY_NAME).map(GroupMapper::toEvaluator).toList(),
-                group.getMembers().stream().anyMatch(member -> Objects.equals(member.getId(), viewer.getId())));
+                evaluators,
+                myGroup);
     }
 
     /**
@@ -67,6 +83,11 @@ public final class GroupMapper {
     private static MemberResponse toMember(Student student) {
         return new MemberResponse(student.getId(), student.getFullName(), student.getStudentCode(),
                 student.getEmail());
+    }
+
+    /** Lo que ve un estudiante de los integrantes de otro grupo: solo el nombre. */
+    private static MemberResponse toMemberName(Student student) {
+        return new MemberResponse(student.getId(), student.getFullName(), null, null);
     }
 
     private static EvaluatorRef toEvaluator(ExternalEvaluator evaluator) {

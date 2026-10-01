@@ -75,6 +75,16 @@ public interface ProjectGroupRepository extends JpaRepository<ProjectGroup, Long
     List<ProjectGroup> findByMembersId(Long studentId);
 
     /**
+     * Historial de un estudiante para su pantalla "Mis grupos": un grupo por
+     * momento, del periodo más reciente al más antiguo.
+     *
+     * @param studentId id del estudiante
+     * @return sus grupos, el más reciente primero
+     */
+    @EntityGraph(attributePaths = {"moment", "teacher"})
+    List<ProjectGroup> findByMembersIdOrderByMomentPeriodStartDateDescMomentNumberDesc(Long studentId);
+
+    /**
      * Grupos que habilitó un docente en todos sus momentos.
      *
      * @param teacherId id del docente

@@ -460,7 +460,21 @@ heavy).
 with the database, and in production it must be on persistent storage (a Docker
 volume if the backend runs in a container). The multipart limits of Spring
 (`spring.servlet.multipart.max-file-size` / `max-request-size`) must match these
-sizes. Implemented in Stage 5 (D3).
+sizes. Implemented in Stage 5 (D3):
+
+- The base folder comes from `SIERAP_STORAGE_PATH` (in `dev`, `~/sierap-files`; the API
+  refuses to start without it in `prod`). Each version goes to
+  `groups/{groupId}/v{version}/` with a random name (`UUID` + validated extension).
+- Besides the extension and the declared content type, the backend checks the first
+  bytes of each file (`PK` for `.zip`, `.docx` and `.pptx`; `%PDF` for `.pdf`), because
+  browsers do not always declare the same type (`application/octet-stream` is accepted).
+  Wrong type → `400`; too large → `413` (Spring's multipart limits are 100 MB per file
+  and 135 MB per request; the 30 MB of the presentation is checked by the service).
+- Migration V8 makes the presentation optional and adds the original name and the size
+  of each file, used only to show them and as the download name. V7 stays reserved for
+  `individual_grade` (ADR-018).
+- If the transaction that registers a version is rolled back, the files it already
+  wrote are deleted, so no orphan files are left.
 
 ---
 
