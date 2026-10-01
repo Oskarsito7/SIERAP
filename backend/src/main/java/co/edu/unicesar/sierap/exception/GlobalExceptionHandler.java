@@ -34,8 +34,8 @@ import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExcep
  *       {@code 409}, con un mensaje genérico en español (ADR-016).</li>
  *   <li>Errores de validación de {@code @Valid} → {@code 400} con el detalle por campo.</li>
  *   <li>Errores propios de Spring MVC (ruta inexistente, método no permitido, JSON
- *       mal formado…) → su código HTTP estándar, heredado de
- *       {@link ResponseEntityExceptionHandler}.</li>
+ *       mal formado, archivo que supera el límite de multipart…) → su código HTTP
+ *       estándar, heredado de {@link ResponseEntityExceptionHandler}.</li>
  *   <li>Cualquier otra excepción → {@code 500}, sin exponer detalles internos.</li>
  * </ul>
  *
@@ -179,6 +179,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
             case 400 -> "La solicitud no es válida";
             case 404 -> "La ruta solicitada no existe";
             case 405 -> "Método HTTP no permitido en esta ruta";
+            case 413 -> "El archivo supera el tamaño máximo permitido.";
             case 415 -> "Tipo de contenido no soportado";
             default -> body instanceof ProblemDetail detail && detail.getDetail() != null
                     ? detail.getDetail()
