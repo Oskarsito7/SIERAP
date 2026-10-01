@@ -555,7 +555,11 @@ function AssignEvaluatorPanel({ group, onAssigned }: { group: Group; onAssigned:
       )}
       <FormError message={error} />
       <p className="text-muted-foreground text-xs">
-        ¿No aparece? Créalo en "Evaluadores externos" (próximamente) y vuelve a buscarlo.
+        ¿No aparece?{' '}
+        <Link to="/external-evaluators" className="underline">
+          Créalo en Evaluadores externos
+        </Link>{' '}
+        y vuelve a buscarlo.
       </p>
     </div>
   )
