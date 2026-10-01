@@ -249,14 +249,6 @@ class GroupIntegrationTest {
                 .andExpect(jsonPath("$", hasSize(1)));
     }
 
-    @Test
-    void studentsDoNotListGroupsUntilStage5() throws Exception {
-        String token = loginToken(student(program, 2));
-
-        mockMvc.perform(get("/api/groups").header(HttpHeaders.AUTHORIZATION, bearer(token)))
-                .andExpect(status().isForbidden());
-    }
-
     // ------------------------------------------------------------ editar y eliminar
 
     @Test

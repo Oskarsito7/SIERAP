@@ -29,10 +29,10 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 /**
- * Grupos de un momento y sus evaluadores externos (Etapa 4, {@code docs/07} "Groups").
+ * Grupos de un momento y sus evaluadores externos ({@code docs/07} "Groups").
  *
- * <p>Las rutas de los estudiantes (inscribirse, salirse y su historial) llegan en la
- * Etapa 5. Aquí solo se traduce HTTP: el alcance y las ventanas los valida
+ * <p>Incluye las rutas de los estudiantes (Etapa 5): inscribirse, salirse y su
+ * historial. Aquí solo se traduce HTTP: el alcance y las ventanas los valida
  * {@link GroupService}.</p>
  */
 @RestController
@@ -54,11 +54,11 @@ public class GroupController {
      * Lista los grupos del alcance del usuario.
      *
      * @param actor    usuario autenticado
-     * @param momentId momento (obligatorio para admin y super_admin)
+     * @param momentId momento (obligatorio para estudiantes, admin y super_admin)
      * @return grupos ordenados por nombre
      */
     @GetMapping("/groups")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'EXTERNAL_EVALUATOR')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'EXTERNAL_EVALUATOR', 'STUDENT')")
     public List<GroupResponse> list(@AuthenticationPrincipal AuthenticatedUser actor,
                                     @RequestParam(required = false) Long momentId) {
         return groupService.list(actor, momentId);
@@ -72,7 +72,7 @@ public class GroupController {
      * @return el grupo
      */
     @GetMapping("/groups/{id}")
-    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'EXTERNAL_EVALUATOR')")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'EXTERNAL_EVALUATOR', 'STUDENT')")
     public GroupResponse get(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) {
         return groupService.get(actor, id);
     }
@@ -90,6 +90,45 @@ public class GroupController {
     public GroupResponse create(@AuthenticationPrincipal AuthenticatedUser actor,
                                 @Valid @RequestBody NewGroupRequest request) {
         return groupService.create(actor, request);
+    }
+
+    /**
+     * Inscribe al estudiante en el grupo; si estaba en otro del mismo momento, sale de
+     * él en el mismo paso.
+     *
+     * @param actor estudiante
+     * @param id    grupo
+     * @return grupo actualizado
+     */
+    @PostMapping("/groups/{id}/join")
+    @PreAuthorize("hasRole('STUDENT')")
+    public GroupResponse join(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) {
+        return groupService.join(actor, id);
+    }
+
+    /**
+     * Retira al estudiante del grupo.
+     *
+     * @param actor estudiante integrante
+     * @param id    grupo
+     */
+    @PostMapping("/groups/{id}/leave")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasRole('STUDENT')")
+    public void leave(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) {
+        groupService.leave(actor, id);
+    }
+
+    /**
+     * Historial de grupos del estudiante.
+     *
+     * @param actor estudiante
+     * @return sus grupos, uno por momento, el más reciente primero
+     */
+    @GetMapping("/students/me/groups")
+    @PreAuthorize("hasRole('STUDENT')")
+    public List<GroupResponse> myGroups(@AuthenticationPrincipal AuthenticatedUser actor) {
+        return groupService.myGroups(actor);
     }
 
     /**
