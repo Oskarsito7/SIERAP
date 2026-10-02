@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import co.edu.unicesar.sierap.entity.enums.MomentStatus;
 import co.edu.unicesar.sierap.exception.BusinessRuleException;
@@ -30,7 +31,8 @@ import jakarta.persistence.UniqueConstraint;
  *
  * <p>Tiene un ciclo de vida (ADR-012): en {@link MomentStatus#CONFIGURATION} el
  * admin define sus RAP ({@link LearningOutcome}), criterios, niveles, integrantes
- * por grupo y ventanas de fechas, y los estudiantes se inscriben en grupos; al
+ * por grupo, ventanas de fechas y el peso del docente y de cada tipo de evaluador
+ * en la nota final ({@link EvaluatorWeight}), y los estudiantes se inscriben en grupos; al
  * lanzarlo ({@link MomentStatus#LAUNCHED}) la configuración queda bloqueada y las
  * ventanas indican cuándo se entrega y cuándo se califica. Las ventanas pueden
  * estar vacías mientras el momento se configura.</p>
@@ -39,13 +41,16 @@ import jakarta.persistence.UniqueConstraint;
  * esté completa; después de lanzar, los setters de configuración y los métodos
  * para agregar o quitar RAP lanzan {@link BusinessRuleException}.</p>
  *
- * <p>Es dueño de sus RAP (composición) y se asocia a un periodo, que existe
- * independientemente del momento.</p>
+ * <p>Es dueño de sus RAP y de sus pesos de evaluador (composición) y se asocia a un
+ * periodo, que existe independientemente del momento.</p>
  */
 @Entity
 @Table(name = "moment",
         uniqueConstraints = @UniqueConstraint(columnNames = {"program_id", "period_id", "number"}))
 public class Moment {
+
+    /** Suma que deben dar los pesos del momento. */
+    private static final BigDecimal ONE_HUNDRED = new BigDecimal("100");
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -121,6 +126,17 @@ public class Moment {
     @OrderBy("code")
     private List<LearningOutcome> learningOutcomes = new ArrayList<>();
 
+    /**
+     * Porcentaje de la nota final que aporta el docente (ADR-018); un momento nuevo
+     * empieza con el docente al 100 %.
+     */
+    @Column(nullable = false, precision = 5, scale = 2)
+    private BigDecimal teacherWeight = ONE_HUNDRED;
+
+    /** Pesos de los tipos de evaluador externo que participan en el momento. */
+    @OneToMany(mappedBy = "moment", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<EvaluatorWeight> evaluatorWeights = new ArrayList<>();
+
     /** Constructor requerido por JPA. */
     protected Moment() {
     }
@@ -160,8 +176,9 @@ public class Moment {
      * <p>Exige las tres ventanas de fechas completas, cada una con inicio antes o
      * igual a su fin, ordenadas y sin solaparse (conformación, luego entregas, luego
      * calificación), la de calificación terminando a más tardar en el límite de
-     * evaluación de la UPC del periodo, y al menos un RAP en el que cada criterio
-     * tenga niveles de desempeño. Se puede lanzar antes de que termine la ventana de
+     * evaluación de la UPC del periodo, al menos un RAP en el que cada criterio
+     * tenga niveles de desempeño, y que el peso del docente más los de los tipos de
+     * evaluador sumen exactamente 100 % (ADR-018). Se puede lanzar antes de que termine la ventana de
      * conformación: lanzar cierra la conformación de grupos.</p>
      *
      * @throws BusinessRuleException si el momento ya fue lanzado o su configuración
@@ -205,6 +222,11 @@ public class Moment {
                             + "\" del " + outcome.getCode() + " debe tener niveles de desempeño.");
                 }
             }
+        }
+        BigDecimal totalWeight = getTotalWeight();
+        if (totalWeight.compareTo(ONE_HUNDRED) != 0) {
+            throw new BusinessRuleException("Los pesos de los evaluadores deben sumar 100 % (hoy suman "
+                    + totalWeight.stripTrailingZeros().toPlainString() + " %).");
         }
         status = MomentStatus.LAUNCHED;
     }
@@ -552,5 +574,112 @@ public class Moment {
     /** @return RAP del momento, en solo lectura (usar add/remove) */
     public List<LearningOutcome> getLearningOutcomes() {
         return Collections.unmodifiableList(learningOutcomes);
+    }
+
+    /** @return porcentaje de la nota final que aporta el docente */
+    public BigDecimal getTeacherWeight() {
+        return teacherWeight;
+    }
+
+    /**
+     * @param teacherWeight porcentaje del docente: mayor que cero y hasta 100, con
+     *                      dos decimales como máximo
+     * @throws BusinessRuleException si el momento ya fue lanzado o el peso es inválido
+     */
+    public void setTeacherWeight(BigDecimal teacherWeight) {
+        requireConfiguration();
+        requireValidWeight(teacherWeight);
+        this.teacherWeight = teacherWeight;
+    }
+
+    /** @return pesos de los tipos de evaluador externo en el momento, solo lectura */
+    public List<EvaluatorWeight> getEvaluatorWeights() {
+        return Collections.unmodifiableList(evaluatorWeights);
+    }
+
+    /**
+     * Peso de un tipo de evaluador en el momento.
+     *
+     * @param evaluatorType tipo de evaluador
+     * @return su porcentaje, o cero si el tipo no tiene peso en el momento
+     */
+    public BigDecimal getWeightFor(EvaluatorType evaluatorType) {
+        return findEvaluatorWeight(evaluatorType)
+                .map(EvaluatorWeight::getWeight)
+                .orElse(BigDecimal.ZERO);
+    }
+
+    /**
+     * Indica si un tipo de evaluador tiene peso en el momento; solo se pueden
+     * designar evaluadores externos de los tipos que lo tienen.
+     *
+     * @param evaluatorType tipo de evaluador
+     * @return {@code true} si el tipo tiene peso en el momento
+     */
+    public boolean hasWeightFor(EvaluatorType evaluatorType) {
+        return findEvaluatorWeight(evaluatorType).isPresent();
+    }
+
+    /**
+     * Asigna o cambia el peso de un tipo de evaluador en el momento.
+     *
+     * @param evaluatorType tipo de evaluador
+     * @param weight        porcentaje: mayor que cero y hasta 100, con dos
+     *                      decimales como máximo
+     * @throws BusinessRuleException si el momento ya fue lanzado o el peso es inválido
+     */
+    public void setEvaluatorWeight(EvaluatorType evaluatorType, BigDecimal weight) {
+        requireConfiguration();
+        requireValidWeight(weight);
+        findEvaluatorWeight(evaluatorType).ifPresentOrElse(
+                existing -> existing.setWeight(weight),
+                () -> evaluatorWeights.add(new EvaluatorWeight(this, evaluatorType, weight)));
+    }
+
+    /**
+     * Quita el peso de un tipo de evaluador; el tipo deja de participar en el momento.
+     *
+     * @param evaluatorType tipo de evaluador
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
+    public void removeEvaluatorWeight(EvaluatorType evaluatorType) {
+        requireConfiguration();
+        findEvaluatorWeight(evaluatorType).ifPresent(evaluatorWeights::remove);
+    }
+
+    /**
+     * Suma de los pesos del momento: el del docente más los de los tipos de evaluador.
+     *
+     * @return suma de los porcentajes; debe ser 100 para lanzar el momento
+     */
+    public BigDecimal getTotalWeight() {
+        return evaluatorWeights.stream()
+                .map(EvaluatorWeight::getWeight)
+                .reduce(teacherWeight, BigDecimal::add);
+    }
+
+    /** Busca el peso de un tipo de evaluador, comparando por identificador si lo tiene. */
+    private Optional<EvaluatorWeight> findEvaluatorWeight(EvaluatorType evaluatorType) {
+        return evaluatorWeights.stream()
+                .filter(w -> isSameType(w.getEvaluatorType(), evaluatorType))
+                .findFirst();
+    }
+
+    private static boolean isSameType(EvaluatorType a, EvaluatorType b) {
+        return a == b || (a.getId() != null && a.getId().equals(b.getId()));
+    }
+
+    /**
+     * Verifica que un peso sea un porcentaje mayor que cero y hasta 100, con dos
+     * decimales como máximo (ADR-013).
+     *
+     * @throws BusinessRuleException si el peso es inválido
+     */
+    private static void requireValidWeight(BigDecimal weight) {
+        if (weight == null || weight.signum() <= 0 || weight.compareTo(ONE_HUNDRED) > 0
+                || weight.stripTrailingZeros().scale() > 2) {
+            throw new BusinessRuleException(
+                    "Cada peso debe ser un porcentaje mayor que 0 y hasta 100, con dos decimales como máximo.");
+        }
     }
 }
