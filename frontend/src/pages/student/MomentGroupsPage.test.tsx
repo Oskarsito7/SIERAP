@@ -138,6 +138,8 @@ describe('MomentGroupsPage', () => {
     renderPage()
 
     expect(await screen.findByText('Conformación cerrada: el momento ya fue lanzado')).toBeInTheDocument()
+    // El aviso sale con el momento; los grupos llegan después.
+    await screen.findByText('Grupo 2', { selector: '[data-slot="card-title"]' })
     expect(within(card('Grupo 1')).getByRole('button', { name: 'Salir del grupo' })).toBeDisabled()
     expect(within(card('Grupo 2')).getByRole('button', { name: 'Cambiarme a este grupo' })).toBeDisabled()
   })
