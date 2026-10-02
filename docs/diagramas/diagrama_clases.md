@@ -406,6 +406,7 @@ Report ..> Evaluation : «use»
 | `Evaluator` declares only `canEvaluate()`; `Teacher` and `ExternalEvaluator` show their own `canEvaluate()` | Same as the code: each class implements its own rule (polymorphism). |
 | `Evaluation` shows `isSubmitted()` | It is in the code. |
 | The detailed `.drawio` is regenerated from this model | It was still the Phase 2 version, with the Spanish names. |
+| The legend of the detailed `.drawio` no longer marks `Moment.launch()` as designed only | It is built, with its validations and the V5 constraints (fixes from the PR #3 review). |
 
 ## Changes of the contract of Stages 4 to 6 (2026-09-28 decisions)
 

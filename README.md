@@ -123,12 +123,19 @@ Implementation progress, by stages of [`docs/06-plan-de-trabajo.md`](docs/06-pla
 
 - [x] **Stage 0 — Foundations:** backend and frontend skeleton, PostgreSQL in
   `docker-compose`, CI on GitHub Actions.
-- [ ] Stage 1 — Domain model and persistence (JPA entities + Flyway): V1–V4 merged
-  (academic model, users, operations) and the detailed class diagram regenerated;
-  pending D2's fixes from the PR #3 review (V5).
-- [ ] Stage 2 — Authentication and access control: backend and login screens done
-  (ADR-017, API contract in `docs/07-contrato-api.md`); the layout per role and the
-  account screens are pending.
+- [x] **Stage 1 — Domain model and persistence:** JPA entities and Flyway V1–V5
+  (academic model, users, operations and the CHECK constraints from the PR #3 review);
+  the detailed class, hierarchy and layer diagrams regenerated in English.
+- [ ] Stage 2 — Authentication and access control: backend, login screens, layout per
+  role, registration codes and external evaluators pages done (ADR-017, API contract
+  in `docs/07-contrato-api.md`); the other account screens are pending.
+- [ ] Stage 3 — Academic configuration: the read routes of moments are done; the CRUD,
+  the evaluator weights, launching, copying the configuration and the admin screens
+  are pending.
+- [x] **Stage 4 — Teacher operations:** groups, dates and external evaluators.
+- [x] **Stage 5 — Student and versioned submissions:** joining groups and uploading
+  versions, with the files on the server disk (ADR-015).
+- [ ] Stage 6 — Multi-role evaluation: split agreed on 2026-10-02 (`docs/06`).
 
 ## 7. Structure of this repository
 
