@@ -146,8 +146,9 @@ one each student sees as their final grade; both feed the reports.
 
 **Final grade formula** (applies to the group grade and to each individual grade):
 weighted average by kind of evaluator (the teacher and each
-`EvaluatorType`), with weights the admin sets in each moment (to be modeled by D2 in
-Stage 3, together with the rest of the moment configuration). Several evaluators of
+`EvaluatorType`), with weights the admin sets in each moment as percentages that add
+up to 100 % (to be modeled by D2 in Stage 3, together with the rest of the moment
+configuration; the moment cannot be launched otherwise). Several evaluators of
 the same kind are averaged within that kind; if a kind has no submitted evaluation,
 its weight is redistributed among the present kinds in proportion to their weights.
 The graded submission is the last on-time version, or the last late one if there is

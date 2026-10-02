@@ -183,6 +183,8 @@ Defined by the project lead on 2026-09-24.
 | Grade reviews | Disagreements are handled outside SIERAP: the student talks to their teacher and the evaluator adjusts the individual grade while the grading window is open. *(2026-09-28)* |
 | API contract of Stages 4 to 6 | Approved with the technical details D1 proposed in `docs/07`. *(2026-09-28)* |
 | Wireframes | Medium-fidelity grayscale HTML pages in `docs/wireframes/` (one per role), exported to PNG for the delivery document and published as a private link for the team; changes go through PRs. *(2026-09-28)* |
+| Evaluator weights | The weights of a moment (the teacher and each evaluator type) are percentages that must add up to **100 %**; the moment cannot be launched otherwise. If a kind has no submitted evaluation, its weight is still redistributed among the present kinds. *(2026-10-02)* |
+| Stage 6 split | D3: `individual_grade` (V7), the evaluation endpoints and the screens to grade, the group results and "My grades". D2: the weights in the moment configuration (V9) while finishing Stage 3. D1: the grade calculation (ADR-018 formula) and the two results routes. *(2026-10-02)* |
 
 ## Still to be defined with the team
 
@@ -191,4 +193,3 @@ Defined by the project lead on 2026-09-24.
   middle of a moment?
 - Do comparative reports require anonymizing student data, or are they always
   handled at an aggregate level?
-- Do the evaluator weights of a moment have to add up to 100 %?
