@@ -5,6 +5,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import co.edu.unicesar.sierap.entity.enums.EvaluationStatus;
 import jakarta.persistence.CascadeType;
@@ -36,6 +37,12 @@ import jakarta.persistence.UniqueConstraint;
  * medias y la envía después con {@link #submit()}. Solo las enviadas cuentan para la
  * nota del grupo, y se pueden corregir mientras la ventana de calificación esté
  * abierta (lo valida el service con el {@code Clock}).</p>
+ *
+ * <p>El grupo se califica una sola vez y cada integrante hereda esos niveles; el
+ * evaluador puede ajustar el nivel de algunos criterios para un estudiante con
+ * {@link #adjust(Student, PerformanceLevel)} (ADR-018). Así salen dos notas: la del
+ * grupo ({@link #getTotalScore()}) y la de cada estudiante
+ * ({@link #getTotalScoreFor(Student)}), que usa sus ajustes donde los tenga.</p>
  *
  * <p>El evaluador se guarda como {@link User} porque JPA no puede mapear una
  * interfaz: la columna apunta a {@code app_user}. Que sea un {@link Evaluator} que
@@ -78,6 +85,10 @@ public class Evaluation {
     @OneToMany(mappedBy = "evaluation", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<CriterionGrade> grades = new ArrayList<>();
 
+    /** Ajustes por estudiante: solo los criterios en que su nivel difiere del grupo. */
+    @OneToMany(mappedBy = "evaluation", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<IndividualGrade> individualGrades = new ArrayList<>();
+
     /** Constructor requerido por JPA. */
     protected Evaluation() {
     }
@@ -95,23 +106,77 @@ public class Evaluation {
     }
 
     /**
-     * Registra el nivel elegido en un criterio. Si el criterio ya tenía nivel, lo
+     * Registra el nivel del grupo en un criterio. Si el criterio ya tenía nivel, lo
      * cambia en la misma fila (el evaluador corrigió su elección): borrar y volver a
      * insertar violaría la restricción única evaluación + criterio, porque Hibernate
      * ejecuta los INSERT antes que los DELETE.
+     *
+     * <p>Los ajustes individuales de ese criterio que quedan iguales al nuevo nivel
+     * del grupo se eliminan: un ajuste solo existe si difiere del grupo.</p>
      *
      * @param level nivel de desempeño elegido; su criterio es el que se califica
      */
     public void grade(PerformanceLevel level) {
         EvaluationCriterion criterion = level.getCriterion();
-        grades.stream()
-                .filter(grade -> sameCriterion(grade.getCriterion(), criterion))
-                .findFirst()
-                .ifPresentOrElse(grade -> grade.changeLevel(level), () -> {
-                    CriterionGrade grade = new CriterionGrade(level);
-                    grades.add(grade);
-                    grade.setEvaluation(this);
-                });
+        findGrade(criterion).ifPresentOrElse(grade -> grade.changeLevel(level), () -> {
+            CriterionGrade grade = new CriterionGrade(level);
+            grades.add(grade);
+            grade.setEvaluation(this);
+        });
+        individualGrades.removeIf(adjustment -> sameCriterion(adjustment.getCriterion(), criterion)
+                && sameLevel(adjustment.getLevel(), level));
+    }
+
+    /**
+     * Ajusta el nivel de un criterio para un solo estudiante (ADR-018). Si ya tenía un
+     * ajuste en ese criterio, lo cambia en la misma fila; si el nivel es igual al del
+     * grupo, elimina el ajuste, porque el estudiante vuelve a heredar el nivel del grupo.
+     *
+     * @param student integrante del grupo evaluado
+     * @param level   nivel para ese estudiante; su criterio es el que se ajusta
+     * @throws IllegalArgumentException si el estudiante no es integrante del grupo
+     *                                  (error de programación: el service debe
+     *                                  validarlo antes y responder 422)
+     */
+    public void adjust(Student student, PerformanceLevel level) {
+        if (!projectGroup.isMember(student)) {
+            throw new IllegalArgumentException("El estudiante no es integrante del grupo evaluado");
+        }
+        EvaluationCriterion criterion = level.getCriterion();
+        boolean sameAsGroup = findGrade(criterion).map(grade -> sameLevel(grade.getLevel(), level)).orElse(false);
+        if (sameAsGroup) {
+            removeAdjustment(student, criterion);
+            return;
+        }
+        findAdjustment(student, criterion).ifPresentOrElse(adjustment -> adjustment.changeLevel(level), () -> {
+            IndividualGrade adjustment = new IndividualGrade(student, level);
+            individualGrades.add(adjustment);
+            adjustment.setEvaluation(this);
+        });
+    }
+
+    /**
+     * Quita el ajuste de un estudiante en un criterio; desde ahí hereda el nivel del
+     * grupo. Si no tenía ajuste, no hace nada.
+     *
+     * @param student   estudiante
+     * @param criterion criterio
+     */
+    public void removeAdjustment(Student student, EvaluationCriterion criterion) {
+        individualGrades.removeIf(adjustment -> sameStudent(adjustment.getStudent(), student)
+                && sameCriterion(adjustment.getCriterion(), criterion));
+    }
+
+    /**
+     * Ajustes de un estudiante en esta evaluación.
+     *
+     * @param student estudiante
+     * @return sus ajustes; vacío si hereda todos los niveles del grupo
+     */
+    public List<IndividualGrade> getAdjustmentsFor(Student student) {
+        return individualGrades.stream()
+                .filter(adjustment -> sameStudent(adjustment.getStudent(), student))
+                .toList();
     }
 
     /**
@@ -157,6 +222,30 @@ public class Evaluation {
     }
 
     /**
+     * Nota total de un estudiante: la del grupo, pero con el puntaje de sus ajustes en
+     * los criterios donde los tiene (ADR-018). Sin ajustes es igual a
+     * {@link #getTotalScore()}.
+     *
+     * @param student integrante del grupo
+     * @return suma de los puntajes que le corresponden
+     */
+    public BigDecimal getTotalScoreFor(Student student) {
+        return scoresFor(student, null);
+    }
+
+    /**
+     * Nota de un estudiante en un RAP: la suma de los criterios de ese RAP, con sus
+     * ajustes donde los tiene.
+     *
+     * @param learningOutcome RAP a consultar
+     * @param student         integrante del grupo
+     * @return suma de los puntajes que le corresponden en ese RAP
+     */
+    public BigDecimal getScoreFor(LearningOutcome learningOutcome, Student student) {
+        return scoresFor(student, learningOutcome);
+    }
+
+    /**
      * Indica si se calificaron todos los criterios de todos los RAP del momento.
      *
      * @return {@code true} si hay una calificación por cada criterio del momento
@@ -166,6 +255,52 @@ public class Evaluation {
                 .flatMap(outcome -> outcome.getCriteria().stream())
                 .allMatch(criterion -> grades.stream()
                         .anyMatch(grade -> sameCriterion(grade.getCriterion(), criterion)));
+    }
+
+    /**
+     * Suma, criterio por criterio, el puntaje del ajuste del estudiante si lo tiene o
+     * el del grupo si no; con {@code outcome} solo cuenta los criterios de ese RAP. Un
+     * ajuste en un criterio que el grupo aún no tiene calificado (borrador) también
+     * cuenta.
+     */
+    private BigDecimal scoresFor(Student student, LearningOutcome outcome) {
+        List<IndividualGrade> adjustments = getAdjustmentsFor(student);
+        BigDecimal groupPart = grades.stream()
+                .filter(grade -> outcome == null || sameOutcome(grade.getCriterion().getLearningOutcome(), outcome))
+                .map(grade -> adjustments.stream()
+                        .filter(adjustment -> sameCriterion(adjustment.getCriterion(), grade.getCriterion()))
+                        .findFirst()
+                        .map(IndividualGrade::getScore)
+                        .orElse(grade.getScore()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        BigDecimal adjustedOnly = adjustments.stream()
+                .filter(adjustment -> findGrade(adjustment.getCriterion()).isEmpty())
+                .filter(adjustment -> outcome == null
+                        || sameOutcome(adjustment.getCriterion().getLearningOutcome(), outcome))
+                .map(IndividualGrade::getScore)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return groupPart.add(adjustedOnly);
+    }
+
+    private Optional<CriterionGrade> findGrade(EvaluationCriterion criterion) {
+        return grades.stream().filter(grade -> sameCriterion(grade.getCriterion(), criterion)).findFirst();
+    }
+
+    private Optional<IndividualGrade> findAdjustment(Student student, EvaluationCriterion criterion) {
+        return individualGrades.stream()
+                .filter(adjustment -> sameStudent(adjustment.getStudent(), student)
+                        && sameCriterion(adjustment.getCriterion(), criterion))
+                .findFirst();
+    }
+
+    /** Compara estudiantes por id cuando ya están guardados, o por referencia si no. */
+    private static boolean sameStudent(Student first, Student second) {
+        return first == second || first.getId() != null && first.getId().equals(second.getId());
+    }
+
+    /** Compara niveles por id cuando ya están guardados, o por referencia si no. */
+    private static boolean sameLevel(PerformanceLevel first, PerformanceLevel second) {
+        return first == second || first.getId() != null && first.getId().equals(second.getId());
     }
 
     /** Compara criterios por id cuando ya están guardados, o por referencia si no. */
@@ -216,5 +351,9 @@ public class Evaluation {
 
     public List<CriterionGrade> getGrades() {
         return Collections.unmodifiableList(grades);
+    }
+
+    public List<IndividualGrade> getIndividualGrades() {
+        return Collections.unmodifiableList(individualGrades);
     }
 }
