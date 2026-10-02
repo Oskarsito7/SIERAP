@@ -10,6 +10,8 @@ import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { SetPasswordPage } from '@/pages/auth/SetPasswordPage'
+import { AssignedGroupPage } from '@/pages/evaluator/AssignedGroupPage'
+import { AssignedGroupsPage } from '@/pages/evaluator/AssignedGroupsPage'
 import { ExternalEvaluatorsPage } from '@/pages/externalEvaluators/ExternalEvaluatorsPage'
 import { GroupDetailPage } from '@/pages/groups/GroupDetailPage'
 import { TeacherGroupsPage } from '@/pages/groups/TeacherGroupsPage'
@@ -30,6 +32,7 @@ const MENU_PAGES: Record<string, ReactNode> = {
   '/registration-codes': <RegistrationCodesPage />,
   '/moment-groups': <MomentGroupsPage />,
   '/my-group': <MyGroupPage />,
+  '/assigned-groups': <AssignedGroupsPage />,
 }
 
 /**
@@ -67,11 +70,19 @@ export const routes: RouteObject[] = [
               { index: true, element: <HomePage /> },
               { path: CHANGE_PASSWORD_PATH.slice(1), element: <ChangePasswordPage /> },
               { path: ACCOUNT_PATH.slice(1), element: <AccountPage /> },
-              {
-                path: 'groups/:id',
+              ...(['summary', 'submissions', 'evaluation'] as const).map((tab) => ({
+                path: tab === 'summary' ? 'groups/:id' : `groups/:id/${tab}`,
                 element: (
                   <RequireRole roles={['TEACHER']}>
-                    <GroupDetailPage />
+                    <GroupDetailPage tab={tab} />
+                  </RequireRole>
+                ),
+              })),
+              {
+                path: 'assigned-groups/:id',
+                element: (
+                  <RequireRole roles={['EXTERNAL_EVALUATOR']}>
+                    <AssignedGroupPage />
                   </RequireRole>
                 ),
               },
