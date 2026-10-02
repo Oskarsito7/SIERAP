@@ -18,6 +18,25 @@ export const groupService = {
     return data
   },
 
+  /**
+   * Inscribe al estudiante en el grupo. Si estaba en otro del mismo momento, sale de él
+   * en el mismo paso (la pantalla pide confirmación antes).
+   */
+  async join(id: number): Promise<Group> {
+    const { data } = await httpClient.post<Group>(`/groups/${id}/join`)
+    return data
+  },
+
+  async leave(id: number): Promise<void> {
+    await httpClient.post(`/groups/${id}/leave`)
+  },
+
+  /** Historial del estudiante: sus grupos, uno por momento, el más reciente primero. */
+  async myGroups(): Promise<Group[]> {
+    const { data } = await httpClient.get<Group[]>('/students/me/groups')
+    return data
+  },
+
   /** Habilita un grupo del docente en un momento que sigue en configuración. */
   async create(momentId: number, name: string): Promise<Group> {
     const { data } = await httpClient.post<Group>('/groups', { momentId, name })
