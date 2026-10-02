@@ -13,20 +13,23 @@ import co.edu.unicesar.sierap.dto.response.UserSummaryResponse;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
 
 /**
- * Operación de los grupos de un momento (Etapa 4, {@code docs/07} "Groups"): el docente
+ * Operación de los grupos de un momento ({@code docs/07} "Groups"): el docente
  * habilita sus grupos, fija sus fechas, agrega estudiantes sin grupo y asigna
- * evaluadores externos. Cada operación valida el alcance del usuario y el estado y las
- * ventanas del momento (ADR-012) con el {@code Clock} inyectado.
+ * evaluadores externos (Etapa 4); el estudiante se inscribe, cambia de grupo o se sale
+ * durante la conformación y consulta su historial (Etapa 5). Cada operación valida el
+ * alcance del usuario y el estado y las ventanas del momento (ADR-012) con el
+ * {@code Clock} inyectado.
  */
 public interface GroupService {
 
     /**
      * Lista los grupos dentro del alcance del usuario.
      *
-     * @param actor    docente (sus grupos), evaluador externo (los asignados), admin
-     *                 (su facultad) o super_admin
+     * @param actor    docente (sus grupos), evaluador externo (los asignados),
+     *                 estudiante (todos los grupos de un momento al que puede acceder),
+     *                 admin (su facultad) o super_admin
      * @param momentId momento; opcional para docentes y evaluadores, obligatorio para
-     *                 admin y super_admin
+     *                 estudiantes, admin y super_admin
      * @return grupos ordenados por nombre
      */
     List<GroupResponse> list(AuthenticatedUser actor, Long momentId);
@@ -49,6 +52,33 @@ public interface GroupService {
      * @return grupo creado
      */
     GroupResponse create(AuthenticatedUser actor, NewGroupRequest request);
+
+    /**
+     * Inscribe al estudiante en un grupo de un momento al que puede acceder, durante la
+     * ventana de conformación y mientras el grupo tenga cupo. Si ya estaba en otro
+     * grupo del mismo momento, sale de él en el mismo paso.
+     *
+     * @param actor estudiante
+     * @param id    grupo
+     * @return grupo actualizado
+     */
+    GroupResponse join(AuthenticatedUser actor, Long id);
+
+    /**
+     * Retira al estudiante de su grupo durante la ventana de conformación.
+     *
+     * @param actor estudiante integrante
+     * @param id    grupo
+     */
+    void leave(AuthenticatedUser actor, Long id);
+
+    /**
+     * Historial del estudiante: sus grupos, uno por momento, el más reciente primero.
+     *
+     * @param actor estudiante
+     * @return sus grupos
+     */
+    List<GroupResponse> myGroups(AuthenticatedUser actor);
 
     /**
      * Cambia el nombre (solo antes del lanzamiento) o las fechas del grupo (dentro de

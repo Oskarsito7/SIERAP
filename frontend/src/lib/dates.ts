@@ -11,3 +11,9 @@ export function formatDate(isoDate: string): string {
   const [year, month, day] = isoDate.split('-')
   return `${day}/${month}/${year}`
 }
+
+/** Convierte una fecha y hora `YYYY-MM-DDTHH:mm:ss` de la API a `DD/MM/YYYY HH:mm`. */
+export function formatDateTime(isoDateTime: string): string {
+  const [date, time = ''] = isoDateTime.split('T')
+  return `${formatDate(date)} ${time.slice(0, 5)}`.trim()
+}

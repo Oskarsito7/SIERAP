@@ -237,8 +237,12 @@ class OperationsIntegrationTest {
     }
 
     private static Submission submission(int version, boolean late) {
-        return new Submission(version, "entregas/v" + version + ".zip",
-                "entregas/v" + version + ".pdf", LocalDateTime.of(2026, 10, 15, 10, 0), late);
+        Submission submission = new Submission(version,
+                new Submission.StoredFile("entregas/v" + version + ".zip", "proyecto.zip", 1024),
+                LocalDateTime.of(2026, 10, 15, 10, 0), late);
+        submission.attachPresentation(
+                new Submission.StoredFile("entregas/v" + version + ".pdf", "sustentacion.pdf", 512));
+        return submission;
     }
 
     private <T> T persist(T entity) {

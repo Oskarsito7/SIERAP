@@ -217,6 +217,7 @@ taken by another PostgreSQL: `DB_PORT=5433 docker compose up -d` and
 | `SIERAP_FRONTEND_URL` | Public URL of the frontend; the links sent by email point to it. |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` | UPC SMTP server (in development, Mailpit on `localhost:1025` without credentials). |
 | `MAIL_FROM` | Sender of the emails (default `SIERAP <no-reply@unicesar.edu.co>`). |
+| `SIERAP_STORAGE_PATH` | Folder where the submission files are stored (ADR-015): outside the application folder, on persistent storage and backed up with the database. The API refuses to start without it. In `dev` it defaults to `~/sierap-files`. |
 
 **Migrations:** the schema is created by Flyway at startup. A migration that is already
 in `develop` is never edited; if your local database has an older version of a migration

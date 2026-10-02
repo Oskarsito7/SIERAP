@@ -25,3 +25,6 @@ sierap:
     jwt-secret: ${SIERAP_JWT_SECRET:clave-de-desarrollo-sierap-no-usar-en-produccion-0123456789}
     # En local el frontend y la API van por http://localhost.
     refresh-cookie-secure: false
+  # En local las entregas quedan en la carpeta personal del usuario.
+  storage:
+    base-path: ${SIERAP_STORAGE_PATH:${user.home}/sierap-files}

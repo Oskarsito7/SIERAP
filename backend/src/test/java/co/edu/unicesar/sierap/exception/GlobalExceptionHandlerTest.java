@@ -28,6 +28,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 /**
  * Verifica que {@link GlobalExceptionHandler} traduzca cada tipo de error al
@@ -89,6 +90,15 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    void uploadAboveTheMultipartLimitResponds413WithAGenericMessage() throws Exception {
+        mockMvc.perform(get("/test/upload-too-large"))
+                .andExpect(status().isPayloadTooLarge())
+                .andExpect(jsonPath("$.status").value(413))
+                .andExpect(jsonPath("$.message").value("El archivo supera el tamaño máximo permitido."))
+                .andExpect(jsonPath("$.path").value("/test/upload-too-large"));
+    }
+
+    @Test
     void dataIntegrityViolationResponds409WithoutExposingTheSqlError() throws Exception {
         mockMvc.perform(get("/test/data-integrity"))
                 .andExpect(status().isConflict())
@@ -127,6 +137,11 @@ class GlobalExceptionHandlerTest {
         @PostMapping("/validation")
         void validate(@Valid @RequestBody TestRequest request) {
             // Si la validación pasa no hay nada que hacer.
+        }
+
+        @GetMapping("/upload-too-large")
+        void throwMaxUploadSizeExceeded() {
+            throw new MaxUploadSizeExceededException(100L * 1024 * 1024);
         }
 
         @GetMapping("/data-integrity")

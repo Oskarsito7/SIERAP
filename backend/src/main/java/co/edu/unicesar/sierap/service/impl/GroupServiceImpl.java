@@ -44,7 +44,8 @@ import org.springframework.transaction.annotation.Transactional;
  * Implementación de {@link GroupService}.
  *
  * <p>El alcance se decide por el tipo de usuario (polimorfismo con
- * {@link Evaluator#canEvaluate(ProjectGroup)} para docentes y evaluadores externos) y
+ * {@link Evaluator#canEvaluate(ProjectGroup)} para docentes y evaluadores externos; el
+ * estudiante ve los grupos de los momentos a los que puede acceder) y
  * las fechas con el {@code Clock} inyectado. Toda regla violada responde con una
  * excepción de SIERAP que {@code GlobalExceptionHandler} convierte en 403, 404 o 422.</p>
  */
@@ -97,6 +98,15 @@ public class GroupServiceImpl implements GroupService {
             groups = momentId == null
                     ? projectGroupRepository.findByEvaluatorsIdOrderByName(evaluator.getId())
                     : projectGroupRepository.findByEvaluatorsIdAndMomentIdOrderByName(evaluator.getId(), momentId);
+        } else if (viewer instanceof Student student) {
+            if (momentId == null) {
+                throw new BusinessRuleException("Indique el momento del que quiere ver los grupos.");
+            }
+            Moment moment = findMoment(momentId);
+            if (!canAccessMoment(student, moment)) {
+                throw new ForbiddenAccessException("No tiene acceso a los grupos de este momento.");
+            }
+            groups = projectGroupRepository.findByMomentIdOrderByName(momentId);
         } else if (viewer instanceof Admin || viewer instanceof SuperAdmin) {
             if (momentId == null) {
                 throw new BusinessRuleException("Indique el momento del que quiere ver los grupos.");
@@ -135,6 +145,53 @@ public class GroupServiceImpl implements GroupService {
         requireUniqueName(moment, teacher, name);
         ProjectGroup group = projectGroupRepository.save(new ProjectGroup(moment, teacher, name));
         return GroupMapper.toResponse(group, teacher);
+    }
+
+    @Override
+    public GroupResponse join(AuthenticatedUser actor, Long id) {
+        Student student = requireStudent(accessScope.loadActor(actor));
+        // Se bloquea la fila del grupo para que dos inscripciones simultáneas no pasen
+        // a la vez la validación del cupo.
+        ProjectGroup group = projectGroupRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Grupo", id));
+        Moment moment = group.getMoment();
+        if (!canAccessMoment(student, moment)) {
+            throw new ForbiddenAccessException("No puede inscribirse en los grupos de este momento.");
+        }
+        requireGroupFormationOpen(moment, today());
+        if (group.isMember(student)) {
+            throw new BusinessRuleException("Ya es integrante de este grupo.");
+        }
+        if (group.isFull()) {
+            throw new BusinessRuleException("El grupo ya tiene el máximo de " + moment.getMaxMembers()
+                    + " integrantes.");
+        }
+        // Cambio de grupo en un solo paso: sale del grupo anterior del mismo momento.
+        projectGroupRepository.findByMomentIdAndMembersId(moment.getId(), student.getId())
+                .ifPresent(previous -> previous.removeMember(student));
+        group.addMember(student);
+        return GroupMapper.toResponse(group, student);
+    }
+
+    @Override
+    public void leave(AuthenticatedUser actor, Long id) {
+        Student student = requireStudent(accessScope.loadActor(actor));
+        ProjectGroup group = findGroup(id);
+        if (!group.isMember(student)) {
+            throw new BusinessRuleException("No es integrante de este grupo.");
+        }
+        requireGroupFormationOpen(group.getMoment(), today());
+        group.removeMember(student);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<GroupResponse> myGroups(AuthenticatedUser actor) {
+        Student student = requireStudent(accessScope.loadActor(actor));
+        return projectGroupRepository.findByMembersIdOrderByMomentPeriodStartDateDescMomentNumberDesc(student.getId())
+                .stream()
+                .map(group -> GroupMapper.toResponse(group, student))
+                .toList();
     }
 
     @Override
@@ -297,17 +354,62 @@ public class GroupServiceImpl implements GroupService {
     // ---------------------------------------------------------------- reglas comunes
 
     /**
-     * Quién ve un grupo: el super_admin, el admin de la facultad y los evaluadores del
-     * grupo (su docente y los externos asignados), cada uno con su propia regla.
+     * Quién ve un grupo: el super_admin, el admin de la facultad, los evaluadores del
+     * grupo (su docente y los externos asignados) y los estudiantes que pueden acceder
+     * a su momento, cada uno con su propia regla.
      */
     private boolean canView(User viewer, ProjectGroup group) {
         if (viewer instanceof SuperAdmin) {
             return true;
         }
+        if (viewer instanceof Student student) {
+            return group.isMember(student) || canAccessMoment(student, group.getMoment());
+        }
         if (viewer instanceof Admin admin) {
             return Objects.equals(admin.getFaculty().getId(), facultyOf(group.getMoment()));
         }
         return viewer instanceof Evaluator evaluator && evaluator.canEvaluate(group);
+    }
+
+    /**
+     * Momento al que accede un estudiante: el de su programa cuyo rango de semestres
+     * incluye su semestre actual o, aunque esté fuera del rango, uno en el que ya tiene
+     * grupo (porque el docente lo agregó).
+     */
+    private boolean canAccessMoment(Student student, Moment moment) {
+        if (!Objects.equals(student.getProgram().getId(), moment.getProgram().getId())) {
+            return false;
+        }
+        int semester = student.getCurrentSemester();
+        return semester >= moment.getSemesterFrom() && semester <= moment.getSemesterTo()
+                || projectGroupRepository.existsByMomentIdAndMembersId(moment.getId(), student.getId());
+    }
+
+    /** Inscribirse, cambiarse o salirse solo se puede durante la conformación (docs/07). */
+    private static void requireGroupFormationOpen(Moment moment, LocalDate today) {
+        if (moment.isInGroupFormation(today)) {
+            return;
+        }
+        if (moment.getStatus() == MomentStatus.LAUNCHED) {
+            throw new BusinessRuleException("El momento ya fue lanzado: los grupos ya no se pueden cambiar.");
+        }
+        LocalDate start = moment.getGroupFormationStart();
+        LocalDate end = moment.getGroupFormationEnd();
+        if (start == null || end == null) {
+            throw new BusinessRuleException(
+                    "El momento todavía no tiene definida la ventana de conformación de grupos.");
+        }
+        if (today.isBefore(start)) {
+            throw new BusinessRuleException("La conformación de grupos abre el " + start + ".");
+        }
+        throw new BusinessRuleException("La ventana de conformación de grupos cerró el " + end + ".");
+    }
+
+    private Student requireStudent(User user) {
+        if (user instanceof Student student) {
+            return student;
+        }
+        throw new ForbiddenAccessException("Solo los estudiantes se inscriben en los grupos.");
     }
 
     private Teacher requireTeacher(User user) {

@@ -17,3 +17,9 @@ spring:
 logging:
   level:
     root: INFO
+
+sierap:
+  # Carpeta de las entregas (ADR-015): en almacenamiento persistente, p. ej. un volumen
+  # de Docker, y respaldada junto con la base de datos.
+  storage:
+    base-path: ${SIERAP_STORAGE_PATH}

@@ -5,16 +5,10 @@ import { FormError, FormField } from '@/components/forms/FormField'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
+import { DOCUMENT_TYPES } from '@/lib/documentTypes'
 import { authService } from '@/services/api/authService'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
 import type { DocumentType } from '@/types/auth'
-
-const DOCUMENT_TYPES: { value: DocumentType; label: string }[] = [
-  { value: 'CC', label: 'Cédula de ciudadanía' },
-  { value: 'TI', label: 'Tarjeta de identidad' },
-  { value: 'CE', label: 'Cédula de extranjería' },
-  { value: 'PASSPORT', label: 'Pasaporte' },
-]
 
 interface RegisterForm {
   registrationCode: string

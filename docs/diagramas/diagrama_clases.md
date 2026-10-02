@@ -243,9 +243,15 @@ class Submission {
   -id: Long
   -versionNumber: int
   -zipFilePath: String
+  -zipFileName: String
+  -zipSize: long
   -presentationPath: String
+  -presentationFileName: String
+  -presentationSize: Long
   -submittedAt: LocalDateTime
   -late: boolean
+  +attachPresentation(file: StoredFile) void
+  +hasPresentation() boolean
   +isLate() boolean
 }
 

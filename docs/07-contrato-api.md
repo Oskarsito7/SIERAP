@@ -248,8 +248,10 @@ own contract written by D2. Until these two routes exist, D3 mocks them.
 ```
 
 Students see only `fullName` of the members of other groups (to know who is in each
-one), without `studentCode`, `email` or `evaluators`; in their own group
-they see everything except `evaluators`.
+one): `studentCode` and `email` come as `null` and `evaluators` as `[]`; in their own
+group they see everything except `evaluators` (also `[]`). A student can see the groups
+of the moments of their program whose semester range includes their current semester,
+and of any moment where they already have a group (a teacher can add them out of range).
 
 | Method and route | Who | Body | Answer |
 |---|---|---|---|

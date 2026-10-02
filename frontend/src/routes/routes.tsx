@@ -10,11 +10,14 @@ import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { SetPasswordPage } from '@/pages/auth/SetPasswordPage'
+import { ExternalEvaluatorsPage } from '@/pages/externalEvaluators/ExternalEvaluatorsPage'
 import { GroupDetailPage } from '@/pages/groups/GroupDetailPage'
 import { TeacherGroupsPage } from '@/pages/groups/TeacherGroupsPage'
 import { HomePage } from '@/pages/HomePage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { RegistrationCodesPage } from '@/pages/registrationCodes/RegistrationCodesPage'
+import { MomentGroupsPage } from '@/pages/student/MomentGroupsPage'
+import { MyGroupPage } from '@/pages/student/MyGroupPage'
 
 import { CHANGE_PASSWORD_PATH, GuestOnly, RequireAuth } from './guards'
 import { MenuPageRoute } from './MenuPageRoute'
@@ -23,7 +26,10 @@ import { RequireRole } from './RequireRole'
 /** Páginas del menú que ya existen; las demás muestran "Próximamente". */
 const MENU_PAGES: Record<string, ReactNode> = {
   '/groups': <TeacherGroupsPage />,
+  '/external-evaluators': <ExternalEvaluatorsPage />,
   '/registration-codes': <RegistrationCodesPage />,
+  '/moment-groups': <MomentGroupsPage />,
+  '/my-group': <MyGroupPage />,
 }
 
 /**
