@@ -22,8 +22,10 @@ import co.edu.unicesar.sierap.entity.enums.MomentStatus;
  * @param periodCode          código del periodo, p. ej. {@code 2026-2}
  * @param semesterFrom        primer semestre que abarca
  * @param semesterTo          último semestre que abarca
+ * @param requirementLevel    nivel de exigencia en texto libre (ADR-010), p. ej. "Bajo"
  * @param minMembers          mínimo de estudiantes por grupo
  * @param maxMembers          máximo de estudiantes por grupo
+ * @param groupCount          cantidad de grupos habilitados en el momento
  * @param status              estado del ciclo de vida
  * @param groupFormationStart primer día de la conformación de grupos, o {@code null}
  * @param groupFormationEnd   último día de la conformación de grupos, o {@code null}
@@ -46,8 +48,10 @@ public record MomentSummaryResponse(
         String periodCode,
         int semesterFrom,
         int semesterTo,
+        String requirementLevel,
         int minMembers,
         int maxMembers,
+        int groupCount,
         MomentStatus status,
         LocalDate groupFormationStart,
         LocalDate groupFormationEnd,
