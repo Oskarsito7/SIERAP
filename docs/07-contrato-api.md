@@ -354,7 +354,7 @@ evaluation per group. They grade the group once and may adjust single students
 | `POST /api/groups/{id}/evaluation/submit` | same | — | `200 EvaluationForm` with `status: SUBMITTED`. `422` "Falta calificar N criterios." if it is incomplete |
 | `GET /api/groups/{id}/evaluations` | the group's teacher, admin of the faculty, super_admin | — | `200 [ { "id", "evaluator": { "id", "fullName", "kind" }, "status", "evaluatedAt", "totalScore", "comment" } ]`. `kind` is "Docente" or the evaluator type name. External evaluators only see their own evaluation |
 
-### Results (Stage 6) — D2 + D3
+### Results (Stage 6) — D1 (calculation and routes) + D3 (screens)
 
 ```jsonc
 // GroupResults: group grade and each member's individual grade
@@ -399,5 +399,6 @@ then weight the kinds with the weights the admin set in the moment (Stage 3),
 redistributing the weight of a kind without submitted evaluations among the others in
 proportion. The group grade uses the group levels; each individual grade uses the group
 levels replaced by that student's adjustments. Per RAP, the same with the scores of that
-RAP's criteria. Every grade is `BigDecimal` (ADR-013) with 2 decimals in the answer.
+RAP's criteria. A kind without weight in the moment (or 0 %) does not count. Every grade
+is `BigDecimal` (ADR-013), rounded half up to 2 decimals only at the end (2.995 → 3.00).
 

@@ -185,6 +185,8 @@ Defined by the project lead on 2026-09-24.
 | Wireframes | Medium-fidelity grayscale HTML pages in `docs/wireframes/` (one per role), exported to PNG for the delivery document and published as a private link for the team; changes go through PRs. *(2026-09-28)* |
 | Evaluator weights | The weights of a moment (the teacher and each evaluator type) are percentages that must add up to **100 %**; the moment cannot be launched otherwise. If a kind has no submitted evaluation, its weight is still redistributed among the present kinds. *(2026-10-02)* |
 | Stage 6 split | D3: `individual_grade` (V7), the evaluation endpoints and the screens to grade, the group results and "My grades". D2: the weights in the moment configuration (V9) while finishing Stage 3. D1: the grade calculation (ADR-018 formula) and the two results routes. *(2026-10-02)* |
+| Evaluator type without weight | The evaluation of an external evaluator whose type has no weight in the moment (or 0 %) does not count in the grade. The screen to assign evaluators warns about it but does not block the assignment, because the admin may still be setting the weights. *(2026-10-16)* |
+| Rounding of grades | Averages and weighting keep 16 significant digits; only the result (the total and each RAP, group and individual) is rounded to 2 decimals, half up: 2.995 → 3.00. *(2026-10-16)* |
 
 ## Still to be defined with the team
 
