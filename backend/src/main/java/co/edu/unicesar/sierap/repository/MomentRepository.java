@@ -102,4 +102,37 @@ public interface MomentRepository extends JpaRepository<Moment, Long> {
      * @return {@code true} si otro momento ya tiene ese número
      */
     boolean existsByProgramIdAndPeriodIdAndNumberAndIdNot(Long programId, Long periodId, int number, Long id);
+
+    /**
+     * Cuenta la cantidad de momentos de un programa en un periodo académico.
+     *
+     * @param programId identificador del programa
+     * @param periodId  identificador del periodo académico
+     * @return cantidad de momentos
+     */
+    int countByProgramIdAndPeriodId(Long programId, Long periodId);
+
+    /**
+     * Indica si existen momentos configurados en un periodo académico.
+     *
+     * @param periodId identificador del periodo académico
+     * @return {@code true} si hay al menos un momento en el periodo
+     */
+    boolean existsByPeriodId(Long periodId);
+
+    /**
+     * Lista todos los momentos de un periodo académico.
+     *
+     * @param periodId identificador del periodo académico
+     * @return momentos del periodo
+     */
+    List<Moment> findByPeriodId(Long periodId);
+
+    /**
+     * Indica si algún momento utiliza el tipo de evaluador en su ponderación.
+     *
+     * @param evaluatorTypeId identificador del tipo de evaluador
+     * @return {@code true} si al menos un peso de momento referencia este tipo
+     */
+    boolean existsByEvaluatorWeightsEvaluatorTypeId(Long evaluatorTypeId);
 }

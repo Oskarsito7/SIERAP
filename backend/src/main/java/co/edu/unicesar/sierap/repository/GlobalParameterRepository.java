@@ -1,5 +1,6 @@
 package co.edu.unicesar.sierap.repository;
 
+import java.util.List;
 import java.util.Optional;
 
 import co.edu.unicesar.sierap.entity.GlobalParameter;
@@ -17,4 +18,11 @@ public interface GlobalParameterRepository extends JpaRepository<GlobalParameter
      * @return el parámetro, si existe
      */
     Optional<GlobalParameter> findByKey(String key);
+
+    /**
+     * Lista todos los parámetros globales ordenados por clave.
+     *
+     * @return parámetros ordenados por clave
+     */
+    List<GlobalParameter> findAllByOrderByKeyAsc();
 }
