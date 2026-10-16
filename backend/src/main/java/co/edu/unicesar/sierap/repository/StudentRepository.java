@@ -67,4 +67,28 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
             """)
     List<Student> findWithoutGroup(@Param("programId") Long programId, @Param("semesterFrom") int semesterFrom,
                                    @Param("semesterTo") int semesterTo, @Param("momentId") Long momentId);
+
+    /**
+     * Indica si existen estudiantes matriculados en algún programa de la facultad.
+     *
+     * @param facultyId identificador de la facultad
+     * @return {@code true} si hay al menos un estudiante en la facultad
+     */
+    boolean existsByProgramFacultyId(Long facultyId);
+
+    /**
+     * Indica si existen estudiantes matriculados en un programa.
+     *
+     * @param programId identificador del programa
+     * @return {@code true} si hay al menos un estudiante en el programa
+     */
+    boolean existsByProgramId(Long programId);
+
+    /**
+     * Cuenta la cantidad de estudiantes matriculados en un programa.
+     *
+     * @param programId identificador del programa
+     * @return cantidad de estudiantes en el programa
+     */
+    int countByProgramId(Long programId);
 }

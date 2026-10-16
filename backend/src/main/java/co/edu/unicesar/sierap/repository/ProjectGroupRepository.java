@@ -160,4 +160,20 @@ public interface ProjectGroupRepository extends JpaRepository<ProjectGroup, Long
      */
     @Query("select g.moment.id, count(g) from ProjectGroup g where g.moment.id in :momentIds group by g.moment.id")
     List<Object[]> countByMomentIdIn(@Param("momentIds") Collection<Long> momentIds);
+
+    /**
+     * Indica si existen grupos asociados a momentos de programas de una facultad.
+     *
+     * @param facultyId identificador de la facultad
+     * @return {@code true} si hay al menos un grupo en programas de esa facultad
+     */
+    boolean existsByMomentProgramFacultyId(Long facultyId);
+
+    /**
+     * Indica si existen grupos asociados a momentos de un programa.
+     *
+     * @param programId identificador del programa
+     * @return {@code true} si hay al menos un grupo en ese programa
+     */
+    boolean existsByMomentProgramId(Long programId);
 }
