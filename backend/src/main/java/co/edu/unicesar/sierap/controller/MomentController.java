@@ -2,9 +2,11 @@ package co.edu.unicesar.sierap.controller;
 
 import java.util.List;
 
+import co.edu.unicesar.sierap.dto.request.LaunchMomentRequest;
 import co.edu.unicesar.sierap.dto.request.MomentWeightsRequest;
 import co.edu.unicesar.sierap.dto.request.NewMomentRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateMomentRequest;
+import co.edu.unicesar.sierap.dto.response.LaunchCheckResponse;
 import co.edu.unicesar.sierap.dto.response.MomentDetailResponse;
 import co.edu.unicesar.sierap.dto.response.MomentSummaryResponse;
 import co.edu.unicesar.sierap.dto.response.MomentWeightsResponse;
@@ -132,5 +134,35 @@ public class MomentController {
                                                @PathVariable Long id,
                                                @Valid @RequestBody MomentWeightsRequest request) {
         return momentService.updateWeights(actor, id, request);
+    }
+
+    /**
+     * Diagnostica la configuración de un momento antes de lanzarlo.
+     *
+     * @param actor usuario autenticado (super_admin o admin de la facultad)
+     * @param id    identificador del momento
+     * @return diagnóstico de lanzamiento
+     */
+    @GetMapping("/{id}/launch-check")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    public LaunchCheckResponse launchCheck(@AuthenticationPrincipal AuthenticatedUser actor,
+                                           @PathVariable Long id) {
+        return momentService.launchCheck(actor, id);
+    }
+
+    /**
+     * Lanza un momento a ejecución.
+     *
+     * @param actor   usuario autenticado (super_admin o admin de la facultad)
+     * @param id      identificador del momento
+     * @param request confirmación opcional de grupos por debajo del mínimo
+     * @return detalle del momento lanzado
+     */
+    @PostMapping("/{id}/launch")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    public MomentDetailResponse launch(@AuthenticationPrincipal AuthenticatedUser actor,
+                                       @PathVariable Long id,
+                                       @RequestBody(required = false) LaunchMomentRequest request) {
+        return momentService.launch(actor, id, request);
     }
 }

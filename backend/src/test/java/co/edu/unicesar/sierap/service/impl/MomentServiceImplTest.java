@@ -16,10 +16,12 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
+import co.edu.unicesar.sierap.dto.request.LaunchMomentRequest;
 import co.edu.unicesar.sierap.dto.request.MomentWeightsRequest;
 import co.edu.unicesar.sierap.dto.request.MomentWeightsRequest.EvaluatorWeightItemRequest;
 import co.edu.unicesar.sierap.dto.request.NewMomentRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateMomentRequest;
+import co.edu.unicesar.sierap.dto.response.LaunchCheckResponse;
 import co.edu.unicesar.sierap.dto.response.MomentDetailResponse;
 import co.edu.unicesar.sierap.dto.response.MomentSummaryResponse;
 import co.edu.unicesar.sierap.dto.response.MomentWeightsResponse;
@@ -27,12 +29,15 @@ import co.edu.unicesar.sierap.entity.AcademicPeriod;
 import co.edu.unicesar.sierap.entity.Admin;
 import co.edu.unicesar.sierap.entity.EvaluationCriterion;
 import co.edu.unicesar.sierap.entity.EvaluatorType;
+import co.edu.unicesar.sierap.entity.ExternalEvaluator;
 import co.edu.unicesar.sierap.entity.Faculty;
 import co.edu.unicesar.sierap.entity.LearningOutcome;
 import co.edu.unicesar.sierap.entity.Moment;
 import co.edu.unicesar.sierap.entity.PerformanceLevel;
 import co.edu.unicesar.sierap.entity.Program;
+import co.edu.unicesar.sierap.entity.ProjectGroup;
 import co.edu.unicesar.sierap.entity.Student;
+import co.edu.unicesar.sierap.entity.Teacher;
 import co.edu.unicesar.sierap.entity.enums.DocumentType;
 import co.edu.unicesar.sierap.entity.enums.UserRole;
 import co.edu.unicesar.sierap.exception.BusinessRuleException;
@@ -566,5 +571,196 @@ class MomentServiceImplTest {
 
         assertThatThrownBy(() -> momentService.updateWeights(adminActor, 200L, request))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    private Moment createFullyConfiguredMoment() {
+        Moment moment = new Moment(period, 1, "Momento 1", "Asignatura", 1, 3, "Bajo", 3, 5);
+        program.addMoment(moment);
+        ReflectionTestUtils.setField(moment, "id", 200L);
+        moment.setGroupFormationStart(LocalDate.of(2026, 8, 10));
+        moment.setGroupFormationEnd(LocalDate.of(2026, 8, 20));
+        moment.setSubmissionStart(LocalDate.of(2026, 9, 1));
+        moment.setSubmissionEnd(LocalDate.of(2026, 9, 15));
+        moment.setGradingStart(LocalDate.of(2026, 10, 1));
+        moment.setGradingEnd(LocalDate.of(2026, 10, 20));
+
+        LearningOutcome rap = new LearningOutcome("RAP1", "Resultado de aprendizaje");
+        EvaluationCriterion crit = new EvaluationCriterion("Criterio 1", 1);
+        PerformanceLevel level = new PerformanceLevel("Alto", "Excelente", BigDecimal.valueOf(5), 1);
+        crit.addLevel(level);
+        rap.addCriterion(crit);
+        moment.addLearningOutcome(rap);
+        return moment;
+    }
+
+    @Test
+    void launchCheckWhenMomentAlreadyLaunched() {
+        Moment moment = createFullyConfiguredMoment();
+        ReflectionTestUtils.setField(moment, "status", co.edu.unicesar.sierap.entity.enums.MomentStatus.LAUNCHED);
+
+        when(momentRepository.findById(200L)).thenReturn(Optional.of(moment));
+        when(accessScope.loadActor(adminActor)).thenReturn(admin);
+
+        LaunchCheckResponse response = momentService.launchCheck(adminActor, 200L);
+
+        assertThat(response.momentId()).isEqualTo(200L);
+        assertThat(response.canLaunch()).isFalse();
+        assertThat(response.problems()).containsExactly("El momento ya fue lanzado.");
+    }
+
+    @Test
+    void launchCheckWhenIncompleteConfiguration() {
+        Moment moment = new Moment(period, 1, "Momento 1", "Asignatura", 1, 3, "Bajo", 3, 5);
+        program.addMoment(moment);
+        ReflectionTestUtils.setField(moment, "id", 200L);
+
+        when(momentRepository.findById(200L)).thenReturn(Optional.of(moment));
+        when(accessScope.loadActor(adminActor)).thenReturn(admin);
+        when(projectGroupRepository.findByMomentIdOrderByName(200L)).thenReturn(List.of());
+
+        LaunchCheckResponse response = momentService.launchCheck(adminActor, 200L);
+
+        assertThat(response.canLaunch()).isFalse();
+        assertThat(response.problems()).contains(
+                "Para lanzar el momento se deben definir las tres ventanas de fechas.",
+                "El momento debe tener al menos un RAP.");
+    }
+
+    @Test
+    void launchCheckWhenValidWithWarnings() {
+        Moment moment = createFullyConfiguredMoment();
+
+        Teacher teacher = new Teacher("Marta", "Díaz", DocumentType.CC, "12345", "marta@unicesar.edu.co", "hash", LocalDateTime.now(), faculty);
+        ReflectionTestUtils.setField(teacher, "id", 12L);
+
+        ProjectGroup group1 = new ProjectGroup(moment, teacher, "Grupo 1");
+        ReflectionTestUtils.setField(group1, "id", 1L);
+        group1.addMember(student);
+
+        EvaluatorType type2 = new EvaluatorType("Egresado", "Evaluador egresado");
+        ReflectionTestUtils.setField(type2, "id", 2L);
+        ExternalEvaluator extEval = new ExternalEvaluator("Carlos", "Gómez", DocumentType.CC, "9876", "carlos@gmail.com", "hash", LocalDateTime.now(), type2);
+        ReflectionTestUtils.setField(extEval, "id", 50L);
+        group1.addEvaluator(extEval);
+
+        when(momentRepository.findById(200L)).thenReturn(Optional.of(moment));
+        when(accessScope.loadActor(adminActor)).thenReturn(admin);
+        when(projectGroupRepository.findByMomentIdOrderByName(200L)).thenReturn(List.of(group1));
+
+        LaunchCheckResponse response = momentService.launchCheck(adminActor, 200L);
+
+        assertThat(response.canLaunch()).isTrue();
+        assertThat(response.problems()).isEmpty();
+        assertThat(response.minMembers()).isEqualTo(3);
+        assertThat(response.groupsBelowMinimum()).hasSize(1);
+        assertThat(response.groupsBelowMinimum().get(0).name()).isEqualTo("Grupo 1");
+        assertThat(response.groupsBelowMinimum().get(0).memberCount()).isEqualTo(1);
+        assertThat(response.groupsBelowMinimum().get(0).teacher().fullName()).isEqualTo("Marta Díaz");
+
+        assertThat(response.evaluatorTypesWithoutWeight()).hasSize(1);
+        assertThat(response.evaluatorTypesWithoutWeight().get(0).evaluatorTypeId()).isEqualTo(2L);
+        assertThat(response.evaluatorTypesWithoutWeight().get(0).evaluatorTypeName()).isEqualTo("Egresado");
+        assertThat(response.evaluatorTypesWithoutWeight().get(0).evaluatorCount()).isEqualTo(1);
+    }
+
+    @Test
+    void launchThrowsWhenAlreadyLaunched() {
+        Moment moment = createFullyConfiguredMoment();
+        ReflectionTestUtils.setField(moment, "status", co.edu.unicesar.sierap.entity.enums.MomentStatus.LAUNCHED);
+
+        when(momentRepository.findById(200L)).thenReturn(Optional.of(moment));
+        when(accessScope.loadActor(adminActor)).thenReturn(admin);
+
+        assertThatThrownBy(() -> momentService.launch(adminActor, 200L, new LaunchMomentRequest(false)))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("El momento ya fue lanzado: su configuración no se puede modificar.");
+    }
+
+    @Test
+    void launchThrowsWhenBlockersExist() {
+        Moment moment = new Moment(period, 1, "Momento 1", "Asignatura", 1, 3, "Bajo", 3, 5);
+        program.addMoment(moment);
+        ReflectionTestUtils.setField(moment, "id", 200L);
+
+        when(momentRepository.findById(200L)).thenReturn(Optional.of(moment));
+        when(accessScope.loadActor(adminActor)).thenReturn(admin);
+
+        assertThatThrownBy(() -> momentService.launch(adminActor, 200L, new LaunchMomentRequest(false)))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("Para lanzar el momento se deben definir las tres ventanas de fechas.");
+    }
+
+    @Test
+    void launchThrowsWhenUnconfirmedUnderMinimum() {
+        Moment moment = createFullyConfiguredMoment();
+
+        Teacher teacher = new Teacher("Marta", "Díaz", DocumentType.CC, "12345", "marta@unicesar.edu.co", "hash", LocalDateTime.now(), faculty);
+        ReflectionTestUtils.setField(teacher, "id", 12L);
+
+        ProjectGroup group1 = new ProjectGroup(moment, teacher, "Grupo 1");
+        ReflectionTestUtils.setField(group1, "id", 1L);
+        group1.addMember(student);
+
+        ProjectGroup group2 = new ProjectGroup(moment, teacher, "Grupo 2");
+        ReflectionTestUtils.setField(group2, "id", 2L);
+
+        when(momentRepository.findById(200L)).thenReturn(Optional.of(moment));
+        when(accessScope.loadActor(adminActor)).thenReturn(admin);
+        when(projectGroupRepository.findByMomentIdOrderByName(200L)).thenReturn(List.of(group1, group2));
+
+        assertThatThrownBy(() -> momentService.launch(adminActor, 200L, new LaunchMomentRequest(false)))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("Hay 2 grupos por debajo del mínimo de 3 integrantes (Grupo 1, Grupo 2). Confirme para lanzar de todos modos.");
+    }
+
+    @Test
+    void launchSuccessfullyWhenConfirmedUnderMinimum() {
+        Moment moment = createFullyConfiguredMoment();
+
+        Teacher teacher = new Teacher("Marta", "Díaz", DocumentType.CC, "12345", "marta@unicesar.edu.co", "hash", LocalDateTime.now(), faculty);
+        ReflectionTestUtils.setField(teacher, "id", 12L);
+
+        ProjectGroup group1 = new ProjectGroup(moment, teacher, "Grupo 1");
+        ReflectionTestUtils.setField(group1, "id", 1L);
+        group1.addMember(student);
+
+        when(momentRepository.findById(200L)).thenReturn(Optional.of(moment));
+        when(accessScope.loadActor(adminActor)).thenReturn(admin);
+        when(projectGroupRepository.findByMomentIdOrderByName(200L)).thenReturn(List.of(group1));
+        when(momentRepository.save(any(Moment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        MomentDetailResponse response = momentService.launch(adminActor, 200L, new LaunchMomentRequest(true));
+
+        assertThat(response.summary().status()).isEqualTo(co.edu.unicesar.sierap.entity.enums.MomentStatus.LAUNCHED);
+        assertThat(moment.getStatus()).isEqualTo(co.edu.unicesar.sierap.entity.enums.MomentStatus.LAUNCHED);
+    }
+
+    @Test
+    void launchSuccessfullyWithoutUnderMinimum() {
+        Moment moment = createFullyConfiguredMoment();
+
+        when(momentRepository.findById(200L)).thenReturn(Optional.of(moment));
+        when(accessScope.loadActor(adminActor)).thenReturn(admin);
+        when(projectGroupRepository.findByMomentIdOrderByName(200L)).thenReturn(List.of());
+        when(momentRepository.save(any(Moment.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        MomentDetailResponse response = momentService.launch(adminActor, 200L, null);
+
+        assertThat(response.summary().status()).isEqualTo(co.edu.unicesar.sierap.entity.enums.MomentStatus.LAUNCHED);
+        assertThat(moment.getStatus()).isEqualTo(co.edu.unicesar.sierap.entity.enums.MomentStatus.LAUNCHED);
+    }
+
+    @Test
+    void launchCheckThrowsWhenOutOfScope() {
+        Moment moment = createFullyConfiguredMoment();
+
+        when(momentRepository.findById(200L)).thenReturn(Optional.of(moment));
+        when(accessScope.loadActor(adminActor)).thenReturn(admin);
+        doThrow(new ForbiddenAccessException("Solo puede gestionar información de su facultad."))
+                .when(accessScope).requireFaculty(admin, faculty.getId());
+
+        assertThatThrownBy(() -> momentService.launchCheck(adminActor, 200L))
+                .isInstanceOf(ForbiddenAccessException.class)
+                .hasMessage("Solo puede gestionar información de su facultad.");
     }
 }

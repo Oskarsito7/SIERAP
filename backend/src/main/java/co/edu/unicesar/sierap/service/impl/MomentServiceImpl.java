@@ -1,7 +1,10 @@
 package co.edu.unicesar.sierap.service.impl;
 
+import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -9,19 +12,27 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
+import co.edu.unicesar.sierap.dto.request.LaunchMomentRequest;
 import co.edu.unicesar.sierap.dto.request.MomentWeightsRequest;
 import co.edu.unicesar.sierap.dto.request.NewMomentRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateMomentRequest;
+import co.edu.unicesar.sierap.dto.response.LaunchCheckResponse;
 import co.edu.unicesar.sierap.dto.response.MomentDetailResponse;
 import co.edu.unicesar.sierap.dto.response.MomentSummaryResponse;
 import co.edu.unicesar.sierap.dto.response.MomentWeightsResponse;
 import co.edu.unicesar.sierap.entity.AcademicPeriod;
+import co.edu.unicesar.sierap.entity.EvaluationCriterion;
 import co.edu.unicesar.sierap.entity.EvaluatorType;
+import co.edu.unicesar.sierap.entity.ExternalEvaluator;
+import co.edu.unicesar.sierap.entity.LearningOutcome;
 import co.edu.unicesar.sierap.entity.Moment;
 import co.edu.unicesar.sierap.entity.Program;
+import co.edu.unicesar.sierap.entity.ProjectGroup;
 import co.edu.unicesar.sierap.entity.Student;
 import co.edu.unicesar.sierap.entity.SuperAdmin;
+import co.edu.unicesar.sierap.entity.Teacher;
 import co.edu.unicesar.sierap.entity.User;
 import co.edu.unicesar.sierap.entity.enums.MomentStatus;
 import co.edu.unicesar.sierap.exception.BusinessRuleException;
@@ -297,6 +308,166 @@ public class MomentServiceImpl implements MomentService {
                         w.getWeight()))
                 .toList();
         return new MomentWeightsResponse(moment.getTeacherWeight(), items, moment.getTotalWeight());
+    }
+
+    @Override
+    public LaunchCheckResponse launchCheck(AuthenticatedUser actor, Long id) {
+        Moment moment = momentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Momento", id));
+        accessScope.requireFaculty(accessScope.loadActor(actor), moment.getProgram().getFaculty().getId());
+
+        List<String> problems = new ArrayList<>();
+        if (moment.getStatus() == MomentStatus.LAUNCHED) {
+            problems.add("El momento ya fue lanzado.");
+        } else {
+            problems.addAll(collectBlockers(moment));
+        }
+
+        boolean canLaunch = problems.isEmpty() && moment.getStatus() == MomentStatus.CONFIGURATION;
+
+        List<ProjectGroup> groups = projectGroupRepository.findByMomentIdOrderByName(id);
+        List<LaunchCheckResponse.GroupBelowMinimumResponse> groupsBelowMinimum = new ArrayList<>();
+        Map<Long, EvaluatorTypeAccumulator> evaluatorTypesWithoutWeightMap = new HashMap<>();
+
+        for (ProjectGroup group : groups) {
+            if (group.getMembers().size() < moment.getMinMembers()) {
+                Teacher teacher = group.getTeacher();
+                LaunchCheckResponse.TeacherSummary teacherSummary = teacher != null
+                        ? new LaunchCheckResponse.TeacherSummary(teacher.getId(), teacher.getFullName())
+                        : null;
+                groupsBelowMinimum.add(new LaunchCheckResponse.GroupBelowMinimumResponse(
+                        group.getId(),
+                        group.getName(),
+                        teacherSummary,
+                        group.getMembers().size()));
+            }
+
+            for (ExternalEvaluator evaluator : group.getEvaluators()) {
+                EvaluatorType type = evaluator.getEvaluatorType();
+                if (type != null && !moment.hasWeightFor(type)) {
+                    EvaluatorTypeAccumulator acc = evaluatorTypesWithoutWeightMap.computeIfAbsent(
+                            type.getId(),
+                            k -> new EvaluatorTypeAccumulator(type.getId(), type.getName(), new HashSet<>()));
+                    acc.evaluators().add(evaluator.getId() != null ? evaluator.getId() : evaluator);
+                }
+            }
+        }
+
+        List<LaunchCheckResponse.EvaluatorTypeWithoutWeightResponse> evaluatorTypesWithoutWeight = evaluatorTypesWithoutWeightMap.values().stream()
+                .sorted(Comparator.comparing(EvaluatorTypeAccumulator::id))
+                .map(acc -> new LaunchCheckResponse.EvaluatorTypeWithoutWeightResponse(
+                        acc.id(),
+                        acc.name(),
+                        acc.evaluators().size()))
+                .toList();
+
+        return new LaunchCheckResponse(
+                moment.getId(),
+                canLaunch,
+                problems,
+                moment.getMinMembers(),
+                groupsBelowMinimum,
+                evaluatorTypesWithoutWeight);
+    }
+
+    @Override
+    @Transactional
+    public MomentDetailResponse launch(AuthenticatedUser actor, Long id, LaunchMomentRequest request) {
+        Moment moment = momentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Momento", id));
+        accessScope.requireFaculty(accessScope.loadActor(actor), moment.getProgram().getFaculty().getId());
+
+        if (moment.getStatus() == MomentStatus.LAUNCHED) {
+            throw new BusinessRuleException("El momento ya fue lanzado: su configuración no se puede modificar.");
+        }
+
+        List<String> blockers = collectBlockers(moment);
+        if (!blockers.isEmpty()) {
+            throw new BusinessRuleException(blockers.get(0));
+        }
+
+        List<ProjectGroup> groups = projectGroupRepository.findByMomentIdOrderByName(moment.getId());
+        List<ProjectGroup> belowMinimum = groups.stream()
+                .filter(g -> g.getMembers().size() < moment.getMinMembers())
+                .toList();
+
+        if (!belowMinimum.isEmpty() && (request == null || !Boolean.TRUE.equals(request.confirmUnderMinimum()))) {
+            String names = belowMinimum.stream().map(ProjectGroup::getName).collect(Collectors.joining(", "));
+            int count = belowMinimum.size();
+            String groupWord = count == 1 ? "1 grupo" : count + " grupos";
+            throw new BusinessRuleException("Hay " + groupWord + " por debajo del mínimo de "
+                    + moment.getMinMembers() + " integrantes (" + names + "). Confirme para lanzar de todos modos.");
+        }
+
+        moment.launch();
+        Moment saved = momentRepository.save(moment);
+        return MomentMapper.toDetail(saved, LocalDate.now(clock), groups.size());
+    }
+
+    private List<String> collectBlockers(Moment moment) {
+        List<String> blockers = new ArrayList<>();
+
+        LocalDate gfStart = moment.getGroupFormationStart();
+        LocalDate gfEnd = moment.getGroupFormationEnd();
+        LocalDate subStart = moment.getSubmissionStart();
+        LocalDate subEnd = moment.getSubmissionEnd();
+        LocalDate gradStart = moment.getGradingStart();
+        LocalDate gradEnd = moment.getGradingEnd();
+
+        if (gfStart == null || gfEnd == null
+                || subStart == null || subEnd == null
+                || gradStart == null || gradEnd == null) {
+            blockers.add("Para lanzar el momento se deben definir las tres ventanas de fechas.");
+        } else {
+            if (gfStart.isAfter(gfEnd)) {
+                blockers.add("La ventana de conformación de grupos no puede terminar antes de empezar.");
+            }
+            if (subStart.isAfter(subEnd)) {
+                blockers.add("La ventana de entregas no puede terminar antes de empezar.");
+            }
+            if (gradStart.isAfter(gradEnd)) {
+                blockers.add("La ventana de calificación no puede terminar antes de empezar.");
+            }
+            if (!gfEnd.isBefore(subStart)) {
+                blockers.add("La ventana de entregas debe empezar después de la de conformación de grupos.");
+            }
+            if (!subEnd.isBefore(gradStart)) {
+                blockers.add("La ventana de calificación debe empezar después de la de entregas.");
+            }
+            LocalDate upcDeadline = moment.getPeriod().getUpcEvaluationDeadline();
+            if (upcDeadline != null && gradEnd.isAfter(upcDeadline)) {
+                blockers.add("La ventana de calificación debe terminar a más tardar el "
+                        + upcDeadline + ", límite de evaluación de la UPC.");
+            }
+        }
+
+        if (moment.getLearningOutcomes().isEmpty()) {
+            blockers.add("El momento debe tener al menos un RAP.");
+        } else {
+            for (LearningOutcome outcome : moment.getLearningOutcomes()) {
+                if (outcome.getCriteria().isEmpty()) {
+                    blockers.add("El " + outcome.getCode() + " debe tener al menos un criterio.");
+                } else {
+                    for (EvaluationCriterion criterion : outcome.getCriteria()) {
+                        if (criterion.getLevels().isEmpty()) {
+                            blockers.add("El criterio \"" + criterion.getDescription()
+                                    + "\" del " + outcome.getCode() + " debe tener niveles de desempeño.");
+                        }
+                    }
+                }
+            }
+        }
+
+        BigDecimal totalWeight = moment.getTotalWeight();
+        if (totalWeight.compareTo(new BigDecimal("100")) != 0) {
+            blockers.add("Los pesos de los evaluadores deben sumar 100 % (hoy suman "
+                    + totalWeight.stripTrailingZeros().toPlainString() + " %).");
+        }
+
+        return blockers;
+    }
+
+    private record EvaluatorTypeAccumulator(Long id, String name, Set<Object> evaluators) {
     }
 
     private void validateRanges(int semesterFrom, int semesterTo, int minMembers, int maxMembers) {

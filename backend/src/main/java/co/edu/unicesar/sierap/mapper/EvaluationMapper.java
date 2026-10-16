@@ -119,7 +119,7 @@ public final class EvaluationMapper {
         return new CriterionForm(criterion.getId(), criterion.getDescription(),
                 criterion.getLevels().stream()
                         .map(level -> new LevelResponse(level.getId(), level.getName(), level.getDescription(),
-                                level.getScore()))
+                                level.getScore(), level.getDisplayOrder()))
                         .toList(),
                 levelId);
     }

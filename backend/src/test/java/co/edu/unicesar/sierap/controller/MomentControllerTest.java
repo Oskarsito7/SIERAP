@@ -19,9 +19,14 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 
+import co.edu.unicesar.sierap.dto.request.LaunchMomentRequest;
 import co.edu.unicesar.sierap.dto.request.MomentWeightsRequest;
 import co.edu.unicesar.sierap.dto.request.NewMomentRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateMomentRequest;
+import co.edu.unicesar.sierap.dto.response.LaunchCheckResponse;
+import co.edu.unicesar.sierap.dto.response.LaunchCheckResponse.EvaluatorTypeWithoutWeightResponse;
+import co.edu.unicesar.sierap.dto.response.LaunchCheckResponse.GroupBelowMinimumResponse;
+import co.edu.unicesar.sierap.dto.response.LaunchCheckResponse.TeacherSummary;
 import co.edu.unicesar.sierap.dto.response.MomentDetailResponse;
 import co.edu.unicesar.sierap.dto.response.MomentSummaryResponse;
 import co.edu.unicesar.sierap.dto.response.MomentWeightsResponse;
@@ -201,5 +206,75 @@ class MomentControllerTest {
                 .andExpect(jsonPath("$.totalWeight").value(100))
                 .andExpect(jsonPath("$.evaluatorWeights[0].evaluatorTypeId").value(1))
                 .andExpect(jsonPath("$.evaluatorWeights[0].evaluatorTypeName").value("Empresario"));
+    }
+
+    @Test
+    void launchCheckReturns200() throws Exception {
+        LaunchCheckResponse response = new LaunchCheckResponse(
+                10L,
+                true,
+                List.of(),
+                3,
+                List.of(new GroupBelowMinimumResponse(1L, "Grupo 1", new TeacherSummary(12L, "Marta Díaz"), 2)),
+                List.of(new EvaluatorTypeWithoutWeightResponse(2L, "Egresado", 1)));
+
+        when(momentService.launchCheck(any(), eq(10L))).thenReturn(response);
+
+        mockMvc.perform(get("/api/moments/10/launch-check"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.momentId").value(10))
+                .andExpect(jsonPath("$.canLaunch").value(true))
+                .andExpect(jsonPath("$.minMembers").value(3))
+                .andExpect(jsonPath("$.groupsBelowMinimum[0].name").value("Grupo 1"))
+                .andExpect(jsonPath("$.groupsBelowMinimum[0].teacher.fullName").value("Marta Díaz"))
+                .andExpect(jsonPath("$.evaluatorTypesWithoutWeight[0].evaluatorTypeName").value("Egresado"));
+    }
+
+    @Test
+    void launchMomentReturns200() throws Exception {
+        MomentSummaryResponse summary = new MomentSummaryResponse(
+                10L, 1, "Momento 1", "Asignatura", 100L, "Sistemas", 1L, "2026-2",
+                1, 3, "Bajo", 3, 5, 0, MomentStatus.LAUNCHED,
+                LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 20),
+                LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 15),
+                LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 20),
+                false, false, false);
+        MomentDetailResponse detail = new MomentDetailResponse(summary, BigDecimal.valueOf(100), List.of(),
+                BigDecimal.valueOf(100), BigDecimal.ZERO, List.of());
+
+        when(momentService.launch(any(), eq(10L), any(LaunchMomentRequest.class))).thenReturn(detail);
+
+        String body = """
+                {
+                  "confirmUnderMinimum": true
+                }
+                """;
+
+        mockMvc.perform(post("/api/moments/10/launch")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(10))
+                .andExpect(jsonPath("$.status").value("LAUNCHED"));
+    }
+
+    @Test
+    void launchMomentWithoutBodyReturns200() throws Exception {
+        MomentSummaryResponse summary = new MomentSummaryResponse(
+                10L, 1, "Momento 1", "Asignatura", 100L, "Sistemas", 1L, "2026-2",
+                1, 3, "Bajo", 3, 5, 0, MomentStatus.LAUNCHED,
+                LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 20),
+                LocalDate.of(2026, 9, 1), LocalDate.of(2026, 9, 15),
+                LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 20),
+                false, false, false);
+        MomentDetailResponse detail = new MomentDetailResponse(summary, BigDecimal.valueOf(100), List.of(),
+                BigDecimal.valueOf(100), BigDecimal.ZERO, List.of());
+
+        when(momentService.launch(any(), eq(10L), any())).thenReturn(detail);
+
+        mockMvc.perform(post("/api/moments/10/launch"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(10))
+                .andExpect(jsonPath("$.status").value("LAUNCHED"));
     }
 }
