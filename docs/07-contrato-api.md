@@ -4,8 +4,8 @@
 > agreed here before implementing them, so the frontend can work against simulated
 > data while the backend is being built. Drafted by D1; approved by the project lead.
 > Stage 2 (authentication and accounts) and Stages 4 to 6 (groups, submissions and
-> evaluation) are below. The moment configuration (Stage 3) is written by D2 in their
-> PR, on the same `/api/moments` resource.
+> evaluation) are below, and so is the academic configuration (Stage 3, written by D2:
+> catalogs, moments, RAP, launch and copy).
 
 ## Conventions
 
@@ -146,6 +146,260 @@ they created. Out of scope answers `403`.
 | `GET /api/registration-codes` | — | `200 RegistrationCode[]`, newest first: a teacher's own codes, the codes of the faculty for an admin, all for the super_admin |
 | `PATCH /api/registration-codes/{id}` | `{ "active": false }` | `200 RegistrationCode`; the code stops working immediately. A deactivated code cannot be reactivated (`422`): generate a new one |
 
+## Stage 3 — Academic configuration — D2 (backend) and Vero (admin and super_admin screens)
+
+Rules come from `docs/04` (flow of a moment, cross-cutting configuration rules) and
+ADR-010, ADR-012 and ADR-016. The `admin` and `super_admin` screens are built against
+this section; the read routes of moments are in the "Moments" section below.
+
+**Who can do what:**
+
+| Resource | Read | Write |
+|---|---|---|
+| Faculties and programs | super_admin (all); admin and teacher (their faculty) | super_admin |
+| Academic periods | any authenticated user | super_admin |
+| Evaluator types | any authenticated user | super_admin |
+| Global parameters | super_admin | super_admin |
+| Moments, weights, RAP, criteria and levels | as `GET /api/moments` | super_admin, and the admin of the faculty of the moment's program |
+
+**Common rules:**
+
+- **Out of scope** (an admin on a program of another faculty, any non super_admin on a
+  catalog) answers `403`.
+- **Locked configuration** (ADR-012): every write on a moment, its weights, RAP,
+  criteria or levels answers `422` "El momento ya fue lanzado: su configuración no se
+  puede modificar." once the moment is `LAUNCHED`.
+- **Duplicates** (a code, a name, a moment number, a RAP code) answer `409` with a
+  message that says which value, e.g. "Ya existe una facultad con el código 04."
+- **Deleting** (ADR-016): `204` when nothing hangs from the resource; `409` with a
+  message in Spanish when the database blocks it (groups, grades, accounts or moments).
+  Configuration without groups or grades is deleted in cascade
+  (faculty → program → moment → RAP → criteria → levels).
+- **`PATCH`** receives only the fields to change; the ones that are omitted keep their
+  value. The answer is the whole resource.
+- **After any change to a moment** (data, weights, RAP, criteria, levels) the screen
+  reads `GET /api/moments/{id}` again: it is the single source of the configuration.
+- Texts have a maximum length: code 20, faculty and program name 150, evaluator type name
+  100, moment name 100, subject 150, requirement level 100, RAP description 1000, criterion
+  description 500, level name 50, level description 1000. Longer ones answer `400`.
+
+### Catalogs: faculties, programs, periods, evaluator types and parameters
+
+```jsonc
+// Faculty
+{ "id": 1, "code": "04", "name": "Facultad de Ingenierías y Tecnologías", "programCount": 2 }
+
+// Program
+{
+  "id": 1, "code": "108", "name": "Ingeniería de Sistemas",
+  "facultyId": 1, "facultyName": "Facultad de Ingenierías y Tecnologías",
+  "currentPeriodMomentCount": 3,   // moments in the current period
+  "studentCount": 120
+}
+
+// AcademicPeriod
+{
+  "id": 1, "code": "2026-2",
+  "startDate": "2026-08-03", "endDate": "2026-12-05",
+  "upcEvaluationDeadline": "2026-11-28",
+  "status": "CURRENT"              // UPCOMING | CURRENT | CLOSED, computed with the Clock
+}
+
+// EvaluatorType (the existing one, plus evaluatorCount)
+{ "id": 1, "name": "Empresario", "description": "...", "active": true, "evaluatorCount": 4 }
+
+// GlobalParameter
+{ "key": "example_key", "value": "10", "description": "..." }
+```
+
+| Method and route | Who | Body | Answer |
+|---|---|---|---|
+| `GET /api/faculties` | super_admin (all), admin and teacher (their own) | — | `200 Faculty[]` by name |
+| `POST /api/faculties` | super_admin | `{ "code", "name" }` | `201 Faculty`. `409` if the code is in use |
+| `PATCH /api/faculties/{id}` | super_admin | any of `{ "code", "name" }` | `200 Faculty`. `409` if the code is in use |
+| `DELETE /api/faculties/{id}` | super_admin | — | `204`; `409` while its programs have groups or grades, or it has accounts |
+| `GET /api/programs?facultyId=` | super_admin (all; `facultyId` optional), admin and teacher (their faculty; another `facultyId` answers `403`) | — | `200 Program[]` by name |
+| `POST /api/programs` | super_admin | `{ "facultyId", "code", "name" }` | `201 Program`. `409` if the code is in use |
+| `PATCH /api/programs/{id}` | super_admin | any of `{ "code", "name" }`. The faculty of a program cannot be changed | `200 Program`. `409` if the code is in use |
+| `DELETE /api/programs/{id}` | super_admin | — | `204`; `409` while it has groups, grades or students |
+| `GET /api/periods` | any authenticated user | — | `200 AcademicPeriod[]`, newest first |
+| `POST /api/periods` | super_admin | `{ "code", "startDate", "endDate", "upcEvaluationDeadline" }` | `201 AcademicPeriod`. `422` if the end is before the start or the UPC deadline is not between them (ADR-012, `docs/04`). `409` if the code is in use |
+| `PATCH /api/periods/{id}` | super_admin | any of the four fields | `200 AcademicPeriod`. `422` for the same rules, and if the new UPC deadline is earlier than the grading end of a moment of the period |
+| `DELETE /api/periods/{id}` | super_admin | — | `204`; `409` while it has moments |
+| `POST /api/evaluator-types` | super_admin | `{ "name", "description" }` | `201 EvaluatorType`. `409` if the name is in use |
+| `PATCH /api/evaluator-types/{id}` | super_admin | any of `{ "name", "description", "active" }` | `200 EvaluatorType`. Deactivating a type does not touch its evaluators or its weights in moments |
+| `DELETE /api/evaluator-types/{id}` | super_admin | — | `204`; `409` while an evaluator or a moment weight uses it (deactivate it instead) |
+| `GET /api/global-parameters` | super_admin | — | `200 GlobalParameter[]` by key |
+| `PUT /api/global-parameters/{key}` | super_admin | `{ "value", "description" }` (`description` optional) | `200 GlobalParameter`. Creates the parameter if the key does not exist; otherwise it changes the value and, only if sent, the description |
+
+`GET /api/evaluator-types` keeps its route and who can call it; it only adds
+`evaluatorCount`. Today no rule of the system reads the global parameters (the table is
+empty): each parameter that a rule starts to use is added with its own contract.
+
+### Moments: create, edit, delete and weights
+
+Fields that Stage 3 adds to the read DTOs of the "Moments" section below (existing ones do not change, so D3's
+screens keep working):
+
+```jsonc
+// MomentSummary adds:
+{ "requirementLevel": "Bajo", "groupCount": 6 }
+
+// MomentDetail adds (the weights, and what the configuration screens need):
+{
+  "teacherWeight": 60.00,           // percentage; 100 in a new moment
+  "evaluatorWeights": [
+    { "evaluatorTypeId": 1, "evaluatorTypeName": "Empresario", "weight": 40.00 }
+  ],
+  "totalWeight": 100.00,            // teacher + evaluator types; must be 100 to launch
+  // and each criterion adds "displayOrder" and "maxScore" (its highest level score),
+  // each level adds "displayOrder"
+}
+```
+
+```jsonc
+// NewMoment
+{
+  "programId": 1, "periodId": 1, "number": 1,
+  "name": "Momento 1", "subject": "Programación II (SS300)",
+  "semesterFrom": 1, "semesterTo": 3,
+  "requirementLevel": "Bajo",       // free text (ADR-010)
+  "minMembers": 3, "maxMembers": 5,
+  // optional, null or omitted while configuring (each window is complete or empty):
+  "groupFormationStart": "2026-08-10", "groupFormationEnd": "2026-08-24",
+  "submissionStart": "2026-10-01",     "submissionEnd": "2026-11-20",
+  "gradingStart": "2026-11-21",        "gradingEnd": "2026-11-28"
+}
+
+// MomentWeights (body of PUT and its answer)
+{
+  "teacherWeight": 60.00,
+  "evaluatorWeights": [ { "evaluatorTypeId": 1, "weight": 40.00 } ]
+  // the answer also has "evaluatorTypeName" in each item and "totalWeight"
+}
+```
+
+| Method and route | Who | Body | Answer |
+|---|---|---|---|
+| `POST /api/moments` | super_admin, admin of the program's faculty | `NewMoment` | `201 MomentDetail`: in `CONFIGURATION`, teacher weight 100, no weights of evaluator types and no RAP. `409` if the program already has that number in the period |
+| `PATCH /api/moments/{id}` | same | any of the fields of `NewMoment` except `programId`. A window is changed by sending both of its dates (or both `null` to clear it) | `200 MomentDetail`. `409` if the new number or period collides with another moment of the program |
+| `DELETE /api/moments/{id}` | same | — | `204`, with its RAP, criteria, levels and weights. `422` if it was launched; `409` if it has groups |
+| `PUT /api/moments/{id}/weights` | same | `MomentWeights`: **replaces** every weight of the moment | `200 MomentWeights` |
+
+**Validations of the moment** (`422` with a message in Spanish, `400` when a value is out
+of its type or format):
+
+- `number`, `semesterFrom` and `minMembers` are at least 1; `semesterFrom` is not greater
+  than `semesterTo`; `minMembers` is not greater than `maxMembers`.
+- The program belongs to the admin's faculty (`403` otherwise); the program and the period
+  exist (`404` otherwise).
+- **Windows** (ADR-012): a window has both dates or none (`422` "La ventana de entregas
+  debe tener fecha de inicio y de fin."); in each one the start is not after the end; the
+  end of group formation is before the start of submissions and the end of submissions is
+  before the start of grading (only checked between the windows that are set); the grading
+  end is not after the `upcEvaluationDeadline` of the period. Every rule is checked again
+  when launching.
+- **Weights:** each one is greater than 0 and up to 100, with at most 2 decimals; a type
+  appears once; the teacher weight is required; the types exist (`404`). They **do not
+  have to add up to 100 while configuring**: that is checked when launching.
+
+**An evaluator type without weight** in the moment (or whose weight was removed) is not an
+error: its evaluators' evaluations do not count in the grade, and the screen that assigns
+evaluators only warns about it (decision of 2026-10-16, `docs/04`). Assigning evaluators
+does not check the weights; the only weight validation is the launch one.
+
+### RAP, criteria and levels
+
+Only while the moment is in `CONFIGURATION`. The shapes are the ones of
+`MomentDetail` (`learningOutcomes[]`, their `criteria[]` and their `levels[]`).
+
+```jsonc
+// NewLearningOutcome
+{ "code": "RAP1", "description": "..." }
+
+// NewCriterion
+{ "description": "Identificación del problema", "displayOrder": 1 }  // displayOrder optional: goes last
+
+// NewLevel
+{ "name": "Alto", "description": "...", "score": 0.48, "displayOrder": 3 }  // description and displayOrder optional
+```
+
+| Method and route | Who | Body | Answer |
+|---|---|---|---|
+| `POST /api/moments/{id}/learning-outcomes` | super_admin, admin of the moment's faculty | `NewLearningOutcome` | `201 LearningOutcome` (with `criteria: []`). `409` if the code is in use in the moment |
+| `PATCH /api/learning-outcomes/{id}` | same | any of `{ "code", "description" }` | `200 LearningOutcome`. `409` if the code is in use in the moment |
+| `DELETE /api/learning-outcomes/{id}` | same | — | `204`, with its criteria and levels |
+| `POST /api/learning-outcomes/{id}/criteria` | same | `NewCriterion` | `201 Criterion` (with `levels: []`) |
+| `PATCH /api/criteria/{id}` | same | any of `{ "description", "displayOrder" }` | `200 Criterion` |
+| `DELETE /api/criteria/{id}` | same | — | `204`, with its levels |
+| `POST /api/criteria/{id}/levels` | same | `NewLevel` | `201 Level` |
+| `PATCH /api/levels/{id}` | same | any of `{ "name", "description", "score", "displayOrder" }` | `200 Level` |
+| `DELETE /api/levels/{id}` | same | — | `204` |
+
+A `score` is at least 0 with at most 2 decimals (`BigDecimal`, ADR-013). The maximum score
+of a criterion is its highest level, the one of a RAP is the sum of its criteria and the
+one of the moment the sum of its RAP; nothing forces the total to be 5.0, because the
+scoring is configurable (`docs/04`). No fixed names or counts of levels exist.
+
+### Launch
+
+```jsonc
+// LaunchCheck: what the screen shows before the admin launches
+{
+  "momentId": 1,
+  "canLaunch": false,               // no problems and the moment is still in CONFIGURATION
+  "problems": [ "Para lanzar el momento se deben definir las tres ventanas de fechas." ],
+  "minMembers": 3,
+  "groupsBelowMinimum": [
+    { "id": 7, "name": "Grupo 3", "teacher": { "id": 12, "fullName": "Marta Díaz" }, "memberCount": 2 }
+  ],
+  "evaluatorTypesWithoutWeight": [  // assigned in its groups but with no weight: they will not count
+    { "evaluatorTypeId": 2, "evaluatorTypeName": "Egresado", "evaluatorCount": 3 }
+  ]
+}
+```
+
+| Method and route | Who | Body | Answer |
+|---|---|---|---|
+| `GET /api/moments/{id}/launch-check` | super_admin, admin of the moment's faculty | — | `200 LaunchCheck`. It changes nothing. `problems` lists **every** blocker at once, not only the first; if the moment was already launched, `canLaunch` is `false` with "El momento ya fue lanzado." |
+| `POST /api/moments/{id}/launch` | same | `{ "confirmUnderMinimum": true }`; the body is optional and the field defaults to `false` | `200 MomentDetail` with `status: LAUNCHED`. `422` with the first blocker if the configuration is incomplete or invalid. `422` "Hay 2 grupos por debajo del mínimo de 3 integrantes (Grupo 3, Grupo 5). Confirme para lanzar de todos modos." if there are such groups and the confirmation was not sent; nothing changes |
+
+**Blockers** (the rules of `Moment.launch()`, ADR-012 and ADR-018): the three windows are
+complete, each with its start not after its end, ordered without overlapping, and the
+grading one ends no later than the UPC deadline; there is at least one RAP, every RAP has
+a criterion and every criterion has levels; and the teacher and evaluator type weights add
+up to exactly 100 %.
+
+**Not blockers:** groups below the minimum (they ask for confirmation and stay as they
+are, `docs/04` 2026-09-25), and evaluator types without weight (only a warning). The admin
+can launch before the group formation window ends: launching closes group formation
+(`docs/04`, 2026-09-27). After the launch, groups and configuration are locked.
+
+### Copy the configuration of a period
+
+```jsonc
+// CopyMomentsRequest
+{ "fromPeriodId": 1, "toPeriodId": 2, "programId": 1 }   // programId optional
+```
+
+| Method and route | Who | Body | Answer |
+|---|---|---|---|
+| `POST /api/moments/copy` | super_admin (any program), admin (programs of their faculty) | `CopyMomentsRequest` | `201 MomentSummary[]`: the new moments, in the destination period, ordered by program and number |
+
+**What it copies** (ADR-010): every moment of the source period in the programs in scope
+(`programId`, or all the programs of the admin's faculty, or all of them for the
+super_admin), with its number, name, subject, semester range, requirement level,
+members per group, RAP, criteria, levels (with their scores and order) and weights.
+
+**What it does not copy:** the date windows (those of the previous semester are not valid
+in the new one, so the admin sets them again), the groups, submissions and grades. The new
+moments start in `CONFIGURATION`. The source period is not touched.
+
+**Errors:** `422` if the periods are the same, if the source has no moment in scope, or if
+the destination already has a moment with the same program and number: the message lists
+those collisions and **nothing is copied** (all or nothing). `404` if a period or the
+program does not exist; `403` if `programId` is not of the admin's faculty.
+
 ## Stages 4 to 6 — Groups, submissions and evaluation
 
 Rules come from `docs/04` (flow of a moment and team decisions) and ADR-012, ADR-015 and
@@ -173,9 +427,9 @@ applies (e.g. "La ventana de entregas cerró el 2026-11-20.").
 
 ### Moments (read only) — implemented by D2 at the start of Stage 3
 
-The operations screens need to list moments. Stage 3 adds the configuration endpoints
-(create, edit, launch, copy from the previous period) on this same resource, with their
-own contract written by D2. Until these two routes exist, D3 mocks them.
+The operations screens need to list moments. The configuration routes (create, edit,
+delete, weights, RAP, launch and copy from the previous period) are in the "Stage 3 —
+Academic configuration" section below.
 
 ```jsonc
 // MomentSummary
@@ -221,7 +475,7 @@ own contract written by D2. Until these two routes exist, D3 mocks them.
 
 | Method and route | Who | Answer |
 |---|---|---|
-| `GET /api/moments?periodId=` | super_admin (all), admin and teacher (programs of their faculty), student (their program, only moments whose semester range includes their current semester) | `200 MomentSummary[]`. Without `periodId`, the current period: the one whose dates include today |
+| `GET /api/moments?periodId=` | super_admin (all), admin and teacher (programs of their faculty), student (their program, the moments whose semester range includes their current semester, and any moment where they already have a group, since a teacher can add them out of range) | `200 MomentSummary[]`. Without `periodId`, the current period: the one whose dates include today |
 | `GET /api/moments/{id}` | same scope | `200 MomentDetail`. `403` out of scope |
 
 ### Groups (Stage 4 teacher, Stage 5 student) — D3

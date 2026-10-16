@@ -140,7 +140,9 @@ factor compared with AULAWEB.
 - CRUD of `Moment` per program and period: subject, semesters, requirement level,
   min./max. members, date windows (group formation, submissions, grading) and the
   weight of each kind of evaluator in the final grade (the teacher and each evaluator
-  type).
+  type). The weights are percentages that add up to 100 % (checked when launching);
+  their model and migration (`V9`) go first, because the Stage 6 grade calculation
+  reads them.
 - CRUD of `LearningOutcome`, `EvaluationCriterion` and `PerformanceLevel` with its
   score, only while the moment is in `CONFIGURATION`.
 - **Launch** the moment (validates the configuration is complete and locks it) and
@@ -181,7 +183,7 @@ factor compared with AULAWEB.
 
 ---
 
-### Stage 6 — Multi-role evaluation (Week 7) · D2 + D3
+### Stage 6 — Multi-role evaluation (Week 7) · D3 + D1, with D2 (weights)
 
 - Actual implementation of the `Evaluator` interface for `Teacher` and
   `ExternalEvaluator` — this is where the **polymorphism** required by the rubric
@@ -194,6 +196,16 @@ factor compared with AULAWEB.
 - Calculation of the group grade and each member's individual grade, in total and per
   RAP (weighted by kind of evaluator).
 - Grading screen (evaluators) and results screen (student).
+
+Split (agreed on 2026-10-02):
+
+| Order | Task | Owner | Migration |
+|---|---|---|---|
+| 1 | `IndividualGrade` and the per-student methods of `Evaluation` (`adjust()`, `getTotalScoreFor()`, `getScoreFor(outcome, student)`), in a first PR so the calculation can build on them | D3 | `V7__individual_grade.sql` |
+| 1 | Weights of each kind of evaluator in the moment configuration (Stage 3) | D2 | `V9` |
+| 2 | `EvaluationService` and the evaluation routes of `docs/07` (`GET`/`PUT /api/groups/{id}/evaluation`, `POST .../submit`, `GET /api/groups/{id}/evaluations`) | D3 | — |
+| 2 | Grade calculation with the ADR-018 formula and the routes `GET /api/groups/{id}/results` and `GET /api/students/me/results` | D1 | — |
+| 3 | Screens: grading and individual adjustment (teacher and external evaluator), group results (teacher) and "My grades" (student); the results screens mock the routes of `docs/07` until they exist | D3 | — |
 
 **Covers RF:** 4, 6. **Rubric:** RAP2 (polymorphism/interfaces), RAP4 (functionality
 of the solution).

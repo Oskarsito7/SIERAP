@@ -3,9 +3,12 @@
 Four hierarchies that structure SIERAP. GitHub renders each block directly from the
 Mermaid code.
 
-> Detailed-design version (the four panels on a single sheet, still with the Spanish
-> names from before ADR-014): [`diagrama_jerarquias.png`](diagrama_jerarquias.png) ·
-> editable in [`diagrama_jerarquias.drawio`](diagrama_jerarquias.drawio).
+> Detailed-design version, with the same four hierarchies on one sheet:
+> [`diagrama_jerarquias.png`](diagrama_jerarquias.png) (also
+> [SVG](diagrama_jerarquias.svg); editable in
+> [`diagrama_jerarquias.drawio`](diagrama_jerarquias.drawio)), regenerated in English
+> when Stage 1 closed. When a hierarchy changes, update this Mermaid code and the
+> `.drawio` together.
 
 ## 1. Inheritance hierarchy — Users
 
@@ -16,26 +19,58 @@ classDiagram
 direction BT
 class User {
   <<abstract>>
+  -id: Long
   -firstNames: String
   -lastNames: String
   -email: String
+  -passwordHash: String
   -active: boolean
   +getRole()* UserRole
+  +getFullName() String
+}
+class UserRole {
+  <<enumeration>>
+  SUPER_ADMIN
+  ADMIN
+  TEACHER
+  STUDENT
+  EXTERNAL_EVALUATOR
 }
 class Evaluator {
   <<interface>>
-  +grade(group) Evaluation
-  +getAssignedGroups() List~ProjectGroup~
+  +canEvaluate(group: ProjectGroup) boolean
+}
+class EvaluatorType {
+  -id: Long
+  -name: String
+  -description: String
+  -active: boolean
 }
 class SuperAdmin { +getRole() UserRole }
-class Admin { +getRole() UserRole }
-class Student { +getRole() UserRole }
-class Teacher { +getRole() UserRole }
-class ExternalEvaluator {
-  -evaluatorType: EvaluatorType
+class Admin {
+  -faculty: Faculty
   +getRole() UserRole
 }
+class Student {
+  -studentCode: String
+  -currentSemester: int
+  -program: Program
+  +getRole() UserRole
+}
+class Teacher {
+  -faculty: Faculty
+  +getRole() UserRole
+  +canEvaluate(group: ProjectGroup) boolean
+}
+class ExternalEvaluator {
+  -evaluatorType: EvaluatorType
+  -organization: String
+  -graduationYear: Integer
+  +getRole() UserRole
+  +canEvaluate(group: ProjectGroup) boolean
+}
 
+User ..> UserRole : «use»
 SuperAdmin --|> User
 Admin --|> User
 Student --|> User
@@ -43,12 +78,16 @@ Teacher --|> User
 ExternalEvaluator --|> User
 Teacher ..|> Evaluator
 ExternalEvaluator ..|> Evaluator
+ExternalEvaluator "*" -- "1" EvaluatorType : is of type
 ```
 
 - `User` is abstract: there is no "generic user", only the five concrete roles.
 - `getRole()` is polymorphic: each subclass overrides it and Spring Security decides permissions with that value.
 - `Teacher` and `ExternalEvaluator` grade groups, but they do not share a parent of
-  their own for that: the common behavior is expressed with the `Evaluator` interface.
+  their own for that: the common behavior is expressed with the `Evaluator` interface,
+  and each one implements its own `canEvaluate()` rule (the teacher who enabled the
+  group, the external evaluators assigned to it). Dates are not part of the interface:
+  the service checks the grading window with the injected `Clock`.
 - Business person, alumnus and the types created later are not classes: they are values
   of the `EvaluatorType` catalog of an `ExternalEvaluator` (ADR-011).
 - `Student`, `Admin` and `SuperAdmin` do not grade, so they do not implement `Evaluator`.
@@ -56,22 +95,29 @@ ExternalEvaluator ..|> Evaluator
 
 ## 2. Inheritance hierarchies — Reports and exceptions
 
-Polymorphism in reporting and centralized error handling with `@ControllerAdvice`.
+Polymorphism in reporting and centralized error handling with `@RestControllerAdvice`.
+The reports are designed but not built yet (Stage 7).
 
 ```mermaid
 classDiagram
 direction BT
 class Report {
   <<abstract>>
+  -generatedAt: LocalDateTime
+  -period: AcademicPeriod
   +generate()* byte[]
 }
 class IndividualReport {
+  -student: Student
   +generate() byte[]
 }
 class GroupReport {
+  -group: ProjectGroup
   +generate() byte[]
 }
 class ComparativeReport {
+  -periodA: AcademicPeriod
+  -periodB: AcademicPeriod
   +generate() byte[]
 }
 IndividualReport --|> Report : per student and RAP
@@ -87,10 +133,11 @@ class RuntimeException {
 }
 class SierapException {
   <<abstract>>
+  #SierapException(message: String)
   +getHttpStatus()* HttpStatus
 }
 class GlobalExceptionHandler {
-  <<ControllerAdvice>>
+  <<RestControllerAdvice>>
   +handleSierapException(ex: SierapException)
 }
 class ResourceNotFoundException {
@@ -102,12 +149,19 @@ class ForbiddenAccessException {
 class BusinessRuleException {
   HTTP 422
 }
+class AuthenticationFailedException {
+  HTTP 401
+}
 SierapException --|> RuntimeException
 ResourceNotFoundException --|> SierapException
 ForbiddenAccessException --|> SierapException
 BusinessRuleException --|> SierapException
+AuthenticationFailedException --|> SierapException
 GlobalExceptionHandler ..> SierapException : «handles»
 ```
+
+Each subclass returns its own HTTP status from `getHttpStatus()`, and
+`GlobalExceptionHandler` answers with the same `ErrorResponse` for all of them.
 
 ## 3. Institutional and academic hierarchy
 
@@ -137,10 +191,11 @@ flowchart TD
 
   subgraph OP["Operation of a moment (e.g. Moment I)"]
     direction LR
-    GRP["<b>Group = classroom project</b><br/>enabled by a teacher;<br/>students join it"]
-    GRP --> ENT["<b>Submissions</b><br/>v1, v2 … vn (history)"]
+    GRP["<b>Group = classroom project</b><br/>enabled by a teacher;<br/>students join it and<br/>write the project title"]
+    GRP --> ENT["<b>Submissions</b><br/>v1, v2 … vn (history)<br/>zip + optional presentation"]
     GRP --> EV["<b>Evaluations</b><br/>teacher · external evaluators"]
     EV --> CAL["<b>Grade per criterion</b><br/>picked level and its score"]
+    CAL --> ADJ["<b>Individual adjustment</b><br/>another level for one student<br/>in a criterion (ADR-018)"]
   end
   M1 --> GRP
   CAL -. against the criteria .-> CRI
@@ -154,17 +209,24 @@ flowchart TD
   class R1,R2,R3,CRI rap
   class OTROS otro
   class GRP,ENT oper
-  class EV,CAL eval
+  class EV,CAL,ADJ eval
 ```
 
 Each moment has its own RAP, criteria and levels with scores, defined by the admin in
 each academic period; nothing is fixed in the code (ADR-010). The grade of an
-evaluation is the sum of the scores of the levels picked in each criterion.
+evaluation is the sum of the scores of the levels picked in each criterion, and the
+final grade is a weighted average by kind of evaluator (the teacher and each
+`EvaluatorType`), with the weights the admin sets in each moment. The group is graded
+once and every member inherits its levels; an evaluator can change the level of one
+student in a criterion, and that individual grade is each student's final grade
+(ADR-018).
 
 ## 4. Role hierarchy and access scope
 
 Each level sees only a subset of what the level above sees. Filtering is applied in the
-service layer, not in the user interface.
+service layer (`AccessScope` and the rules of each service), not in the user interface.
+Students are the exception to the nesting while groups are formed: they see every group
+of the moment of their semester to join one, and then only their own group.
 
 ```mermaid
 flowchart TD
@@ -176,7 +238,7 @@ flowchart TD
 
   SA --> AD --> DC
   DC -. enables groups for .-> ES
-  DC -- creates and assigns --> EX
+  DC -- creates or reuses, assigns --> EX
 
   classDef rol fill:#DBEAFE,stroke:#3B6FB6,color:#1F2937
   class SA,AD,DC,ES,EX rol

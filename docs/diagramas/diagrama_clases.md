@@ -181,11 +181,21 @@ class Moment {
   -program: Program
   -period: AcademicPeriod
   -learningOutcomes: List~LearningOutcome~
+  -teacherWeight: BigDecimal
+  -evaluatorWeights: List~EvaluatorWeight~
   +launch() void
   +isInGroupFormation(today: LocalDate) boolean
   +isInSubmission(today: LocalDate) boolean
   +isInGrading(today: LocalDate) boolean
   +getMaxScore() BigDecimal
+  +getWeightFor(type: EvaluatorType) BigDecimal
+  +getTotalWeight() BigDecimal
+}
+class EvaluatorWeight {
+  -id: Long
+  -moment: Moment
+  -evaluatorType: EvaluatorType
+  -weight: BigDecimal
 }
 class MomentStatus {
   <<enumeration>>
@@ -341,6 +351,8 @@ Program "1" *-- "*" Moment
 Moment "*" -- "1" AcademicPeriod : configured in
 Moment ..> MomentStatus : «use»
 Moment "1" *-- "1..*" LearningOutcome
+Moment "1" *-- "*" EvaluatorWeight
+EvaluatorWeight "*" -- "1" EvaluatorType : weighs
 LearningOutcome "1" *-- "1..*" EvaluationCriterion
 EvaluationCriterion "1" *-- "1..*" PerformanceLevel
 
@@ -381,6 +393,7 @@ Report ..> Evaluation : «use»
 | `Moment` belongs to an `AcademicPeriod`; `requirementLevel` becomes free text | The configuration is versioned per period and there are no standard levels (ADR-010). |
 | `Moment` gains `status` (`MomentStatus`), min./max. members and three date windows | Moment lifecycle: configuration → launch → submissions → grading (ADR-012). |
 | `LearningOutcome` (RAP) belongs to a `Moment` (composition) and loses its evaluative weight | Each moment has its own RAP; the weight comes from the scores of its criteria. |
+| New `EvaluatorWeight` and `Moment.teacherWeight` | The final grade is weighted by kind of evaluator with percentages that add up to 100 %, set by the admin in each moment (ADR-018). |
 | New `EvaluationCriterion` and `PerformanceLevel` (entity) | Structure of the UPC rubric: each RAP has criteria and each criterion levels with scores, all configurable. |
 | Group and classroom project merge into `ProjectGroup`, which belongs to a `Moment` | Each group has a single project; the teacher enables groups within a moment. |
 | Per-RAP grade → `CriterionGrade` | The evaluator picks one level per criterion; the performance per RAP is a sum. |
@@ -395,6 +408,7 @@ Report ..> Evaluation : «use»
 | `Evaluator` declares only `canEvaluate()`; `Teacher` and `ExternalEvaluator` show their own `canEvaluate()` | Same as the code: each class implements its own rule (polymorphism). |
 | `Evaluation` shows `isSubmitted()` | It is in the code. |
 | The detailed `.drawio` is regenerated from this model | It was still the Phase 2 version, with the Spanish names. |
+| The legend of the detailed `.drawio` no longer marks `Moment.launch()` as designed only | It is built, with its validations and the V5 constraints (fixes from the PR #3 review). |
 
 ## Changes of the contract of Stages 4 to 6 (2026-09-28 decisions)
 
