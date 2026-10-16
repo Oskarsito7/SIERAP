@@ -14,6 +14,7 @@ import co.edu.unicesar.sierap.entity.EvaluationCriterion;
 import co.edu.unicesar.sierap.entity.EvaluatorType;
 import co.edu.unicesar.sierap.entity.ExternalEvaluator;
 import co.edu.unicesar.sierap.entity.Faculty;
+import co.edu.unicesar.sierap.entity.IndividualGrade;
 import co.edu.unicesar.sierap.entity.LearningOutcome;
 import co.edu.unicesar.sierap.entity.Moment;
 import co.edu.unicesar.sierap.entity.PerformanceLevel;
@@ -199,6 +200,51 @@ class OperationsIntegrationTest {
         CriterionGrade corrected = entityManager.find(CriterionGrade.class, gradeId);
         assertThat(corrected.getLevel().getId()).isEqualTo(lowest.getId());
         assertThat(corrected.getScore()).isEqualByComparingTo("0");
+    }
+
+    @Test
+    void anIndividualAdjustmentIsStoredAndCorrectedInTheSameRow() {
+        gradeEverythingWithTheHighestLevel(teacher, true);
+        Evaluation saved = evaluationRepository
+                .findByProjectGroupIdAndEvaluatorId(group.getId(), teacher.getId()).orElseThrow();
+        EvaluationCriterion criterion = saved.getGrades().get(0).getCriterion();
+        Student adjusted = entityManager.find(Student.class, member.getId());
+        saved.adjust(adjusted, lowestLevel(criterion));
+        flushAndClear();
+
+        Evaluation reloaded = evaluationRepository
+                .findByProjectGroupIdAndEvaluatorId(group.getId(), teacher.getId()).orElseThrow();
+        Student reloadedMember = entityManager.find(Student.class, member.getId());
+        IndividualGrade adjustment = reloaded.getIndividualGrades().get(0);
+        Long adjustmentId = adjustment.getId();
+        assertThat(adjustment.getScore()).isEqualByComparingTo(lowestLevel(criterion).getScore());
+        assertThat(reloaded.getTotalScoreFor(reloadedMember)).isEqualByComparingTo(reloaded.getTotalScore()
+                .subtract(saved.getGrades().get(0).getScore()).add(lowestLevel(criterion).getScore()));
+
+        PerformanceLevel middle = criterion.getLevels().stream()
+                .sorted(Comparator.comparing(PerformanceLevel::getScore))
+                .skip(1).findFirst().orElseThrow();
+        reloaded.adjust(reloadedMember, entityManager.find(PerformanceLevel.class, middle.getId()));
+        flushAndClear();
+
+        IndividualGrade corrected = entityManager.find(IndividualGrade.class, adjustmentId);
+        assertThat(corrected.getLevel().getId()).isEqualTo(middle.getId());
+        assertThat(corrected.getScore()).isEqualByComparingTo(middle.getScore());
+    }
+
+    @Test
+    void aStudentWithAnAdjustmentCannotBeDeleted() {
+        gradeEverythingWithTheHighestLevel(teacher, false);
+        Evaluation saved = evaluationRepository
+                .findByProjectGroupIdAndEvaluatorId(group.getId(), teacher.getId()).orElseThrow();
+        saved.adjust(entityManager.find(Student.class, member.getId()),
+                lowestLevel(saved.getGrades().get(0).getCriterion()));
+        flushAndClear();
+
+        assertThatThrownBy(() -> entityManager.createNativeQuery("DELETE FROM student WHERE id = :id")
+                .setParameter("id", member.getId())
+                .executeUpdate())
+                .isInstanceOf(PersistenceException.class);
     }
 
     @Test

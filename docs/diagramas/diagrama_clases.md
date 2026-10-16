@@ -283,6 +283,8 @@ class Evaluation {
   +adjust(s: Student, level: PerformanceLevel) void
   +getTotalScoreFor(s: Student) BigDecimal
   +getScoreFor(outcome: LearningOutcome, s: Student) BigDecimal
+  +removeAdjustment(s: Student, c: EvaluationCriterion) void
+  +getAdjustmentsFor(s: Student) List~IndividualGrade~
 }
 class CriterionGrade {
   -id: Long

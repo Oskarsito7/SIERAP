@@ -11,9 +11,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- * Pruebas unitarias del cálculo de notas de {@link Evaluation} y de
- * {@link CriterionGrade}: suma por RAP y total, corrección de un criterio,
- * evaluación completa y paso de borrador a enviada.
+ * Pruebas unitarias del cálculo de notas de {@link Evaluation}, {@link CriterionGrade}
+ * e {@link IndividualGrade}: suma por RAP y total, corrección de un criterio,
+ * evaluación completa, paso de borrador a enviada y ajustes por estudiante (ADR-018).
  */
 class EvaluationTest {
 
@@ -23,6 +23,8 @@ class EvaluationTest {
     private EvaluationCriterion description;
     private EvaluationCriterion defense;
     private Evaluation evaluation;
+    private Student ana;
+    private Student luis;
 
     @BeforeEach
     void setUp() {
@@ -39,6 +41,10 @@ class EvaluationTest {
         moment.addLearningOutcome(rap5);
 
         ProjectGroup group = new ProjectGroup(moment, new Teacher(), "Grupo 1");
+        ana = new Student();
+        luis = new Student();
+        group.addMember(ana);
+        group.addMember(luis);
         evaluation = new Evaluation(new Teacher(), LocalDateTime.of(2026, 11, 10, 8, 0));
         group.addEvaluation(evaluation);
     }
@@ -123,6 +129,116 @@ class EvaluationTest {
 
         assertThatThrownBy(() -> grade.changeLevel(level(defense, "Alto")))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    // ------------------------------------------------------------ ajustes individuales
+
+    @Test
+    void withoutAdjustmentsEveryMemberHasTheGroupScore() {
+        gradeGroup("Alto", "Alto", "Alto");
+
+        assertThat(evaluation.getTotalScoreFor(ana)).isEqualByComparingTo(evaluation.getTotalScore());
+        assertThat(evaluation.getTotalScoreFor(ana)).isEqualByComparingTo("1.60");
+        assertThat(evaluation.getScoreFor(rap5, luis)).isEqualByComparingTo(evaluation.getScoreFor(rap5));
+    }
+
+    @Test
+    void anAdjustmentReplacesTheGroupLevelOnlyForThatStudentAndCriterion() {
+        gradeGroup("Alto", "Alto", "Alto");
+
+        evaluation.adjust(ana, level(defense, "Sobresaliente"));
+
+        assertThat(evaluation.getTotalScoreFor(ana)).isEqualByComparingTo("1.76");
+        assertThat(evaluation.getScoreFor(rap5, ana)).isEqualByComparingTo("1.28");
+        assertThat(evaluation.getScoreFor(rap1, ana)).isEqualByComparingTo("0.48");
+        assertThat(evaluation.getTotalScoreFor(luis)).isEqualByComparingTo("1.60");
+        assertThat(evaluation.getTotalScore()).isEqualByComparingTo("1.60");
+        assertThat(evaluation.getAdjustmentsFor(ana)).hasSize(1);
+        assertThat(evaluation.getAdjustmentsFor(luis)).isEmpty();
+    }
+
+    @Test
+    void adjustingTheSameCriterionAgainChangesTheSameAdjustment() {
+        gradeGroup("Alto", "Alto", "Alto");
+        evaluation.adjust(ana, level(defense, "Bajo"));
+        IndividualGrade first = evaluation.getIndividualGrades().get(0);
+
+        evaluation.adjust(ana, level(defense, "Básico"));
+
+        assertThat(evaluation.getIndividualGrades()).containsExactly(first);
+        assertThat(first.getLevel().getName()).isEqualTo("Básico");
+        assertThat(first.getScore()).isEqualByComparingTo("0.48");
+    }
+
+    @Test
+    void adjustingToTheGroupLevelRemovesTheAdjustment() {
+        gradeGroup("Alto", "Alto", "Alto");
+        evaluation.adjust(ana, level(defense, "Bajo"));
+
+        evaluation.adjust(ana, level(defense, "Alto"));
+
+        assertThat(evaluation.getIndividualGrades()).isEmpty();
+        assertThat(evaluation.getTotalScoreFor(ana)).isEqualByComparingTo("1.60");
+    }
+
+    @Test
+    void changingTheGroupLevelToTheAdjustedOneDropsTheRedundantAdjustment() {
+        gradeGroup("Alto", "Alto", "Alto");
+        evaluation.adjust(ana, level(defense, "Sobresaliente"));
+        evaluation.adjust(luis, level(defense, "Bajo"));
+
+        evaluation.grade(level(defense, "Sobresaliente"));
+
+        assertThat(evaluation.getAdjustmentsFor(ana)).isEmpty();
+        assertThat(evaluation.getAdjustmentsFor(luis)).hasSize(1);
+        assertThat(evaluation.getTotalScoreFor(luis)).isEqualByComparingTo("0.96");
+    }
+
+    @Test
+    void anAdjustmentCountsEvenIfTheGroupHasNotGradedThatCriterionYet() {
+        evaluation.grade(level(problem, "Alto"));
+
+        evaluation.adjust(ana, level(defense, "Básico"));
+
+        assertThat(evaluation.getTotalScoreFor(ana)).isEqualByComparingTo("0.96");
+        assertThat(evaluation.getScoreFor(rap5, ana)).isEqualByComparingTo("0.48");
+        assertThat(evaluation.getTotalScoreFor(luis)).isEqualByComparingTo("0.48");
+        assertThat(evaluation.isComplete()).isFalse();
+    }
+
+    @Test
+    void removingAnAdjustmentGoesBackToTheGroupLevel() {
+        gradeGroup("Alto", "Alto", "Alto");
+        evaluation.adjust(ana, level(problem, "Bajo"));
+
+        evaluation.removeAdjustment(ana, problem);
+        evaluation.removeAdjustment(luis, problem);
+
+        assertThat(evaluation.getIndividualGrades()).isEmpty();
+        assertThat(evaluation.getTotalScoreFor(ana)).isEqualByComparingTo("1.60");
+    }
+
+    @Test
+    void onlyMembersOfTheGroupCanBeAdjusted() {
+        assertThatThrownBy(() -> evaluation.adjust(new Student(), level(problem, "Alto")))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void anAdjustmentKeepsTheScoreOfTheLevelAtTheTimeOfAdjusting() {
+        gradeGroup("Alto", "Alto", "Alto");
+        PerformanceLevel top = level(defense, "Sobresaliente");
+        evaluation.adjust(ana, top);
+
+        top.setScore(new BigDecimal("0.70"));
+
+        assertThat(evaluation.getTotalScoreFor(ana)).isEqualByComparingTo("1.76");
+    }
+
+    private void gradeGroup(String problemLevel, String descriptionLevel, String defenseLevel) {
+        evaluation.grade(level(problem, problemLevel));
+        evaluation.grade(level(description, descriptionLevel));
+        evaluation.grade(level(defense, defenseLevel));
     }
 
     /** Criterio con los cuatro niveles de la rúbrica, escalados a su puntaje máximo. */
