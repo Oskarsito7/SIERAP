@@ -610,8 +610,9 @@ public class Moment {
     }
 
     /**
-     * Indica si un tipo de evaluador tiene peso en el momento; solo se pueden
-     * designar evaluadores externos de los tipos que lo tienen.
+     * Indica si un tipo de evaluador tiene peso en el momento. Si no lo tiene, los
+     * evaluadores de ese tipo pueden ser designados pero su calificación no cuenta
+     * en la nota final (decisión del 16/10/2026).
      *
      * @param evaluatorType tipo de evaluador
      * @return {@code true} si el tipo tiene peso en el momento

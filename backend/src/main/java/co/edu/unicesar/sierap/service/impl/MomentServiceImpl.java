@@ -18,6 +18,7 @@ import co.edu.unicesar.sierap.exception.ResourceNotFoundException;
 import co.edu.unicesar.sierap.mapper.MomentMapper;
 import co.edu.unicesar.sierap.repository.AcademicPeriodRepository;
 import co.edu.unicesar.sierap.repository.MomentRepository;
+import co.edu.unicesar.sierap.repository.ProjectGroupRepository;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
 import co.edu.unicesar.sierap.service.MomentService;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,7 @@ public class MomentServiceImpl implements MomentService {
 
     private final MomentRepository momentRepository;
     private final AcademicPeriodRepository academicPeriodRepository;
+    private final ProjectGroupRepository projectGroupRepository;
     private final AccessScope accessScope;
     private final Clock clock;
 
@@ -44,13 +46,16 @@ public class MomentServiceImpl implements MomentService {
      *
      * @param momentRepository         repositorio de momentos
      * @param academicPeriodRepository repositorio de periodos académicos
+     * @param projectGroupRepository   repositorio de grupos de proyecto
      * @param accessScope              reglas de alcance
      * @param clock                    reloj de la aplicación
      */
     public MomentServiceImpl(MomentRepository momentRepository, AcademicPeriodRepository academicPeriodRepository,
+                             ProjectGroupRepository projectGroupRepository,
                              AccessScope accessScope, Clock clock) {
         this.momentRepository = momentRepository;
         this.academicPeriodRepository = academicPeriodRepository;
+        this.projectGroupRepository = projectGroupRepository;
         this.accessScope = accessScope;
         this.clock = clock;
     }
@@ -73,7 +78,7 @@ public class MomentServiceImpl implements MomentService {
             moments = momentRepository.findByPeriodIdOrderByProgramNameAscNumberAsc(id);
         } else if (viewer instanceof Student student) {
             moments = momentRepository.findForStudent(id, student.getProgram().getId(),
-                    student.getCurrentSemester());
+                    student.getCurrentSemester(), student.getId());
         } else {
             moments = momentRepository.findByPeriodIdAndProgramFacultyIdOrderByProgramNameAscNumberAsc(id,
                     requireFaculty(viewer));
@@ -94,7 +99,8 @@ public class MomentServiceImpl implements MomentService {
     /**
      * Indica si el usuario puede ver el momento: el super_admin siempre; el admin y
      * el docente si el programa es de su facultad; el estudiante si es de su programa
-     * y su semestre actual está en el rango del momento.
+     * y su semestre actual está en el rango del momento, o si ya tiene un grupo
+     * en ese momento (un docente puede haberlo agregado fuera de rango).
      */
     private boolean canView(User viewer, Moment moment) {
         if (viewer instanceof SuperAdmin) {
@@ -102,8 +108,12 @@ public class MomentServiceImpl implements MomentService {
         }
         if (viewer instanceof Student student) {
             int semester = student.getCurrentSemester();
-            return Objects.equals(student.getProgram().getId(), moment.getProgram().getId())
+            boolean inSemesterRange = Objects.equals(student.getProgram().getId(), moment.getProgram().getId())
                     && semester >= moment.getSemesterFrom() && semester <= moment.getSemesterTo();
+            if (inSemesterRange) {
+                return true;
+            }
+            return projectGroupRepository.existsByMomentIdAndMembersId(moment.getId(), student.getId());
         }
         return Objects.equals(requireFaculty(viewer), moment.getProgram().getFaculty().getId());
     }

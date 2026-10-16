@@ -26,6 +26,7 @@ import co.edu.unicesar.sierap.entity.LearningOutcome;
 import co.edu.unicesar.sierap.entity.Moment;
 import co.edu.unicesar.sierap.entity.PerformanceLevel;
 import co.edu.unicesar.sierap.entity.Program;
+import co.edu.unicesar.sierap.entity.ProjectGroup;
 import co.edu.unicesar.sierap.entity.Student;
 import co.edu.unicesar.sierap.entity.SuperAdmin;
 import co.edu.unicesar.sierap.entity.Teacher;
@@ -34,6 +35,7 @@ import co.edu.unicesar.sierap.entity.enums.DocumentType;
 import co.edu.unicesar.sierap.repository.AcademicPeriodRepository;
 import co.edu.unicesar.sierap.repository.FacultyRepository;
 import co.edu.unicesar.sierap.repository.MomentRepository;
+import co.edu.unicesar.sierap.repository.ProjectGroupRepository;
 import co.edu.unicesar.sierap.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
@@ -93,6 +95,9 @@ class MomentIntegrationTest {
 
     @Autowired
     private MomentRepository momentRepository;
+
+    @Autowired
+    private ProjectGroupRepository projectGroupRepository;
 
     @Autowired
     private UserRepository userRepository;
@@ -217,6 +222,31 @@ class MomentIntegrationTest {
                 .andExpect(status().isOk());
         mockMvc.perform(get("/api/moments/" + launched.getId()).header(HttpHeaders.AUTHORIZATION, bearer(token)))
                 .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void studentSeesMomentOutsideSemesterRangeIfTheyHaveAGroup() throws Exception {
+        Student student = (Student) persist(new Student("Estudiante", "Prueba", DocumentType.TI, document(),
+                email("estudiante2"), passwordEncoder.encode(PASSWORD), LocalDateTime.now(clock),
+                "2026" + SEQUENCE.incrementAndGet(), 2, program));
+        Teacher teacher = (Teacher) persistTeacher(faculty);
+
+        // launched es para semestres 4 a 6, y el estudiante está en 2do semestre
+        ProjectGroup group = new ProjectGroup(launched, teacher, "Grupo especial");
+        group.addMember(student);
+        projectGroupRepository.saveAndFlush(group);
+
+        String token = loginToken(student);
+
+        // Ahora debe ver launched en el listado y poder consultar su detalle
+        mockMvc.perform(get("/api/moments").header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[*].id", hasItems(configuring.getId().intValue(), launched.getId().intValue())));
+
+        mockMvc.perform(get("/api/moments/" + launched.getId()).header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(launched.getId()));
     }
 
     @Test

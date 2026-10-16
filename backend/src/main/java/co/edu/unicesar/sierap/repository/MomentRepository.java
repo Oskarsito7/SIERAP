@@ -49,19 +49,26 @@ public interface MomentRepository extends JpaRepository<Moment, Long> {
 
     /**
      * Momentos de un periodo en un programa cuyo rango de semestres incluye el
-     * semestre indicado (estudiante).
+     * semestre indicado (estudiante), o momentos en los que el estudiante ya tiene un
+     * grupo (incluso si su semestre está fuera del rango).
      *
      * @param periodId  periodo académico
      * @param programId programa del estudiante
      * @param semester  semestre actual del estudiante
+     * @param studentId id del estudiante
      * @return momentos ordenados por número
      */
     @EntityGraph(attributePaths = {"program", "period"})
     @Query("""
             SELECT m FROM Moment m
-            WHERE m.period.id = :periodId AND m.program.id = :programId
-              AND :semester BETWEEN m.semesterFrom AND m.semesterTo
+            WHERE m.period.id = :periodId
+              AND ((m.program.id = :programId AND :semester BETWEEN m.semesterFrom AND m.semesterTo)
+                   OR EXISTS (
+                       SELECT 1 FROM ProjectGroup g
+                       JOIN g.members mem
+                       WHERE g.moment = m AND mem.id = :studentId
+                   ))
             ORDER BY m.number""")
     List<Moment> findForStudent(@Param("periodId") Long periodId, @Param("programId") Long programId,
-                                @Param("semester") int semester);
+                                @Param("semester") int semester, @Param("studentId") Long studentId);
 }
