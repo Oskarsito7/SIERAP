@@ -19,6 +19,7 @@ import { HomePage } from '@/pages/HomePage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { RegistrationCodesPage } from '@/pages/registrationCodes/RegistrationCodesPage'
 import { MomentGroupsPage } from '@/pages/student/MomentGroupsPage'
+import { MyGradesPage } from '@/pages/student/MyGradesPage'
 import { MyGroupPage } from '@/pages/student/MyGroupPage'
 
 import { CHANGE_PASSWORD_PATH, GuestOnly, RequireAuth } from './guards'
@@ -32,6 +33,7 @@ const MENU_PAGES: Record<string, ReactNode> = {
   '/registration-codes': <RegistrationCodesPage />,
   '/moment-groups': <MomentGroupsPage />,
   '/my-group': <MyGroupPage />,
+  '/my-grades': <MyGradesPage />,
   '/assigned-groups': <AssignedGroupsPage />,
 }
 
@@ -70,7 +72,7 @@ export const routes: RouteObject[] = [
               { index: true, element: <HomePage /> },
               { path: CHANGE_PASSWORD_PATH.slice(1), element: <ChangePasswordPage /> },
               { path: ACCOUNT_PATH.slice(1), element: <AccountPage /> },
-              ...(['summary', 'submissions', 'evaluation'] as const).map((tab) => ({
+              ...(['summary', 'submissions', 'evaluation', 'results'] as const).map((tab) => ({
                 path: tab === 'summary' ? 'groups/:id' : `groups/:id/${tab}`,
                 element: (
                   <RequireRole roles={['TEACHER']}>

@@ -20,6 +20,7 @@ import type { Group, StudentWithoutGroup, UpdateGroupRequest } from '@/types/gro
 import type { MomentSummary } from '@/types/moment'
 
 import { formatWindow, groupStatus } from './groupDisplay'
+import { GroupResultsTab } from './GroupResultsTab'
 
 interface GroupWithMoment {
   group: Group
@@ -30,12 +31,13 @@ interface GroupWithMoment {
 type OnGroupChange = (group: Group) => void
 
 /** Pestañas del detalle del grupo, cada una con su ruta. */
-export type GroupTab = 'summary' | 'submissions' | 'evaluation'
+export type GroupTab = 'summary' | 'submissions' | 'evaluation' | 'results'
 
 const TABS: { tab: GroupTab; label: string; path: string }[] = [
   { tab: 'summary', label: 'Resumen', path: '' },
   { tab: 'submissions', label: 'Entregas', path: '/submissions' },
   { tab: 'evaluation', label: 'Mi calificación', path: '/evaluation' },
+  { tab: 'results', label: 'Resultados', path: '/results' },
 ]
 
 /**
@@ -44,7 +46,9 @@ const TABS: { tab: GroupTab; label: string; path: string }[] = [
  *   evaluadores externos;
  * - "Entregas" (DO-04): el historial de versiones con sus descargas;
  * - "Mi calificación" (DO-05 y DO-06): su evaluación del grupo con los ajustes
- *   individuales.
+ *   individuales;
+ * - "Resultados" (DO-07): la nota del grupo y de cada integrante con todas las
+ *   evaluaciones enviadas.
  *
  * Los botones se deshabilitan según el estado y las ventanas del momento; el backend
  * vuelve a validarlo y responde 422 con el motivo, que se muestra en la sección.
@@ -121,6 +125,7 @@ export function GroupDetailPage({ tab = 'summary' }: { tab?: GroupTab }) {
       )}
       {tab === 'submissions' && <SubmissionsTab groupId={group.id} />}
       {tab === 'evaluation' && <EvaluationEditor groupId={group.id} />}
+      {tab === 'results' && <GroupResultsTab groupId={group.id} moment={moment} />}
     </div>
   )
 }
