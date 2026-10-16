@@ -1,0 +1,36 @@
+# Infraestructura de desarrollo local de SIERAP.
+# Uso: docker compose up -d   (PostgreSQL + Mailpit; backend y frontend se levantan aparte, ver README)
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: sierap-postgres
+    environment:
+      POSTGRES_DB: ${DB_NAME:-sierap}
+      POSTGRES_USER: ${DB_USERNAME:-sierap}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-sierap}
+      TZ: America/Bogota
+    ports:
+      # Si ya tienes un PostgreSQL local en el 5432, usa p. ej. DB_PORT=5433
+      # y apunta el backend con DB_URL=jdbc:postgresql://localhost:5433/sierap
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - sierap-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Servidor SMTP de pruebas: captura los correos (enlaces de contraseña) sin
+  # enviarlos. Bandeja web en http://localhost:8025
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: sierap-mailpit
+    ports:
+      - "${MAIL_PORT:-1025}:1025"
+      - "${MAILPIT_UI_PORT:-8025}:8025"
+    restart: unless-stopped
+
+volumes:
+  sierap-postgres-data:

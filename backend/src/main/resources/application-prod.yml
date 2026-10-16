@@ -1,0 +1,25 @@
+# Perfil de producción: sin valores por defecto, todo llega por variables de entorno.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  # Cuenta institucional de la UPC (ADR-017): MAIL_HOST, MAIL_PORT, MAIL_USERNAME,
+  # MAIL_PASSWORD y MAIL_FROM llegan por entorno.
+  mail:
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+logging:
+  level:
+    root: INFO
+
+sierap:
+  # Carpeta de las entregas (ADR-015): en almacenamiento persistente, p. ej. un volumen
+  # de Docker, y respaldada junto con la base de datos.
+  storage:
+    base-path: ${SIERAP_STORAGE_PATH}

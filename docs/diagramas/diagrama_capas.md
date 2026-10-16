@@ -1,70 +1,75 @@
-# Diagrama de capas (arquitectura por paquetes)
+# Layer diagram (package architecture)
 
-Cliente web React + API REST en Spring Boot organizada en **presentación, lógica de
-negocio, datos y entidades** —las cuatro capas que pide la rúbrica (RAP2)—, con
-componentes transversales. GitHub renderiza este diagrama directamente a partir del
-código Mermaid.
+React web client + Spring Boot REST API organized into **presentation, business
+logic, data and entities** —the four layers required by the rubric (RAP2)—, with
+cross-cutting components. GitHub renders this diagram directly from the Mermaid code.
 
-> Versión con diseño detallado: [`diagrama_capas.png`](diagrama_capas.png) · editable en
-> [`diagrama_capas.drawio`](diagrama_capas.drawio).
+> Detailed-design version, with the same packages on one sheet:
+> [`diagrama_capas.png`](diagrama_capas.png) (also [SVG](diagrama_capas.svg); editable
+> in [`diagrama_capas.drawio`](diagrama_capas.drawio)), regenerated in English when
+> Stage 1 closed. When a package changes, update this Mermaid code and the `.drawio`
+> together.
 
 ```mermaid
 flowchart TB
-  subgraph FE["PRESENTACIÓN — cliente web · sierap-frontend (React + TypeScript)"]
+  subgraph FE["PRESENTATION — web client · frontend (React 19 + TypeScript · Vite · Tailwind CSS v4 + shadcn/ui)"]
     direction LR
-    pages["<b>pages</b><br/>vistas por rol"]
-    components["<b>components</b><br/>formularios, tablas, gráficas"]
-    routes["<b>routes</b><br/>rutas protegidas por rol"]
-    auth["<b>context / auth</b><br/>sesión y token JWT"]
-    api["<b>services / api</b><br/>clientes HTTP tipados"]
+    pages["<b>pages</b><br/>views per role; never call axios directly"]
+    components["<b>components</b><br/>ui (shadcn/ui), layout with<br/>the menu of each role, forms"]
+    routes["<b>routes</b><br/>AppRouter · RequireRole<br/>routes protected by role"]
+    auth["<b>auth</b><br/>AuthProvider: session and user,<br/>access token in memory"]
+    api["<b>services / api</b><br/>httpClient (axios): Bearer JWT,<br/>refresh with the sierap_refresh cookie"]
+    types["<b>types</b><br/>mirror the backend DTOs"]
   end
 
-  subgraph BE["co.edu.unicesar.sierap — backend (Java 21 · Spring Boot 3)"]
+  subgraph BE["co.edu.unicesar.sierap — backend (Java 21 · Spring Boot 3.5)"]
     direction TB
-    subgraph P["PRESENTACIÓN — API REST"]
+    subgraph P["PRESENTATION — REST API"]
       direction LR
-      controller["<b>controller</b><br/>@RestController<br/>GrupoController, EvaluacionController …"]
-      dto["<b>dto</b><br/>request / response<br/>validación con @Valid"]
-      mapper["<b>mapper</b><br/>entidad ⇄ DTO"]
+      controller["<b>controller</b><br/>@RestController<br/>AuthController, AccountController,<br/>MomentController, GroupController …"]
+      dto["<b>dto</b><br/>request / response as records<br/>validation with @Valid · ErrorResponse"]
+      mapper["<b>mapper</b><br/>UserMapper, MomentMapper, GroupMapper …<br/>entity → DTO"]
     end
-    subgraph L["LÓGICA DE NEGOCIO"]
+    subgraph L["BUSINESS LOGIC"]
       direction LR
-      service["<b>service</b><br/>«interface» GrupoService,<br/>EvaluacionService, ReporteService …"]
-      impl["<b>service.impl</b><br/>@Service · @Transactional<br/>reglas: 3–5 integrantes, fechas UPC,<br/>alcance por rol"]
+      service["<b>service</b><br/>«interface» AuthService, AccountService,<br/>MomentService, GroupService, EmailService …"]
+      impl["<b>service.impl</b><br/>@Service · @Transactional<br/>rules: status and windows of the moment,<br/>members per group, per-role scope (AccessScope)"]
     end
-    subgraph DA["DATOS"]
-      repository["<b>repository</b><br/>extends JpaRepository&lt;T, Long&gt;<br/>consultas de reportería con @Query"]
+    subgraph DA["DATA"]
+      repository["<b>repository</b><br/>extends JpaRepository&lt;T, Long&gt;<br/>queries with @Query"]
     end
-    subgraph EN["ENTIDADES"]
+    subgraph EN["ENTITIES"]
       direction LR
-      entity["<b>entity</b><br/>Usuario {abstract} + 6 roles, Facultad, Programa,<br/>Momento, RAP, Grupo, ProyectoAula, Evaluacion …"]
-      enums["<b>entity.enums</b><br/>RolUsuario · NivelExigencia<br/>NivelDesempeno"]
+      entity["<b>entity</b><br/>User {abstract} + 5 roles, Faculty, Program,<br/>AcademicPeriod, Moment, LearningOutcome, EvaluationCriterion,<br/>PerformanceLevel, ProjectGroup, Submission, Evaluation …"]
+      enums["<b>entity.enums</b><br/>UserRole · DocumentType · MomentStatus<br/>EvaluationStatus · PasswordTokenPurpose"]
     end
-    subgraph T["TRANSVERSALES"]
+    subgraph T["CROSS-CUTTING"]
       direction TB
-      security["<b>security</b><br/>SecurityConfig · JwtAuthFilter<br/>@PreAuthorize por rol"]
-      exception["<b>exception</b><br/>GlobalExceptionHandler «@ControllerAdvice»<br/>SierapException y subclases"]
-      config["<b>config</b><br/>CorsConfig · StorageConfig<br/>application-dev / prod"]
+      security["<b>security</b><br/>SecurityConfig · JwtAuthFilter · JwtService<br/>RefreshCookie · @PreAuthorize per role"]
+      exception["<b>exception</b><br/>GlobalExceptionHandler «@RestControllerAdvice»<br/>SierapException and subclasses"]
+      config["<b>config</b><br/>ClockConfig · AuthProperties<br/>application-dev / prod"]
     end
   end
 
-  subgraph INFRA["INFRAESTRUCTURA"]
+  subgraph INFRA["INFRASTRUCTURE"]
     direction LR
-    db[("<b>PostgreSQL</b><br/>migraciones Flyway")]
-    files[("<b>Almacenamiento de archivos</b><br/>.zip · .pdf · .docx")]
+    db[("<b>PostgreSQL 17</b><br/>Flyway migrations")]
+    files[("<b>File storage</b> · Stage 5<br/>server disk (ADR-015)<br/>.zip · .pdf · .docx · .pptx")]
+    smtp[("<b>SMTP server</b><br/>account and password emails<br/>Mailpit in dev")]
   end
 
-  api -- "HTTP / JSON · Bearer JWT" --> controller
+  api -- "HTTP / JSON · Bearer JWT · refresh cookie" --> controller
   controller -. «use» .-> dto
   mapper -. «use» .-> dto
   controller -. «use» .-> service
-  impl -. implementa .-> service
-  service -. «use» .-> repository
+  impl -. implements .-> service
+  impl -. «use» .-> repository
   repository -. «use» .-> entity
-  security -- filtra cada petición --> controller
-  exception -. maneja errores .-> controller
+  security -- filters every request --> controller
+  exception -. handles errors .-> controller
   repository -- Spring Data JPA · JDBC --> db
-  impl -- guarda / lee archivos --> files
+  impl -- stores / reads files --> files
+  impl -- sends emails --> smtp
 
   classDef pres fill:#DBEAFE,stroke:#3B6FB6,color:#1F2937
   classDef log fill:#EDE4FB,stroke:#7E57C2,color:#1F2937
@@ -72,29 +77,30 @@ flowchart TB
   classDef ent fill:#DCFCE7,stroke:#2F855A,color:#1F2937
   classDef tr fill:#F1F5F9,stroke:#64748B,color:#1F2937
   classDef inf fill:#E0F2FE,stroke:#0369A1,color:#1F2937
-  class pages,components,routes,auth,api,controller,dto,mapper pres
+  class pages,components,routes,auth,api,types,controller,dto,mapper pres
   class service,impl log
   class repository dat
   class entity,enums ent
   class security,exception,config tr
-  class db,files inf
+  class db,files,smtp inf
 ```
 
-## Reglas de la arquitectura
+## Architecture rules
 
-| Regla | Por qué |
+| Rule | Why |
 |---|---|
-| Cada capa solo usa la inmediatamente inferior (`controller → service → repository → entity`). | Es la arquitectura por capas completa que evalúa la rúbrica (RAP2). |
-| Las entidades JPA nunca salen de la API: el controller responde siempre con DTOs. | Evita exponer `passwordHash` o relaciones internas y desacopla la API del modelo. |
-| Sin lógica de negocio en los controllers. | Las reglas (3–5 integrantes, fechas dentro del rango UPC, alcance por rol) viven en `service.impl` y se prueban con JUnit + Mockito. |
-| Sin `try/catch` disperso: los errores se lanzan como `SierapException` y los traduce `exception`. | Respuestas de error uniformes y manejo de excepciones centralizado (rúbrica RAP2). |
-| Nada de valores de negocio hardcodeados. | RAP, pesos y rangos de semestre se leen de la base de datos (`ParametroGlobal`, `Momento`, `RAP`). |
+| Each layer only uses the one right below it (`controller → service → repository → entity`). | It is the full layered architecture the rubric assesses (RAP2). |
+| JPA entities never leave the API: the controller always responds with DTOs. | Avoids exposing `passwordHash` or internal relationships and decouples the API from the model. |
+| No business logic in the controllers. | The rules (members per group, dates within the UPC range, per-role scope) live in `service.impl` and are tested with JUnit + Mockito. |
+| No scattered `try/catch`: errors are thrown as `SierapException` and translated by `exception`. | Uniform error responses and centralized exception handling (rubric RAP2). |
+| No hard-coded business values. | RAP, weights and semester ranges are read from the database (`GlobalParameter`, `Moment`, `LearningOutcome`). |
+| Code in English; screens, error messages, Javadoc and comments in Spanish. | Team convention (ADR-014). |
 
-## Correspondencia con la rúbrica
+## Mapping to the rubric
 
-| Capa que pide la guía UPC | Paquete en SIERAP |
+| Layer required by the UPC guide | Package in SIERAP |
 |---|---|
-| Presentación | `frontend` (React) + `controller`, `dto`, `mapper` |
-| Lógica | `service`, `service.impl` |
-| Datos | `repository` + PostgreSQL |
-| Entidades | `entity`, `entity.enums` |
+| Presentation | `frontend` (React) + `controller`, `dto`, `mapper` |
+| Logic | `service`, `service.impl` |
+| Data | `repository` + PostgreSQL |
+| Entities | `entity`, `entity.enums` |

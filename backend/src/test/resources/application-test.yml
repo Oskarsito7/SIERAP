@@ -1,0 +1,8 @@
+# Perfil de pruebas: valores fijos para que las pruebas no dependan del entorno.
+sierap:
+  auth:
+    jwt-secret: clave-de-pruebas-sierap-solo-para-tests-0123456789
+    refresh-cookie-secure: false
+  # Las entregas de las pruebas van a una carpeta temporal.
+  storage:
+    base-path: ${java.io.tmpdir}/sierap-test-files

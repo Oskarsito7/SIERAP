@@ -1,0 +1,30 @@
+# Perfil de desarrollo local. Los valores por defecto coinciden con docker-compose.yml.
+# Para sobreescribirlos sin tocar este archivo: variables de entorno, o un
+# application-local.yml (ignorado por git) activando --spring.profiles.active=dev,local
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/sierap}
+    username: ${DB_USERNAME:sierap}
+    password: ${DB_PASSWORD:sierap}
+  jpa:
+    properties:
+      hibernate:
+        format_sql: true
+  # Permite aplicar una migración con número menor que otra ya aplicada (p. ej. la V5
+  # del D2 si llega después de la V6), sin tener que reiniciar la base local.
+  flyway:
+    out-of-order: true
+
+logging:
+  level:
+    co.edu.unicesar.sierap: DEBUG
+
+sierap:
+  auth:
+    # Solo para desarrollo local. En producción llega por SIERAP_JWT_SECRET.
+    jwt-secret: ${SIERAP_JWT_SECRET:clave-de-desarrollo-sierap-no-usar-en-produccion-0123456789}
+    # En local el frontend y la API van por http://localhost.
+    refresh-cookie-secure: false
+  # En local las entregas quedan en la carpeta personal del usuario.
+  storage:
+    base-path: ${SIERAP_STORAGE_PATH:${user.home}/sierap-files}

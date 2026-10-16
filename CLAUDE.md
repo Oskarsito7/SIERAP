@@ -17,45 +17,88 @@ de uno de los desarrolladores** — cualquier trabajo aquí debe poder sustentar
 también contra la rúbrica oficial de la UPC en
 `docs/00-guia-oficial-momento1.md`.
 
+## Regla de trabajo: preguntar antes de decidir
+
+El responsable del proyecto conoce las necesidades de la universidad y del proyecto.
+**No tomar decisiones por cuenta propia**: ante cualquier duda de dominio, de
+alcance, de modelo de datos o de organización del equipo, preguntar primero (con
+opciones concretas y una recomendación cuando la haya) y solo después implementar.
+Las decisiones ya tomadas quedan registradas en `docs/04` (sección de decisiones) y
+en los ADR de `docs/05`; no volver a preguntarlas.
+
 ## Stack (no negociable salvo discusión explícita)
 
 - **Backend:** Java 21 + Spring Boot 3.x — Spring Web, Spring Data JPA, Spring
   Security + JWT. Arquitectura por capas: `controller → service → repository →
   entity`, con DTOs en el borde de la API.
 - **Base de datos:** PostgreSQL.
-- **Frontend:** React + TypeScript.
-- **Build backend:** Maven (a confirmar con el equipo si prefieren Gradle).
+- **Frontend:** React + TypeScript con Vite, Tailwind CSS v4 + shadcn/ui, React
+  Router y axios (ADR-006).
+- **Build backend:** Maven, vía Maven Wrapper (`backend/mvnw`). Paquete base
+  `co.edu.unicesar.sierap`.
 
 ## Roles del sistema (fundamentales para cualquier feature)
 
-`super_admin`, `admin` (por facultad, define momentos/RAP por programa),
-`docente` (define grupos/fechas, solo ve sus grupos asignados), `estudiante`
-(sube entregas versionadas, ve su calificación por RAP), `empresario` y
-`egresado` (evalúan grupos asignados). Docente/Empresario/Egresado implementan
-una interfaz común `Evaluador`. Ver `docs/03-entidades-dominio.md` para el
-modelo de clases completo y `docs/diagramas/diagrama_clases.drawio` para el UML.
+`super_admin` (parámetros, periodos, catálogo de tipos de evaluador), `admin` (por
+facultad: crea, configura y lanza los momentos de sus programas), `docente` (habilita
+grupos en un momento, designa evaluadores externos, fija fechas), `estudiante` (se
+inscribe en un grupo del momento, sube entregas versionadas, ve su calificación por
+RAP) y `evaluador_externo` (empresario, egresado u otro tipo del catálogo
+`EvaluatorType`, ADR-011). `Teacher` y `ExternalEvaluator` implementan la interfaz
+`Evaluator`; el estudiante **no** se autoevalúa. Todos inician sesión con su correo.
+El flujo de un momento (configuración → conformación de grupos → lanzar → entregas →
+calificación) está en `docs/04` y en el ADR-012. Ver `docs/03-entidades-dominio.md`
+para el modelo completo y `docs/diagramas/diagrama_clases.md` para el UML vigente (su
+versión detallada, `diagrama_clases_mejorado.drawio` + PNG/SVG, se actualiza junto con
+el Mermaid).
 
 ## Reglas de control de acceso a tener siempre presentes
 
-- Un docente **solo** debe poder ver/gestionar los grupos que tiene asignados —
-  nunca todos los grupos del sistema.
+- Un docente **solo** debe poder ver/gestionar/calificar los grupos que él
+  habilitó — nunca todos los grupos del sistema. Los estudiantes, en cambio, ven los
+  grupos de todos los docentes del momento para poder inscribirse.
 - Un admin de facultad solo gestiona programas/momentos/RAP de **su** facultad.
-- Empresarios/egresados solo ven y califican los grupos que se les asignaron, y
-  solo dentro de la fecha de evaluación estipulada (que a su vez debe caer dentro
-  de la fecha límite que define la UPC).
-- Todo lo de RAP/momentos/criterios/puntuación es **configurable** por
-  admin/super_admin — evitar hardcodear valores de negocio (nombres de RAP,
-  pesos, rangos de semestre) en el código.
+- Los evaluadores externos solo ven y califican los grupos para los que fueron
+  designados, y solo en la fecha de evaluación estipulada (dentro de la ventana de
+  calificación del momento, que termina a más tardar en el límite de la UPC).
+- Cada operación valida el estado y las ventanas del momento (ADR-012): la
+  configuración solo se edita antes de lanzar; se entrega y se califica solo dentro
+  de sus ventanas.
+- Todo lo de RAP/momentos/criterios/niveles/puntuación es **configurable** por
+  admin/super_admin y se versiona **por periodo académico** (ADR-010) — nada de
+  valores estándar en el código: ni nombres de RAP, ni niveles, ni puntajes, ni
+  rangos de semestre, ni enums de niveles.
 
 ## Convenciones de código
 
+- **Idioma (ADR-014, aprobado por el líder):**
+  - **En inglés:** el código (clases, atributos, métodos, tablas, columnas, rutas y
+    campos JSON de la API, en backend y frontend), la documentación (`docs/`,
+    README, ADR) y los mensajes de commit.
+  - **En español:** todo texto que ve el usuario (pantallas del frontend y mensajes
+    de error de la API), el **Javadoc y los comentarios del código** (son para la
+    sustentación), `docs/00` (transcripción de la guía oficial) y `docs/entregas`.
+  - Equivalencias español → inglés del modelo: tabla en `docs/03-entidades-dominio.md`.
 - Nomenclatura de paquetes/clases/métodos/atributos siguiendo convención estándar
   de Java (paquetes en minúsculas, clases en PascalCase, métodos/atributos en
   camelCase) — esto es parte de la rúbrica de evaluación de la universidad.
 - Cada clase debe llevar comentarios/documentación (Javadoc mínimo en clases de
   dominio) — también es parte de la rúbrica.
 - Manejo de excepciones centralizado vía `@ControllerAdvice`, no try/catch
-  disperso en controllers.
+  disperso en controllers: los services lanzan subclases de `SierapException`
+  (`ResourceNotFoundException` 404, `BusinessRuleException` 422,
+  `ForbiddenAccessException` 403) y `GlobalExceptionHandler` responde con
+  `ErrorResponse`.
+- Sin Lombok; DTOs como `record`; inyección por constructor (ADR-008).
+- `config/`, `security/`, `exception/` y `pom.xml` son del D1: preguntar antes de
+  cambiarlos.
+- Una migración de Flyway que ya está en `develop` nunca se edita: cualquier
+  corrección va en una migración nueva.
+- Puntajes y notas como `BigDecimal`, nunca `double` (ADR-013).
+- Fechas: usar siempre el `Clock` inyectado (`LocalDate.now(clock)`), nunca
+  `LocalDate.now()`, para poder probar reglas de fechas con `Clock.fixed`.
+- Frontend: las páginas nunca llaman a axios directo, siempre vía
+  `src/services/api/*`; los tipos de `src/types/` reflejan los DTO del backend.
 
 ## Dónde está cada cosa
 
@@ -71,12 +114,26 @@ modelo de clases completo y `docs/diagramas/diagrama_clases.drawio` para el UML.
 - `docs/05-decisiones-tecnicas.md` — registro de decisiones técnicas (ADRs).
   Añadir una entrada nueva cuando se tome una decisión de arquitectura no trivial
   (elección de librería, patrón, estructura de módulos, etc.).
+- `docs/07-contrato-api.md` — contrato de la API (rutas, DTO y códigos de error)
+  acordado antes de programar; el frontend trabaja contra este contrato.
 - `docs/06-plan-de-trabajo.md` — etapas del desarrollo, reparto entre los tres
   integrantes, estrategia de ramas (`main`/`develop`/`feature/*`), convención de
   commits, checklist de PR y estrategia de pruebas. Consúltalo antes de abrir una
   rama o de proponer en qué orden implementar algo.
-- `backend/` y `frontend/` — código fuente (se crean cuando arranque la
-  implementación).
+- `docs/wireframes/` — wireframes de todas las pantallas por rol (HTML + PNG); el
+  frontend los implementa y cualquier cambio de regla va primero a `docs/04` y `docs/07`.
+- `backend/` — API Spring Boot; `frontend/` — app React (ver `frontend/README.md`);
+  `docker-compose.yml` — PostgreSQL local; `.github/workflows/ci.yml` — CI.
+
+## Comandos
+
+```bash
+docker compose up -d                                  # PostgreSQL (sierap/sierap) + Mailpit (:8025)
+cd backend && ./mvnw spring-boot:run                  # API en :8080 (perfil dev por defecto)
+cd backend && ./mvnw verify                           # pruebas; las de integración usan Testcontainers (Docker)
+cd frontend && npm run dev                            # app en :5173, proxy /api -> :8080
+cd frontend && npm run lint && npm test && npm run build
+```
 
 ## Al iniciar cualquier feature nueva
 
