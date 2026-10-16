@@ -48,6 +48,16 @@ public interface MomentRepository extends JpaRepository<Moment, Long> {
     List<Moment> findByPeriodIdAndProgramFacultyIdOrderByProgramNameAscNumberAsc(Long periodId, Long facultyId);
 
     /**
+     * Momentos de un periodo en un programa específico ordenados por número.
+     *
+     * @param periodId  periodo académico
+     * @param programId programa académico
+     * @return momentos del programa en ese periodo ordenados por número
+     */
+    @EntityGraph(attributePaths = {"program", "period"})
+    List<Moment> findByPeriodIdAndProgramIdOrderByNumberAsc(Long periodId, Long programId);
+
+    /**
      * Momentos de un periodo en un programa cuyo rango de semestres incluye el
      * semestre indicado (estudiante), o momentos en los que el estudiante ya tiene un
      * grupo (incluso si su semestre está fuera del rango).

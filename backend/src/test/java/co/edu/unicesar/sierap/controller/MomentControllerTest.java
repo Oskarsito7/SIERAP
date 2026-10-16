@@ -19,6 +19,7 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.List;
 
+import co.edu.unicesar.sierap.dto.request.CopyMomentsRequest;
 import co.edu.unicesar.sierap.dto.request.LaunchMomentRequest;
 import co.edu.unicesar.sierap.dto.request.MomentWeightsRequest;
 import co.edu.unicesar.sierap.dto.request.NewMomentRequest;
@@ -276,5 +277,41 @@ class MomentControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(10))
                 .andExpect(jsonPath("$.status").value("LAUNCHED"));
+    }
+
+    @Test
+    void copyMomentsReturns201() throws Exception {
+        MomentSummaryResponse summary = createSampleDetail(20L).summary();
+        when(momentService.copy(any(), any(CopyMomentsRequest.class))).thenReturn(List.of(summary));
+
+        String body = """
+                {
+                  "fromPeriodId": 1,
+                  "toPeriodId": 2,
+                  "programId": 100
+                }
+                """;
+
+        mockMvc.perform(post("/api/moments/copy")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$[0].id").value(20))
+                .andExpect(jsonPath("$[0].name").value("Momento 1"));
+    }
+
+    @Test
+    void copyMomentsReturns400WhenRequiredFieldMissing() throws Exception {
+        String body = """
+                {
+                  "fromPeriodId": 1
+                }
+                """;
+
+        mockMvc.perform(post("/api/moments/copy")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.status").value(400));
     }
 }
