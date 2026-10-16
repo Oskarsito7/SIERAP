@@ -2,9 +2,11 @@ package co.edu.unicesar.sierap.service;
 
 import java.util.List;
 
+import co.edu.unicesar.sierap.dto.request.LaunchMomentRequest;
 import co.edu.unicesar.sierap.dto.request.MomentWeightsRequest;
 import co.edu.unicesar.sierap.dto.request.NewMomentRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateMomentRequest;
+import co.edu.unicesar.sierap.dto.response.LaunchCheckResponse;
 import co.edu.unicesar.sierap.dto.response.MomentDetailResponse;
 import co.edu.unicesar.sierap.dto.response.MomentSummaryResponse;
 import co.edu.unicesar.sierap.dto.response.MomentWeightsResponse;
@@ -76,4 +78,24 @@ public interface MomentService {
      * @return distribución de pesos actualizada
      */
     MomentWeightsResponse updateWeights(AuthenticatedUser actor, Long id, MomentWeightsRequest request);
+
+    /**
+     * Diagnostica la configuración de un momento antes del lanzamiento y lista
+     * alertas (evaluadores sin peso y grupos por debajo del mínimo de integrantes).
+     *
+     * @param actor usuario que consulta
+     * @param id    identificador del momento
+     * @return diagnóstico de lanzamiento
+     */
+    LaunchCheckResponse launchCheck(AuthenticatedUser actor, Long id);
+
+    /**
+     * Lanza un momento a ejecución (pasa a estado lanzado).
+     *
+     * @param actor   usuario que lanza
+     * @param id      identificador del momento
+     * @param request confirmación opcional para lanzar con grupos por debajo del mínimo
+     * @return detalle del momento lanzado
+     */
+    MomentDetailResponse launch(AuthenticatedUser actor, Long id, LaunchMomentRequest request);
 }
