@@ -649,6 +649,16 @@ public class Moment {
     }
 
     /**
+     * Elimina todos los pesos de tipos de evaluador externo del momento.
+     *
+     * @throws BusinessRuleException si el momento ya fue lanzado
+     */
+    public void clearEvaluatorWeights() {
+        requireConfiguration();
+        evaluatorWeights.clear();
+    }
+
+    /**
      * Suma de los pesos del momento: el del docente más los de los tipos de evaluador.
      *
      * @return suma de los porcentajes; debe ser 100 para lanzar el momento

@@ -1,5 +1,6 @@
 package co.edu.unicesar.sierap.repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
@@ -134,4 +135,29 @@ public interface ProjectGroupRepository extends JpaRepository<ProjectGroup, Long
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select g from ProjectGroup g where g.id = :id")
     Optional<ProjectGroup> findByIdForUpdate(@Param("id") Long id);
+
+    /**
+     * Cuenta la cantidad de grupos habilitados en un momento.
+     *
+     * @param momentId id del momento
+     * @return total de grupos
+     */
+    int countByMomentId(Long momentId);
+
+    /**
+     * Indica si existen grupos asociados a un momento.
+     *
+     * @param momentId id del momento
+     * @return {@code true} si tiene al menos un grupo
+     */
+    boolean existsByMomentId(Long momentId);
+
+    /**
+     * Cuenta los grupos agrupados por momento para una lista de momentos.
+     *
+     * @param momentIds identificadores de momentos
+     * @return lista de pares [momentId, conteo]
+     */
+    @Query("select g.moment.id, count(g) from ProjectGroup g where g.moment.id in :momentIds group by g.moment.id")
+    List<Object[]> countByMomentIdIn(@Param("momentIds") Collection<Long> momentIds);
 }

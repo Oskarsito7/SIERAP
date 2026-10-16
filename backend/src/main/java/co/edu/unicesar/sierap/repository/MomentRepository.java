@@ -71,4 +71,25 @@ public interface MomentRepository extends JpaRepository<Moment, Long> {
             ORDER BY m.number""")
     List<Moment> findForStudent(@Param("periodId") Long periodId, @Param("programId") Long programId,
                                 @Param("semester") int semester, @Param("studentId") Long studentId);
+
+    /**
+     * Indica si ya existe un momento con ese número en el programa y periodo.
+     *
+     * @param programId id del programa
+     * @param periodId  id del periodo académico
+     * @param number    número del momento
+     * @return {@code true} si ya existe
+     */
+    boolean existsByProgramIdAndPeriodIdAndNumber(Long programId, Long periodId, int number);
+
+    /**
+     * Indica si ya existe otro momento diferente con ese número en el programa y periodo.
+     *
+     * @param programId id del programa
+     * @param periodId  id del periodo académico
+     * @param number    número del momento
+     * @param id        id del momento a excluir
+     * @return {@code true} si otro momento ya tiene ese número
+     */
+    boolean existsByProgramIdAndPeriodIdAndNumberAndIdNot(Long programId, Long periodId, int number, Long id);
 }
