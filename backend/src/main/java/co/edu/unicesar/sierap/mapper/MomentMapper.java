@@ -91,12 +91,12 @@ public final class MomentMapper {
                 moment.getLearningOutcomes().stream().map(MomentMapper::toLearningOutcome).toList());
     }
 
-    private static LearningOutcomeResponse toLearningOutcome(LearningOutcome outcome) {
+    public static LearningOutcomeResponse toLearningOutcome(LearningOutcome outcome) {
         return new LearningOutcomeResponse(outcome.getId(), outcome.getCode(), outcome.getDescription(),
                 outcome.getMaxScore(), outcome.getCriteria().stream().map(MomentMapper::toCriterion).toList());
     }
 
-    private static CriterionResponse toCriterion(EvaluationCriterion criterion) {
+    public static CriterionResponse toCriterion(EvaluationCriterion criterion) {
         return new CriterionResponse(
                 criterion.getId(),
                 criterion.getDescription(),
@@ -105,7 +105,7 @@ public final class MomentMapper {
                 criterion.getLevels().stream().map(MomentMapper::toLevel).toList());
     }
 
-    private static LevelResponse toLevel(PerformanceLevel level) {
+    public static LevelResponse toLevel(PerformanceLevel level) {
         return new LevelResponse(
                 level.getId(),
                 level.getName(),
