@@ -41,7 +41,7 @@ describe('TeacherGroupsPage', () => {
       groupFixture({ id: 1, name: 'Grupo 1', projectTitle: 'SIERAP', memberCount: 5, full: true,
         submissionDeadline: '2026-10-15' }),
       groupFixture({ id: 2, name: 'Grupo 2', memberCount: 4,
-        evaluators: [{ id: 51, fullName: 'Sofía Vega', evaluatorType: 'Empresario' }] }),
+        evaluators: [{ id: 51, fullName: 'Sofía Vega', evaluatorType: 'Empresario', countsInGrade: true }] }),
       groupFixture({ id: 3, name: 'Grupo 3', memberCount: 2 }),
     ])
     renderPage()

@@ -50,7 +50,8 @@ public final class GroupMapper {
                 : GroupMapper::toMember;
         List<EvaluatorRef> evaluators = student
                 ? List.of()
-                : group.getEvaluators().stream().sorted(BY_NAME).map(GroupMapper::toEvaluator).toList();
+                : group.getEvaluators().stream().sorted(BY_NAME).map(evaluator -> toEvaluator(evaluator, moment))
+                        .toList();
         return new GroupResponse(
                 group.getId(),
                 moment.getId(),
@@ -90,7 +91,13 @@ public final class GroupMapper {
         return new MemberResponse(student.getId(), student.getFullName(), null, null);
     }
 
-    private static EvaluatorRef toEvaluator(ExternalEvaluator evaluator) {
-        return new EvaluatorRef(evaluator.getId(), evaluator.getFullName(), evaluator.getEvaluatorType().getName());
+    /**
+     * Evaluador asignado; su evaluación cuenta en la nota solo si su tipo tiene un peso
+     * mayor que cero en el momento.
+     */
+    private static EvaluatorRef toEvaluator(ExternalEvaluator evaluator, Moment moment) {
+        boolean countsInGrade = moment.getWeightFor(evaluator.getEvaluatorType()).signum() > 0;
+        return new EvaluatorRef(evaluator.getId(), evaluator.getFullName(), evaluator.getEvaluatorType().getName(),
+                countsInGrade);
     }
 }

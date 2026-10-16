@@ -496,7 +496,8 @@ Academic configuration" section below.
   "members": [ { "id": 40, "fullName": "Juan Rojas", "studentCode": "20261001", "email": "juan@unicesar.edu.co" } ],
   "submissionDeadline": "2026-11-15",   // null until the teacher sets it
   "evaluationDate": "2026-11-24",       // null until the teacher sets it
-  "evaluators": [ { "id": 51, "fullName": "Sofía Vega", "evaluatorType": "Empresario" } ],
+  "evaluators": [ { "id": 51, "fullName": "Sofía Vega", "evaluatorType": "Empresario",
+                    "countsInGrade": true } ],  // false if their type has no weight in the moment
   "myGroup": false                      // true if the caller is a member
 }
 ```
@@ -527,7 +528,7 @@ and of any moment where they already have a group (a teacher can add them out of
 | Method and route | Who | Body | Answer |
 |---|---|---|---|
 | `GET /api/external-evaluators/lookup?q=` | teacher, admin, super_admin | — | `200 UserSummary` of the active external evaluator whose email or document number is **exactly** `q`; `404` if there is none. It does not list or search partially, so evaluator accounts cannot be browsed |
-| `POST /api/groups/{id}/evaluators` | the group's teacher | `{ "evaluatorId" }` | `200 Group`. `422` if the evaluator is deactivated or already assigned |
+| `POST /api/groups/{id}/evaluators` | the group's teacher | `{ "evaluatorId" }` | `200 Group`. `422` if the evaluator is deactivated or already assigned. An evaluator whose type has no weight in the moment (or 0 %) is still assigned, with `countsInGrade: false`; the screen warns that their evaluation will not count (2026-10-16) |
 | `DELETE /api/groups/{id}/evaluators/{evaluatorId}` | the group's teacher | — | `204`. `422` if that evaluator already has an evaluation (draft or submitted) of the group |
 
 Creating an evaluator is the existing `POST /api/external-evaluators` (Stage 2).

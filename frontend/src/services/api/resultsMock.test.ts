@@ -32,7 +32,7 @@ const form: EvaluationForm = {
 
 describe('sampleGroupResults', () => {
   beforeEach(() => {
-    vi.mocked(groupService.get).mockResolvedValue(groupFixture({ evaluators: [{ id: 70, fullName: 'Carlos Pérez', evaluatorType: 'Egresado' }] }))
+    vi.mocked(groupService.get).mockResolvedValue(groupFixture({ evaluators: [{ id: 70, fullName: 'Carlos Pérez', evaluatorType: 'Egresado', countsInGrade: true }] }))
     vi.mocked(momentService.get).mockResolvedValue({
       ...momentFixture({ gradingEnd: '2999-12-31' }), maxScore: 3, learningOutcomes: [],
     })

@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { ArrowLeft, Search } from 'lucide-react'
+import { ArrowLeft, Search, TriangleAlert } from 'lucide-react'
 import { Link, NavLink, useNavigate, useParams } from 'react-router'
 
 import { LoadStatus } from '@/components/LoadStatus'
@@ -528,9 +528,12 @@ function EvaluatorsSection({
           <ul className="flex flex-col divide-y">
             {group.evaluators.map((evaluator) => (
               <li key={evaluator.id} className="flex items-center justify-between gap-3 py-3 text-sm">
-                <span>
-                  <span className="font-medium">{evaluator.fullName}</span>
-                  <span className="text-muted-foreground"> · {evaluator.evaluatorType}</span>
+                <span className="flex flex-col gap-1">
+                  <span>
+                    <span className="font-medium">{evaluator.fullName}</span>
+                    <span className="text-muted-foreground"> · {evaluator.evaluatorType}</span>
+                  </span>
+                  {!evaluator.countsInGrade && <NoWeightWarning evaluatorType={evaluator.evaluatorType} />}
                 </span>
                 <Button
                   variant="ghost"
@@ -547,6 +550,20 @@ function EvaluatorsSection({
         )}
       </CardContent>
     </Card>
+  )
+}
+
+/**
+ * Aviso de que la evaluación no contará en la nota porque el tipo del evaluador no tiene
+ * peso en el momento (o tiene 0 %). No impide asignarlo: el admin puede estar fijando
+ * los pesos todavía (decisión del 16/10, docs/04).
+ */
+function NoWeightWarning({ evaluatorType }: { evaluatorType: string }) {
+  return (
+    <span role="note" className="flex items-start gap-1 text-xs text-amber-700 dark:text-amber-400">
+      <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+      Su evaluación no contará en la nota: el tipo {evaluatorType} no tiene peso en este momento.
+    </span>
   )
 }
 

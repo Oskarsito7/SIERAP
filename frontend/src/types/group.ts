@@ -18,6 +18,8 @@ export interface GroupEvaluator {
   fullName: string
   /** Nombre del tipo de evaluador, p. ej. "Empresario". */
   evaluatorType: string
+  /** `false` si su tipo no tiene peso en el momento: su evaluación no cuenta en la nota. */
+  countsInGrade: boolean
 }
 
 /** Grupo (= proyecto de aula), espejo de `GroupResponse` (`Group` en `docs/07`). */
