@@ -2,6 +2,7 @@ package co.edu.unicesar.sierap.controller;
 
 import java.util.List;
 
+import co.edu.unicesar.sierap.dto.request.CopyMomentsRequest;
 import co.edu.unicesar.sierap.dto.request.LaunchMomentRequest;
 import co.edu.unicesar.sierap.dto.request.MomentWeightsRequest;
 import co.edu.unicesar.sierap.dto.request.NewMomentRequest;
@@ -164,5 +165,21 @@ public class MomentController {
                                        @PathVariable Long id,
                                        @RequestBody(required = false) LaunchMomentRequest request) {
         return momentService.launch(actor, id, request);
+    }
+
+    /**
+     * Copia la configuración de momentos (RAP, criterios, niveles y pesos) de un
+     * periodo a otro para los programas dentro del alcance.
+     *
+     * @param actor   usuario autenticado (super_admin o admin de facultad)
+     * @param request parámetros de copia (periodos y programa opcional)
+     * @return lista de nuevos momentos creados en el periodo destino
+     */
+    @PostMapping("/copy")
+    @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    public List<MomentSummaryResponse> copy(@AuthenticationPrincipal AuthenticatedUser actor,
+                                            @Valid @RequestBody CopyMomentsRequest request) {
+        return momentService.copy(actor, request);
     }
 }
