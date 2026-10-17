@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ArrowLeft, Trash2 } from 'lucide-react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { Link, NavLink, useNavigate, useParams } from 'react-router'
 
 import { LoadStatus } from '@/components/LoadStatus'
 import { FormError } from '@/components/forms/FormField'
@@ -11,27 +11,35 @@ import { useLoad } from '@/lib/useLoad'
 import { catalogService } from '@/services/api/catalogService'
 import { getErrorMessage } from '@/services/api/httpClient'
 import { momentService } from '@/services/api/momentService'
+import type { AcademicPeriod } from '@/types/catalog'
 import type { MomentDetail } from '@/types/moment'
 
 import { MomentForm } from './MomentForm'
 import { toMomentData, toMomentForm } from './momentFormValues'
 import { momentSteps } from './momentPhase'
 import { MomentStatusBadge } from './MomentStatusBadge'
+import { RubricTab } from './RubricTab'
+
+/** Pestañas de la configuración de un momento, cada una con su ruta. */
+export type MomentTab = 'data' | 'rubric'
+
+const TABS: { tab: MomentTab; label: string; path: string }[] = [
+  { tab: 'data', label: 'Datos y ventanas', path: '' },
+  { tab: 'rubric', label: 'RAP, criterios y niveles', path: '/rubric' },
+]
 
 /**
- * Configuración de un momento (wireframe AD-02): el resumen, la línea de tiempo de sus
- * fases y la pestaña "Datos y ventanas". Mientras está en configuración se edita y se
- * puede eliminar (si no tiene grupos); una vez lanzado, todo queda de solo lectura
+ * Configuración de un momento: el resumen, la línea de tiempo de sus fases y sus
+ * pestañas, "Datos y ventanas" (wireframe AD-02) y "RAP, criterios y niveles" (AD-03).
+ * Mientras está en configuración se edita; una vez lanzado, todo queda de solo lectura
  * (ADR-012) y el backend responde 422 a cualquier cambio.
  */
-export function MomentDetailPage() {
+export function MomentDetailPage({ tab = 'data' }: { tab?: MomentTab }) {
   const id = Number(useParams().id)
-  const navigate = useNavigate()
   const data = useLoad(async () => {
     const [moment, periods] = await Promise.all([momentService.get(id), catalogService.periods()])
     return { moment, periods }
   }, [id])
-  const [notice, setNotice] = useState<string | null>(null)
 
   if (data.state.kind !== 'success') {
     return (
@@ -64,10 +72,21 @@ export function MomentDetailPage() {
 
       <Timeline moment={moment} />
 
-      <nav aria-label="Secciones del momento" className="flex gap-1 border-b">
-        <span className="border-primary -mb-px border-b-2 px-3 py-2 text-sm font-medium" aria-current="page">
-          Datos y ventanas
-        </span>
+      <nav aria-label="Secciones del momento" className="flex flex-wrap gap-1 border-b">
+        {TABS.map((item) => (
+          <NavLink
+            key={item.tab}
+            to={`/moments/${moment.id}${item.path}`}
+            end
+            className={({ isActive }) =>
+              `-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
+                isActive ? 'border-primary text-foreground' : 'text-muted-foreground border-transparent'
+              }`
+            }
+          >
+            {item.label}
+          </NavLink>
+        ))}
       </nav>
 
       {launched && (
@@ -75,6 +94,31 @@ export function MomentDetailPage() {
           El momento ya fue lanzado: su configuración no se puede modificar.
         </p>
       )}
+
+      {tab === 'data' && <DataTab moment={moment} periods={periods} onChange={replace} />}
+      {tab === 'rubric' && (
+        <RubricTab moment={moment} onChange={async () => replace(await momentService.get(moment.id))} />
+      )}
+    </div>
+  )
+}
+
+/** "Datos y ventanas" (AD-02): el formulario del momento y, sin lanzar, la opción de eliminarlo. */
+function DataTab({
+  moment,
+  periods,
+  onChange,
+}: {
+  moment: MomentDetail
+  periods: AcademicPeriod[]
+  onChange: (moment: MomentDetail) => void
+}) {
+  const navigate = useNavigate()
+  const [notice, setNotice] = useState<string | null>(null)
+  const launched = moment.status === 'LAUNCHED'
+
+  return (
+    <>
       {notice && (
         <p role="status" className="bg-muted rounded-md px-3 py-2 text-sm">
           {notice}
@@ -89,18 +133,15 @@ export function MomentDetailPage() {
         submitLabel="Guardar cambios"
         onSubmit={async (values) => {
           setNotice(null)
-          replace(await momentService.update(moment.id, toMomentData(values)))
+          onChange(await momentService.update(moment.id, toMomentData(values)))
           setNotice('Se guardaron los cambios del momento.')
         }}
       />
 
       {!launched && (
-        <DeleteSection
-          moment={moment}
-          onDeleted={() => navigate(`/moments?periodId=${moment.periodId}`)}
-        />
+        <DeleteSection moment={moment} onDeleted={() => navigate(`/moments?periodId=${moment.periodId}`)} />
       )}
-    </div>
+    </>
   )
 }
 

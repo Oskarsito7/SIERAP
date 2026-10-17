@@ -44,11 +44,19 @@ export interface PerformanceLevel {
   score: number
 }
 
+/** Nivel de un criterio en la configuración del momento, con su orden de presentación. */
+export interface MomentLevel extends PerformanceLevel {
+  displayOrder: number
+}
+
 /** Criterio de evaluación de un RAP. */
 export interface EvaluationCriterion {
   id: number
   description: string
-  levels: PerformanceLevel[]
+  displayOrder: number
+  /** Puntaje de su nivel más alto. */
+  maxScore: number
+  levels: MomentLevel[]
 }
 
 /** RAP (resultado de aprendizaje) de un momento. */
@@ -99,4 +107,24 @@ export interface CopyMomentsRequest {
   fromPeriodId: number
   toPeriodId: number
   programId?: number
+}
+
+/** Cuerpo de `POST /api/moments/{id}/learning-outcomes` (y de su `PATCH`, con lo que cambie). */
+export interface LearningOutcomeRequest {
+  code: string
+  description: string
+}
+
+/** Cuerpo de `POST /api/learning-outcomes/{id}/criteria`; sin `displayOrder`, va de último. */
+export interface CriterionRequest {
+  description: string
+  displayOrder?: number
+}
+
+/** Cuerpo de `POST /api/criteria/{id}/levels`; el puntaje es al menos 0, con hasta 2 decimales. */
+export interface LevelRequest {
+  name: string
+  description?: string | null
+  score: number
+  displayOrder?: number
 }
