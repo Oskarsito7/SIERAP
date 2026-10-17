@@ -94,7 +94,7 @@ export const routes: RouteObject[] = [
                   </RequireRole>
                 ),
               },
-              ...(['data', 'rubric'] as const).map((tab) => ({
+              ...(['data', 'rubric', 'weights', 'groups'] as const).map((tab) => ({
                 path: tab === 'data' ? 'moments/:id' : `moments/:id/${tab}`,
                 element: (
                   <RequireRole roles={['ADMIN']}>

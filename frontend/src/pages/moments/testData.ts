@@ -21,5 +21,8 @@ export function programFixture(overrides: Partial<Program> = {}): Program {
 
 /** Detalle de prueba del Momento 1, sin RAP. */
 export function momentDetailFixture(overrides: Partial<MomentDetail> = {}): MomentDetail {
-  return { ...momentFixture(), maxScore: 0, learningOutcomes: [], ...overrides }
+  return {
+    ...momentFixture(), teacherWeight: 100, evaluatorWeights: [], totalWeight: 100, maxScore: 0, learningOutcomes: [],
+    ...overrides,
+  }
 }

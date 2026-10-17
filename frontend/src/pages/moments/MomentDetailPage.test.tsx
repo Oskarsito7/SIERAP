@@ -1,4 +1,4 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter, Route, Routes } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -11,7 +11,7 @@ import { momentDetailFixture, periodFixture } from './testData'
 
 vi.mock('@/services/api/catalogService', () => ({ catalogService: { periods: vi.fn() } }))
 vi.mock('@/services/api/momentService', () => ({
-  momentService: { get: vi.fn(), update: vi.fn(), remove: vi.fn() },
+  momentService: { get: vi.fn(), update: vi.fn(), remove: vi.fn(), launchCheck: vi.fn(), launch: vi.fn() },
 }))
 
 const get = vi.mocked(momentService.get)
@@ -109,5 +109,21 @@ describe('MomentDetailPage', () => {
     expect(screen.getByRole('link', { name: 'Datos y ventanas' })).toHaveAttribute('href', '/moments/1')
     expect(screen.getByText(/El momento todavía no tiene RAP/)).toBeInTheDocument()
     expect(screen.queryByLabelText('Nombre')).not.toBeInTheDocument()
+  })
+  it('launches the moment from its header and locks the configuration', async () => {
+    get.mockResolvedValue(momentDetailFixture())
+    vi.mocked(momentService.launchCheck).mockResolvedValue({ momentId: 1, canLaunch: true, problems: [],
+      minMembers: 3, groupsBelowMinimum: [], evaluatorTypesWithoutWeight: [] })
+    vi.mocked(momentService.launch).mockResolvedValue(momentDetailFixture({ status: 'LAUNCHED' }))
+    renderPage()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Lanzar momento' }))
+    const panel = screen.getByRole('region', { name: 'Lanzar Momento 1' })
+    await userEvent.click(await within(panel).findByRole('button', { name: 'Lanzar momento' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Se lanzó el momento')
+    expect(screen.getByRole('note')).toHaveTextContent('El momento ya fue lanzado')
+    expect(screen.getByLabelText('Nombre')).toBeDisabled()
+    expect(screen.queryByRole('button', { name: 'Lanzar momento' })).not.toBeInTheDocument()
   })
 })

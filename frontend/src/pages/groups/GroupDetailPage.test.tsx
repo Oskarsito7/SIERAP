@@ -39,7 +39,8 @@ const members = [
 ]
 
 function momentDetail(overrides = {}): MomentDetail {
-  return { ...momentFixture(overrides), maxScore: 5, learningOutcomes: [] }
+  return { ...momentFixture(overrides), teacherWeight: 100, evaluatorWeights: [], totalWeight: 100, maxScore: 5,
+    learningOutcomes: [] }
 }
 
 function apiError(status: number, message: string): AxiosError {
