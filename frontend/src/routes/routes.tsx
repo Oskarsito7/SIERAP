@@ -16,6 +16,9 @@ import { ExternalEvaluatorsPage } from '@/pages/externalEvaluators/ExternalEvalu
 import { GroupDetailPage } from '@/pages/groups/GroupDetailPage'
 import { TeacherGroupsPage } from '@/pages/groups/TeacherGroupsPage'
 import { HomePage } from '@/pages/HomePage'
+import { MomentDetailPage } from '@/pages/moments/MomentDetailPage'
+import { MomentsPage } from '@/pages/moments/MomentsPage'
+import { NewMomentPage } from '@/pages/moments/NewMomentPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { RegistrationCodesPage } from '@/pages/registrationCodes/RegistrationCodesPage'
 import { MomentGroupsPage } from '@/pages/student/MomentGroupsPage'
@@ -31,6 +34,7 @@ import { RequireRole } from './RequireRole'
 const MENU_PAGES: Record<string, ReactNode> = {
   '/groups': <TeacherGroupsPage />,
   '/teachers': <TeachersPage />,
+  '/moments': <MomentsPage />,
   '/external-evaluators': <ExternalEvaluatorsPage />,
   '/registration-codes': <RegistrationCodesPage />,
   '/moment-groups': <MomentGroupsPage />,
@@ -82,6 +86,22 @@ export const routes: RouteObject[] = [
                   </RequireRole>
                 ),
               })),
+              {
+                path: 'moments/new',
+                element: (
+                  <RequireRole roles={['ADMIN']}>
+                    <NewMomentPage />
+                  </RequireRole>
+                ),
+              },
+              {
+                path: 'moments/:id',
+                element: (
+                  <RequireRole roles={['ADMIN']}>
+                    <MomentDetailPage />
+                  </RequireRole>
+                ),
+              },
               {
                 path: 'assigned-groups/:id',
                 element: (
