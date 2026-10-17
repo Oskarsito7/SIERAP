@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, Trash2 } from 'lucide-react'
+import { ArrowLeft, Rocket, Trash2 } from 'lucide-react'
 import { Link, NavLink, useNavigate, useParams } from 'react-router'
 
 import { LoadStatus } from '@/components/LoadStatus'
@@ -18,21 +18,27 @@ import { MomentForm } from './MomentForm'
 import { toMomentData, toMomentForm } from './momentFormValues'
 import { momentSteps } from './momentPhase'
 import { MomentStatusBadge } from './MomentStatusBadge'
+import { GroupsTab } from './GroupsTab'
+import { LaunchPanel } from './LaunchPanel'
 import { RubricTab } from './RubricTab'
+import { WeightsTab } from './WeightsTab'
 
 /** Pestañas de la configuración de un momento, cada una con su ruta. */
-export type MomentTab = 'data' | 'rubric'
+export type MomentTab = 'data' | 'rubric' | 'weights' | 'groups'
 
 const TABS: { tab: MomentTab; label: string; path: string }[] = [
   { tab: 'data', label: 'Datos y ventanas', path: '' },
   { tab: 'rubric', label: 'RAP, criterios y niveles', path: '/rubric' },
+  { tab: 'weights', label: 'Pesos de la nota', path: '/weights' },
+  { tab: 'groups', label: 'Grupos', path: '/groups' },
 ]
 
 /**
- * Configuración de un momento: el resumen, la línea de tiempo de sus fases y sus
- * pestañas, "Datos y ventanas" (wireframe AD-02) y "RAP, criterios y niveles" (AD-03).
- * Mientras está en configuración se edita; una vez lanzado, todo queda de solo lectura
- * (ADR-012) y el backend responde 422 a cualquier cambio.
+ * Configuración de un momento: el resumen, la línea de tiempo de sus fases, el botón
+ * para lanzarlo y sus pestañas: "Datos y ventanas" (wireframe AD-02), "RAP, criterios y
+ * niveles" (AD-03), "Pesos de la nota" (AD-04) y "Grupos" (AD-05). Mientras está en
+ * configuración se edita; una vez lanzado, todo queda de solo lectura (ADR-012) y el
+ * backend responde 422 a cualquier cambio.
  */
 export function MomentDetailPage({ tab = 'data' }: { tab?: MomentTab }) {
   const id = Number(useParams().id)
@@ -40,6 +46,8 @@ export function MomentDetailPage({ tab = 'data' }: { tab?: MomentTab }) {
     const [moment, periods] = await Promise.all([momentService.get(id), catalogService.periods()])
     return { moment, periods }
   }, [id])
+  const [launching, setLaunching] = useState(false)
+  const [launchedNotice, setLaunchedNotice] = useState(false)
 
   if (data.state.kind !== 'success') {
     return (
@@ -53,22 +61,48 @@ export function MomentDetailPage({ tab = 'data' }: { tab?: MomentTab }) {
   const { moment, periods } = data.state.data
   const launched = moment.status === 'LAUNCHED'
   const replace = (updated: MomentDetail) => data.setData((current) => ({ ...current, moment: updated }))
+  const refresh = async () => replace(await momentService.get(moment.id))
 
   return (
     <div className="flex flex-col gap-6">
       <BackLink periodId={moment.periodId} />
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold tracking-tight">
-          {moment.name} · {moment.programName}
-        </h1>
-        <div className="flex flex-wrap items-center gap-3 text-sm">
-          <MomentStatusBadge status={moment.status} />
-          <span className="text-muted-foreground">
-            {moment.subject} · {moment.periodCode} · semestres {moment.semesterFrom} a {moment.semesterTo} ·
-            grupos de {moment.minMembers} a {moment.maxMembers}
-          </span>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col gap-2">
+          <h1 className="text-2xl font-bold tracking-tight">
+            {moment.name} · {moment.programName}
+          </h1>
+          <div className="flex flex-wrap items-center gap-3 text-sm">
+            <MomentStatusBadge status={moment.status} />
+            <span className="text-muted-foreground">
+              {moment.subject} · {moment.periodCode} · semestres {moment.semesterFrom} a {moment.semesterTo} ·
+              grupos de {moment.minMembers} a {moment.maxMembers}
+            </span>
+          </div>
         </div>
+        {!launched && (
+          <Button onClick={() => setLaunching((open) => !open)}>
+            <Rocket aria-hidden />
+            Lanzar momento
+          </Button>
+        )}
       </div>
+
+      {launching && !launched && (
+        <LaunchPanel
+          moment={moment}
+          onCancel={() => setLaunching(false)}
+          onLaunched={(updated) => {
+            setLaunching(false)
+            setLaunchedNotice(true)
+            replace(updated)
+          }}
+        />
+      )}
+      {launchedNotice && (
+        <p role="status" className="bg-muted rounded-md px-3 py-2 text-sm">
+          Se lanzó el momento: la conformación de grupos quedó cerrada y su configuración ya no se puede modificar.
+        </p>
+      )}
 
       <Timeline moment={moment} />
 
@@ -96,9 +130,9 @@ export function MomentDetailPage({ tab = 'data' }: { tab?: MomentTab }) {
       )}
 
       {tab === 'data' && <DataTab moment={moment} periods={periods} onChange={replace} />}
-      {tab === 'rubric' && (
-        <RubricTab moment={moment} onChange={async () => replace(await momentService.get(moment.id))} />
-      )}
+      {tab === 'rubric' && <RubricTab moment={moment} onChange={refresh} />}
+      {tab === 'weights' && <WeightsTab moment={moment} onChange={refresh} />}
+      {tab === 'groups' && <GroupsTab moment={moment} />}
     </div>
   )
 }

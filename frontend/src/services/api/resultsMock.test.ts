@@ -35,6 +35,7 @@ describe('sampleGroupResults', () => {
     vi.mocked(groupService.get).mockResolvedValue(groupFixture({ evaluators: [{ id: 70, fullName: 'Carlos Pérez', evaluatorType: 'Egresado', countsInGrade: true }] }))
     vi.mocked(momentService.get).mockResolvedValue({
       ...momentFixture({ gradingEnd: '2999-12-31' }), maxScore: 3, learningOutcomes: [],
+      teacherWeight: 100, evaluatorWeights: [], totalWeight: 100,
     })
     vi.mocked(evaluationService.list).mockResolvedValue([
       { id: 15, evaluator: { id: 12, fullName: 'Marta Díaz', kind: 'Docente' }, status: 'SUBMITTED',

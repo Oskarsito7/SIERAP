@@ -68,8 +68,21 @@ export interface LearningOutcome {
   criteria: EvaluationCriterion[]
 }
 
-/** Detalle de un momento: el resumen más su estructura de evaluación (`MomentDetail`). */
+/** Peso de un tipo de evaluador externo en la nota del momento (ADR-018). */
+export interface EvaluatorWeight {
+  evaluatorTypeId: number
+  evaluatorTypeName: string
+  /** Porcentaje mayor que 0 y hasta 100. */
+  weight: number
+}
+
+/** Detalle de un momento: el resumen más sus pesos y su estructura de evaluación (`MomentDetail`). */
 export interface MomentDetail extends MomentSummary {
+  /** Porcentaje de la nota que aporta el docente; 100 en un momento nuevo. */
+  teacherWeight: number
+  evaluatorWeights: EvaluatorWeight[]
+  /** Docente más tipos de evaluador; debe ser 100 para lanzar. */
+  totalWeight: number
   maxScore: number
   learningOutcomes: LearningOutcome[]
 }
@@ -127,4 +140,24 @@ export interface LevelRequest {
   description?: string | null
   score: number
   displayOrder?: number
+}
+
+/** Cuerpo de `PUT /api/moments/{id}/weights`: reemplaza todos los pesos del momento. */
+export interface MomentWeightsRequest {
+  teacherWeight: number
+  evaluatorWeights: { evaluatorTypeId: number; weight: number }[]
+}
+
+/** Lo que muestra la pantalla antes de lanzar un momento (`LaunchCheck` en `docs/07`). */
+export interface LaunchCheck {
+  momentId: number
+  /** Sin problemas y todavía en configuración. */
+  canLaunch: boolean
+  /** Todo lo que bloquea el lanzamiento, de una vez. */
+  problems: string[]
+  minMembers: number
+  /** No bloquean: piden confirmación y quedan como están. */
+  groupsBelowMinimum: { id: number; name: string; teacher: { id: number; fullName: string }; memberCount: number }[]
+  /** Tipos asignados en sus grupos pero sin peso: su evaluación no contará. */
+  evaluatorTypesWithoutWeight: { evaluatorTypeId: number; evaluatorTypeName: string; evaluatorCount: number }[]
 }
