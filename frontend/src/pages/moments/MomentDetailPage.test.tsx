@@ -18,11 +18,12 @@ const get = vi.mocked(momentService.get)
 const update = vi.mocked(momentService.update)
 const remove = vi.mocked(momentService.remove)
 
-function renderPage() {
+function renderPage(path = '/moments/1') {
   render(
-    <MemoryRouter initialEntries={['/moments/1']}>
+    <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/moments/:id" element={<MomentDetailPage />} />
+        <Route path="/moments/:id/rubric" element={<MomentDetailPage tab="rubric" />} />
         <Route path="/moments" element={<p>Lista de momentos</p>} />
       </Routes>
     </MemoryRouter>,
@@ -98,5 +99,15 @@ describe('MomentDetailPage', () => {
 
     expect(await screen.findByRole('button', { name: 'Eliminar momento' })).toBeDisabled()
     expect(screen.getByText(/ya habilitaron 2 grupos/)).toBeInTheDocument()
+  })
+  it('shows the rubric in its tab', async () => {
+    get.mockResolvedValue(momentDetailFixture())
+    renderPage('/moments/1/rubric')
+
+    const tab = await screen.findByRole('link', { name: 'RAP, criterios y niveles' })
+    expect(tab).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Datos y ventanas' })).toHaveAttribute('href', '/moments/1')
+    expect(screen.getByText(/El momento todavía no tiene RAP/)).toBeInTheDocument()
+    expect(screen.queryByLabelText('Nombre')).not.toBeInTheDocument()
   })
 })

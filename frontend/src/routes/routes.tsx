@@ -94,14 +94,14 @@ export const routes: RouteObject[] = [
                   </RequireRole>
                 ),
               },
-              {
-                path: 'moments/:id',
+              ...(['data', 'rubric'] as const).map((tab) => ({
+                path: tab === 'data' ? 'moments/:id' : `moments/:id/${tab}`,
                 element: (
                   <RequireRole roles={['ADMIN']}>
-                    <MomentDetailPage />
+                    <MomentDetailPage tab={tab} />
                   </RequireRole>
                 ),
-              },
+              })),
               {
                 path: 'assigned-groups/:id',
                 element: (
