@@ -7,6 +7,8 @@ export interface EvaluatorType {
   description: string | null
   /** Solo los activos se asignan a evaluadores nuevos. */
   active: boolean
+  /** Evaluadores externos de este tipo. */
+  evaluatorCount: number
 }
 
 /** Cuerpo de `POST /api/external-evaluators` (`NewExternalEvaluatorRequest`). */

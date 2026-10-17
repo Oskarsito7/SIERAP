@@ -17,9 +17,9 @@ const onChange = vi.fn<() => Promise<void>>()
 describe('WeightsTab', () => {
   beforeEach(() => {
     vi.mocked(accountService.listEvaluatorTypes).mockResolvedValue([
-      { id: 1, name: 'Empresario', description: null, active: true },
-      { id: 2, name: 'Egresado', description: null, active: true },
-      { id: 3, name: 'Investigador', description: null, active: false },
+      { id: 1, name: 'Empresario', description: null, active: true, evaluatorCount: 0 },
+      { id: 2, name: 'Egresado', description: null, active: true, evaluatorCount: 0 },
+      { id: 3, name: 'Investigador', description: null, active: false, evaluatorCount: 0 },
     ])
     updateWeights.mockReset().mockResolvedValue()
     onChange.mockReset().mockResolvedValue()
