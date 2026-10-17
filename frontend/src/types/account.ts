@@ -1,4 +1,4 @@
-import type { DocumentType, UserSummary } from './auth'
+import type { DocumentType } from './auth'
 
 /** Tipo de evaluador del catálogo (espejo de `EvaluatorTypeResponse`). */
 export interface EvaluatorType {
@@ -24,18 +24,7 @@ export interface NewExternalEvaluatorRequest {
   graduationYear?: number
 }
 
-/**
- * Docente en la lista de "Docentes" del admin (wireframe AD-06). Propuesta para
- * `GET /api/teachers`, que hoy devuelve `UserSummary` sin documento ni grupos.
- */
-export interface TeacherSummary extends UserSummary {
-  documentType: DocumentType
-  documentNumber: string
-  /** Grupos que habilitó en el periodo actual. */
-  groupCount: number
-}
-
-/** Cuerpo de `POST /api/teachers`; la facultad es la del admin que lo crea. */
+/** Datos de un docente nuevo; la facultad la agrega el servicio (la del admin). */
 export interface NewTeacherRequest {
   firstNames: string
   lastNames: string

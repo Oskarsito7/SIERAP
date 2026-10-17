@@ -2,7 +2,6 @@ import { useState, type FormEvent } from 'react'
 import { UserPlus } from 'lucide-react'
 
 import { LoadStatus } from '@/components/LoadStatus'
-import { SampleDataNotice } from '@/components/SampleDataNotice'
 import { FormError, FormField } from '@/components/forms/FormField'
 import { SelectField } from '@/components/forms/SelectField'
 import { Badge } from '@/components/ui/badge'
@@ -10,18 +9,47 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DOCUMENT_TYPES } from '@/lib/documentTypes'
 import { useLoad } from '@/lib/useLoad'
+import { accountService } from '@/services/api/accountService'
+import { catalogService } from '@/services/api/catalogService'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
-import { TEACHERS_API_READY, teacherService } from '@/services/api/teacherService'
-import type { NewTeacherRequest, TeacherSummary } from '@/types/account'
-import type { DocumentType } from '@/types/auth'
+import { teacherService } from '@/services/api/teacherService'
+import type { NewTeacherRequest } from '@/types/account'
+import type { DocumentType, UserSummary } from '@/types/auth'
+import type { Faculty } from '@/types/catalog'
 
 /**
- * Docentes de la facultad del admin (wireframe AD-06): la lista con su documento y sus
- * grupos del periodo, el reenvío del enlace para crear la contraseña, la desactivación
- * de la cuenta y el formulario para crear uno nuevo (ADR-017).
+ * Docentes de la facultad del admin (wireframe AD-06): la lista, el reenvío del enlace
+ * para crear la contraseña, la desactivación de la cuenta y el formulario para crear uno
+ * nuevo (ADR-017). La facultad es la del admin (`GET /api/faculties` le devuelve solo la
+ * suya). El documento y los grupos del periodo del wireframe esperan que la API los
+ * agregue a la lista de docentes.
  */
 export function TeachersPage() {
-  const teachers = useLoad(() => teacherService.list(), [])
+  const faculties = useLoad(() => catalogService.faculties(), [])
+
+  if (faculties.state.kind !== 'success') {
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="text-2xl font-bold tracking-tight">Docentes</h1>
+        <LoadStatus state={faculties.state} onRetry={faculties.reload} label="Cargando tu facultad…" />
+      </div>
+    )
+  }
+
+  const faculty = faculties.state.data[0]
+  if (!faculty) {
+    return (
+      <div className="flex flex-col gap-6">
+        <h1 className="text-2xl font-bold tracking-tight">Docentes</h1>
+        <p className="text-muted-foreground text-sm">Tu cuenta no tiene una facultad asignada.</p>
+      </div>
+    )
+  }
+  return <FacultyTeachers faculty={faculty} />
+}
+
+function FacultyTeachers({ faculty }: { faculty: Faculty }) {
+  const teachers = useLoad(() => teacherService.list(faculty.id), [faculty.id])
   const [search, setSearch] = useState('')
   const [creating, setCreating] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
@@ -31,25 +59,25 @@ export function TeachersPage() {
   const term = search.trim().toLowerCase()
   const visible = term
     ? list.filter((teacher) =>
-        `${teacher.fullName} ${teacher.documentNumber} ${teacher.email}`.toLowerCase().includes(term),
+        `${teacher.fullName} ${teacher.email}`.toLowerCase().includes(term),
       )
     : list
 
-  const replace = (updated: TeacherSummary) =>
+  const replace = (updated: UserSummary) =>
     teachers.setData((current) => current.map((teacher) => (teacher.id === updated.id ? updated : teacher)))
 
-  const resendLink = async (teacher: TeacherSummary) => {
+  const resendLink = async (teacher: UserSummary) => {
     setNotice(null)
     setError(null)
     try {
-      await teacherService.resendPasswordLink(teacher.id)
+      await accountService.resendPasswordLink(teacher.id)
       setNotice(`Se envió de nuevo el enlace a ${teacher.email}.`)
     } catch (resendError) {
       setError(getErrorMessage(resendError))
     }
   }
 
-  const toggleActive = async (teacher: TeacherSummary) => {
+  const toggleActive = async (teacher: UserSummary) => {
     const question = `¿Desactivar la cuenta de ${teacher.fullName}? No podrá iniciar sesión.`
     if (teacher.active && !window.confirm(question)) return
     setNotice(null)
@@ -69,7 +97,7 @@ export function TeachersPage() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold tracking-tight">Docentes</h1>
           <p className="text-muted-foreground max-w-2xl text-sm">
-            Los docentes de tu facultad. Cada docente nuevo recibe un correo para crear su contraseña.
+            Los docentes de la {faculty.name}. Cada docente nuevo recibe un correo para crear su contraseña.
           </p>
         </div>
         <Button onClick={() => setCreating((open) => !open)}>
@@ -78,12 +106,9 @@ export function TeachersPage() {
         </Button>
       </div>
 
-      {!TEACHERS_API_READY && (
-        <SampleDataNotice reason="la API todavía no usa la facultad del admin; los cambios no se guardan." />
-      )}
-
       {creating && (
         <NewTeacherForm
+          facultyId={faculty.id}
           onCancel={() => setCreating(false)}
           onCreated={(teacher) => {
             setCreating(false)
@@ -107,7 +132,7 @@ export function TeachersPage() {
         <CardContent className="flex flex-col gap-4">
           <div className="max-w-sm">
             <FormField
-              label="Buscar por nombre, documento o correo"
+              label="Buscar por nombre o correo"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
@@ -125,8 +150,6 @@ export function TeachersPage() {
                   <tr>
                     <th className="py-2 pr-4 font-medium">Nombre</th>
                     <th className="py-2 pr-4 font-medium">Correo</th>
-                    <th className="py-2 pr-4 font-medium">Documento</th>
-                    <th className="py-2 pr-4 text-right font-medium">Grupos del periodo</th>
                     <th className="py-2 pr-4 font-medium">Estado</th>
                     <th className="py-2 font-medium">
                       <span className="sr-only">Acciones</span>
@@ -138,10 +161,6 @@ export function TeachersPage() {
                     <tr key={teacher.id} className="border-b last:border-0">
                       <td className="py-3 pr-4">{teacher.fullName}</td>
                       <td className="py-3 pr-4 break-all">{teacher.email}</td>
-                      <td className="py-3 pr-4 whitespace-nowrap">
-                        {teacher.documentType} {teacher.documentNumber}
-                      </td>
-                      <td className="py-3 pr-4 text-right">{teacher.groupCount}</td>
                       <td className="py-3 pr-4">
                         <Badge variant={teacher.active ? 'default' : 'secondary'}>
                           {teacher.active ? 'Activo' : 'Desactivado'}
@@ -190,10 +209,12 @@ const EMPTY_FORM: TeacherForm = { firstNames: '', lastNames: '', documentType: '
 
 /** Formulario de un docente nuevo; queda en la facultad del admin. */
 function NewTeacherForm({
+  facultyId,
   onCreated,
   onCancel,
 }: {
-  onCreated: (teacher: TeacherSummary) => void
+  facultyId: number
+  onCreated: (teacher: UserSummary) => void
   onCancel: () => void
 }) {
   const [form, setForm] = useState<TeacherForm>(EMPTY_FORM)
@@ -214,7 +235,7 @@ function NewTeacherForm({
 
     setSaving(true)
     try {
-      onCreated(await teacherService.create(toRequest(form)))
+      onCreated(await teacherService.create(facultyId, toRequest(form)))
     } catch (createError) {
       setFieldErrors(getFieldErrors(createError))
       setError(getErrorMessage(createError))
