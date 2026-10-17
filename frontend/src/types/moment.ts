@@ -18,8 +18,12 @@ export interface MomentSummary {
   periodCode: string
   semesterFrom: number
   semesterTo: number
+  /** Texto libre que define cada programa (ADR-010), p. ej. "Bajo". */
+  requirementLevel: string
   minMembers: number
   maxMembers: number
+  /** Grupos que los docentes habilitaron en el momento. */
+  groupCount: number
   status: MomentStatus
   groupFormationStart: string | null
   groupFormationEnd: string | null
@@ -60,4 +64,39 @@ export interface LearningOutcome {
 export interface MomentDetail extends MomentSummary {
   maxScore: number
   learningOutcomes: LearningOutcome[]
+}
+
+/** Ventanas de fechas de un momento; cada una va completa o vacía (`null`). */
+export interface MomentWindows {
+  groupFormationStart: string | null
+  groupFormationEnd: string | null
+  submissionStart: string | null
+  submissionEnd: string | null
+  gradingStart: string | null
+  gradingEnd: string | null
+}
+
+/** Datos generales de un momento que el admin define al crearlo o editarlo. */
+export interface MomentData extends MomentWindows {
+  periodId: number
+  number: number
+  name: string
+  subject: string
+  semesterFrom: number
+  semesterTo: number
+  requirementLevel: string
+  minMembers: number
+  maxMembers: number
+}
+
+/** Cuerpo de `POST /api/moments` (`NewMoment` en `docs/07`). */
+export interface NewMomentRequest extends MomentData {
+  programId: number
+}
+
+/** Cuerpo de `POST /api/moments/copy`: sin `programId`, copia todos los programas del alcance. */
+export interface CopyMomentsRequest {
+  fromPeriodId: number
+  toPeriodId: number
+  programId?: number
 }

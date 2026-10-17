@@ -1,8 +1,14 @@
-import type { MomentDetail, MomentSummary } from '@/types/moment'
+import type {
+  CopyMomentsRequest,
+  MomentData,
+  MomentDetail,
+  MomentSummary,
+  NewMomentRequest,
+} from '@/types/moment'
 
 import { httpClient } from './httpClient'
 
-/** Consulta de momentos (`/api/moments`, `docs/07-contrato-api.md`). */
+/** Momentos (`/api/moments`, `docs/07-contrato-api.md`): consulta y configuración. */
 export const momentService = {
   /**
    * Momentos de un periodo dentro del alcance del usuario. Sin `periodId`, los del
@@ -15,9 +21,35 @@ export const momentService = {
     return data
   },
 
-  /** Momento con sus RAP, criterios y niveles. */
+  /** Momento con sus pesos, RAP, criterios y niveles. */
   async get(id: number): Promise<MomentDetail> {
     const { data } = await httpClient.get<MomentDetail>(`/moments/${id}`)
+    return data
+  },
+
+  /** Crea un momento en configuración (admin de la facultad del programa o super_admin). */
+  async create(request: NewMomentRequest): Promise<MomentDetail> {
+    const { data } = await httpClient.post<MomentDetail>('/moments', request)
+    return data
+  },
+
+  /**
+   * Cambia los datos del momento mientras sigue en configuración. Cada ventana se
+   * envía con sus dos fechas, o con las dos en `null` para vaciarla.
+   */
+  async update(id: number, changes: Partial<MomentData>): Promise<MomentDetail> {
+    const { data } = await httpClient.patch<MomentDetail>(`/moments/${id}`, changes)
+    return data
+  },
+
+  /** Elimina un momento sin lanzar y sin grupos, con toda su configuración. */
+  async remove(id: number): Promise<void> {
+    await httpClient.delete(`/moments/${id}`)
+  },
+
+  /** Copia los momentos de un periodo a otro, sin las ventanas de fechas (ADR-010). */
+  async copy(request: CopyMomentsRequest): Promise<MomentSummary[]> {
+    const { data } = await httpClient.post<MomentSummary[]>('/moments/copy', request)
     return data
   },
 }
