@@ -31,3 +31,30 @@ export interface AcademicPeriod {
   upcEvaluationDeadline: string
   status: PeriodStatus
 }
+
+/** Parámetro global del sistema (`GlobalParameter` en `docs/07`). */
+export interface GlobalParameter {
+  key: string
+  value: string
+  description: string | null
+}
+
+/** Cuerpo para crear o editar una facultad o un programa (el programa lleva su facultad al crearlo). */
+export interface CatalogEntryRequest {
+  code: string
+  name: string
+}
+
+/** Cuerpo para crear o editar un periodo: siempre van los cuatro campos. */
+export interface PeriodRequest {
+  code: string
+  startDate: string
+  endDate: string
+  upcEvaluationDeadline: string
+}
+
+/** Cuerpo para crear o editar un tipo de evaluador. */
+export interface EvaluatorTypeRequest {
+  name: string
+  description: string | null
+}

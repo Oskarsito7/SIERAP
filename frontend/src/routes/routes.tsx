@@ -10,6 +10,10 @@ import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
 import { RegisterPage } from '@/pages/auth/RegisterPage'
 import { SetPasswordPage } from '@/pages/auth/SetPasswordPage'
+import { EvaluatorTypesPage } from '@/pages/catalogs/EvaluatorTypesPage'
+import { FacultiesPage } from '@/pages/catalogs/FacultiesPage'
+import { ParametersPage } from '@/pages/catalogs/ParametersPage'
+import { PeriodsPage } from '@/pages/catalogs/PeriodsPage'
 import { AssignedGroupPage } from '@/pages/evaluator/AssignedGroupPage'
 import { AssignedGroupsPage } from '@/pages/evaluator/AssignedGroupsPage'
 import { ExternalEvaluatorsPage } from '@/pages/externalEvaluators/ExternalEvaluatorsPage'
@@ -35,6 +39,10 @@ const MENU_PAGES: Record<string, ReactNode> = {
   '/groups': <TeacherGroupsPage />,
   '/teachers': <TeachersPage />,
   '/moments': <MomentsPage />,
+  '/faculties': <FacultiesPage />,
+  '/periods': <PeriodsPage />,
+  '/parameters': <ParametersPage />,
+  '/evaluator-types': <EvaluatorTypesPage />,
   '/external-evaluators': <ExternalEvaluatorsPage />,
   '/registration-codes': <RegistrationCodesPage />,
   '/moment-groups': <MomentGroupsPage />,
