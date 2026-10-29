@@ -178,6 +178,13 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<UserSummaryResponse> listAdmins(Long facultyId) {
+        findFaculty(facultyId);
+        return adminRepository.findByFacultyId(facultyId).stream().map(UserMapper::toSummary).toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<UserSummaryResponse> listTeachers(AuthenticatedUser actor, Long facultyId) {
         accessScope.requireFaculty(accessScope.loadActor(actor), findFaculty(facultyId).getId());
         return teacherRepository.findByFacultyId(facultyId).stream().map(UserMapper::toSummary).toList();
