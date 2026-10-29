@@ -43,7 +43,8 @@ the three build together at the beginning.
 
 ## 2. Stages
 
-Duration in relative weeks; adjust to the real Moment 1 delivery date. Stages 0–2 are
+Duration in relative weeks; adjust to the real Moment 1 delivery date, which falls
+between November 15 and 30, 2026 (`docs/04`, 2026-10-29). Stages 0–2 are
 **sequential and blocking**; from stage 3 onward there is real parallelism.
 
 ### Stage 0 — Foundations (Week 1) · all 3 together
@@ -220,7 +221,9 @@ AULAWEB's main gap, and therefore what weighs the most in the presentation.
 - Group report.
 - Consolidated report per program/moment.
 - **Comparisons**: semester X vs. semester Y, by year, by program.
-- Export (PDF/Excel — decide the real scope based on the remaining time).
+- Everything on screen with charts. Exporting to PDF or Excel moves to Moment 2
+  (decided on 2026-10-29).
+- Target: done by November 12, to leave the last week for Stage 8.
 
 **Covers RF:** 12.
 

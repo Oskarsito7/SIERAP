@@ -187,10 +187,14 @@ Defined by the project lead on 2026-09-24.
 | Stage 6 split | D3: `individual_grade` (V7), the evaluation endpoints and the screens to grade, the group results and "My grades". D2: the weights in the moment configuration (V9) while finishing Stage 3. D1: the grade calculation (ADR-018 formula) and the two results routes. *(2026-10-02)* |
 | Evaluator type without weight | The evaluation of an external evaluator whose type has no weight in the moment (or 0 %) does not count in the grade. The screen to assign evaluators warns about it but does not block the assignment, because the admin may still be setting the weights. *(2026-10-16)* |
 | Rounding of grades | Averages and weighting keep 16 significant digits; only the result (the total and each RAP, group and individual) is rounded to 2 decimals, half up: 2.995 → 3.00. *(2026-10-16)* |
+| Grade in the domain model | `ProjectGroup` computes the group grade and each individual grade (in total and per RAP) from its submitted evaluations and the weights of its moment, with the `GradeCalculator` utility; the results service only checks who sees them and when. *(2026-10-16)* |
+| Comments of evaluators without weight | The student also sees the comment of an evaluator whose type has no weight: the grade does not count, but the feedback does. *(2026-10-16)* |
+| Reports scope (Stage 7) | On screen with charts: individual report (a student per RAP), group report, consolidated per moment and program, and comparison of semester X vs. Y. Exporting to PDF or Excel moves to Moment 2. *(2026-10-29)* |
+| Bulk upload of students | Moves to Moment 2; students are created one by one or register with a code. *(2026-10-29)* |
+| Moment 1 delivery | Between November 15 and 30, 2026. *(2026-10-29)* |
 
 ## Still to be defined with the team
 
-- Bulk upload of students: file format (CSV or Excel) and columns.
 - What happens if a teacher needs to reassign a group to another teacher in the
   middle of a moment?
 - Do comparative reports require anonymizing student data, or are they always

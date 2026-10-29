@@ -619,7 +619,7 @@ evaluation per group. They grade the group once and may adjust single students
   "final": false,                   // true once the grading window ended
   "maxScore": 5.0,
   "groupGrade": 4.52,               // null while there is no submitted evaluation
-  "groupLearningOutcomes": [ { "id": 10, "code": "RAP1", "score": 0.6, "maxScore": 0.6 } ],
+  "groupLearningOutcomes": [ { "id": 10, "code": "RAP1", "score": 0.6, "maxScore": 0.6 } ], // score null while there is no grade
   "members": [
     {
       "studentId": 40, "fullName": "Juan Rojas",

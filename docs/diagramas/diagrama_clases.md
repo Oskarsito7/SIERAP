@@ -247,7 +247,15 @@ class ProjectGroup {
   +hasEvaluator(e: ExternalEvaluator) boolean
   +nextSubmissionVersion() int
   +getSubmissionToGrade() Submission
-  +getFinalGrade() BigDecimal
+  +getSubmittedEvaluations() List~Evaluation~
+  +getGroupGrade() Optional~BigDecimal~
+  +getGroupScoreFor(outcome: LearningOutcome) Optional~BigDecimal~
+  +getIndividualGrade(s: Student) Optional~BigDecimal~
+  +getIndividualScoreFor(outcome: LearningOutcome, s: Student) Optional~BigDecimal~
+}
+class GradeCalculator {
+  <<utility>>
+  +weightedGrade(scores, weights)$ Optional~BigDecimal~
 }
 class Submission {
   -id: Long
@@ -363,6 +371,7 @@ ProjectGroup "*" -- "*" ExternalEvaluator : assigned
 ProjectGroup "1" *-- "0..*" Submission
 
 ProjectGroup "1" *-- "0..*" Evaluation
+ProjectGroup ..> GradeCalculator : «use»
 Evaluation "*" -- "1" Evaluator : made by
 Evaluation ..> EvaluationStatus : «use»
 Evaluation "1" *-- "1..*" CriterionGrade
@@ -415,6 +424,14 @@ Report ..> Evaluation : «use»
 | Change | Reason |
 |---|---|
 | `IndividualGrade` (new), composed by `Evaluation`, with `adjust()`, `getTotalScoreFor()` and an overload of `getScoreFor()` per student | The group is graded once and every member inherits it; an evaluator can change the level of some criteria for one student, so each student has an individual grade besides the group grade (ADR-018). |
+
+## Stage 6 (2026-10-16 decisions)
+
+| Change | Reason |
+|---|---|
+| `ProjectGroup.getFinalGrade()` becomes `getGroupGrade()`, `getIndividualGrade()` and their per-RAP versions, plus `getSubmittedEvaluations()` | The lead decided that the grade is computed in the domain model: the group has its submitted evaluations and its moment has the weights, so it computes both grades itself. They return `Optional` because there is no grade while no submitted evaluation counts. |
+| `GradeCalculator` (new, utility) and the dependency `ProjectGroup ..> GradeCalculator` | It holds the ADR-018 formula: average within each kind of evaluator, weighting with the moment percentages and spreading the weight of the absent kinds; a kind without weight does not count, and only the result is rounded (decisions of 2026-10-16). |
+| `IndividualGrade` is no longer drawn as designed only | It is built (V7, #21). |
 
 ## Changes compared with the preliminary diagram (Phase 1)
 
