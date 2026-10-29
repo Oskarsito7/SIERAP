@@ -189,7 +189,8 @@ Defined by the project lead on 2026-09-24.
 | Rounding of grades | Averages and weighting keep 16 significant digits; only the result (the total and each RAP, group and individual) is rounded to 2 decimals, half up: 2.995 → 3.00. *(2026-10-16)* |
 | Grade in the domain model | `ProjectGroup` computes the group grade and each individual grade (in total and per RAP) from its submitted evaluations and the weights of its moment, with the `GradeCalculator` utility; the results service only checks who sees them and when. *(2026-10-16)* |
 | Comments of evaluators without weight | The student also sees the comment of an evaluator whose type has no weight: the grade does not count, but the feedback does. *(2026-10-16)* |
-| Reports scope (Stage 7) | On screen with charts: individual report (a student per RAP), group report, consolidated per moment and program, and comparison of semester X vs. Y. Exporting to PDF or Excel moves to Moment 2. *(2026-10-29)* |
+| Reporting scope (Moment 1) | Reports are shown on screen with charts and tables (individual, group, consolidated per moment and comparative across periods); exporting to PDF or Excel is deferred to Moment 2. `Report.generate()` returns a `ReportData` DTO instead of `byte[]`, keeping the polymorphic hierarchy. *(2026-10-29)* |
+| Comparative reports | Handled strictly at an aggregate level, without student names, codes or individual rows: they compare cohort averages, per-RAP achievement percentages and grade distributions across two periods of the same program and moment number. *(2026-10-29)* |
 | Bulk upload of students | Moves to Moment 2; students are created one by one or register with a code. *(2026-10-29)* |
 | Moment 1 delivery | Between November 15 and 30, 2026. *(2026-10-29)* |
 
@@ -197,5 +198,3 @@ Defined by the project lead on 2026-09-24.
 
 - What happens if a teacher needs to reassign a group to another teacher in the
   middle of a moment?
-- Do comparative reports require anonymizing student data, or are they always
-  handled at an aggregate level?

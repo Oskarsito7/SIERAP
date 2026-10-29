@@ -311,20 +311,27 @@ class Report {
   <<abstract>>
   -generatedAt: LocalDateTime
   -period: AcademicPeriod
-  +generate()* byte[]
+  +generate()* ReportData
 }
 class IndividualReport {
   -student: Student
-  +generate() byte[]
+  -group: ProjectGroup
+  +generate() ReportData
 }
 class GroupReport {
   -group: ProjectGroup
-  +generate() byte[]
+  +generate() ReportData
+}
+class MomentReport {
+  -moment: Moment
+  +generate() ReportData
 }
 class ComparativeReport {
+  -momentA: Moment
+  -momentB: Moment
   -periodA: AcademicPeriod
   -periodB: AcademicPeriod
-  +generate() byte[]
+  +generate() ReportData
 }
 
 %% ================= Relationships =================
@@ -384,6 +391,7 @@ IndividualGrade "*" -- "1" PerformanceLevel : level for that student
 
 Report <|-- IndividualReport
 Report <|-- GroupReport
+Report <|-- MomentReport
 Report <|-- ComparativeReport
 Report ..> Evaluation : «use»
 ```
@@ -432,6 +440,12 @@ Report ..> Evaluation : «use»
 | `ProjectGroup.getFinalGrade()` becomes `getGroupGrade()`, `getIndividualGrade()` and their per-RAP versions, plus `getSubmittedEvaluations()` | The lead decided that the grade is computed in the domain model: the group has its submitted evaluations and its moment has the weights, so it computes both grades itself. They return `Optional` because there is no grade while no submitted evaluation counts. |
 | `GradeCalculator` (new, utility) and the dependency `ProjectGroup ..> GradeCalculator` | It holds the ADR-018 formula: average within each kind of evaluator, weighting with the moment percentages and spreading the weight of the absent kinds; a kind without weight does not count, and only the result is rounded (decisions of 2026-10-16). |
 | `IndividualGrade` is no longer drawn as designed only | It is built (V7, #21). |
+
+## Changes of the Stage 7 contract (2026-10-29 decisions)
+
+| Change | Reason |
+|---|---|
+| `Report.generate()` and its subclasses return `ReportData` instead of `byte[]`; new `MomentReport` subclass | In Moment 1 reports are shown on screen with charts and tables (exporting to PDF or Excel is deferred to Moment 2). Each subclass overrides `generate()` and returns its own `ReportData` record (covariant return type), keeping the polymorphic hierarchy for the rubric (RAP2) across the four reports: individual, group, consolidated per moment and comparative across periods. |
 
 ## Changes compared with the preliminary diagram (Phase 1)
 

@@ -28,6 +28,7 @@ import { RegistrationCodesPage } from '@/pages/registrationCodes/RegistrationCod
 import { MomentGroupsPage } from '@/pages/student/MomentGroupsPage'
 import { MyGradesPage } from '@/pages/student/MyGradesPage'
 import { MyGroupPage } from '@/pages/student/MyGroupPage'
+import { StudentsPage } from '@/pages/students/StudentsPage'
 import { TeachersPage } from '@/pages/teachers/TeachersPage'
 
 import { CHANGE_PASSWORD_PATH, GuestOnly, RequireAuth } from './guards'
@@ -37,6 +38,7 @@ import { RequireRole } from './RequireRole'
 /** Páginas del menú que ya existen; las demás muestran "Próximamente". */
 const MENU_PAGES: Record<string, ReactNode> = {
   '/groups': <TeacherGroupsPage />,
+  '/students': <StudentsPage />,
   '/teachers': <TeachersPage />,
   '/moments': <MomentsPage />,
   '/faculties': <FacultiesPage />,

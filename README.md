@@ -127,9 +127,9 @@ Implementation progress, by stages of [`docs/06-plan-de-trabajo.md`](docs/06-pla
   (academic model, users, operations and the CHECK constraints from the PR #3 review);
   the detailed class, hierarchy and layer diagrams regenerated in English.
 - [ ] Stage 2 — Authentication and access control: backend, login screens, layout per
-  role, registration codes, teachers and external evaluators pages done (ADR-017, API
-  contract in `docs/07-contrato-api.md`); the "Administradores" (SA-05) and "Mis
-  estudiantes" (DO-08) screens are pending.
+  role, registration codes, teachers, students and external evaluators pages done
+  (ADR-017, API contract in `docs/07-contrato-api.md`); the "Administradores" screen
+  (SA-05) is pending.
 - [x] **Stage 3 — Academic configuration:** catalogs, moments with windows and
   weights, RAP, criteria and levels, launching and copying the configuration, with the
   admin and super_admin screens.
