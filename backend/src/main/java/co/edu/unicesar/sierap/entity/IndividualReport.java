@@ -7,8 +7,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import co.edu.unicesar.sierap.dto.response.report.IndividualReportData;
 
@@ -57,8 +55,7 @@ public class IndividualReport extends Report {
     @Override
     public IndividualReportData generate() {
         Moment moment = group.getMoment();
-        LocalDate gradingEnd = moment.getGradingEnd();
-        boolean finalResults = gradingEnd != null && today.isAfter(gradingEnd);
+        boolean finalResults = moment.isGradingClosed(today);
 
         BigDecimal individualGrade = group.getIndividualGrade(student).orElse(null);
         BigDecimal groupGrade = group.getGroupGrade().orElse(null);
@@ -93,14 +90,7 @@ public class IndividualReport extends Report {
 
         List<Evaluation> submitted = group.getSubmittedEvaluations();
         int submittedCount = submitted.size();
-        Set<Long> submittedEvaluatorIds = submitted.stream()
-                .map(e -> e.getEvaluator().getId())
-                .collect(Collectors.toSet());
-
-        int pendingCount = (group.getTeacher() != null && submittedEvaluatorIds.contains(group.getTeacher().getId())) ? 0 : 1;
-        pendingCount += (int) group.getEvaluators().stream()
-                .filter(ext -> !submittedEvaluatorIds.contains(ext.getId()))
-                .count();
+        int pendingCount = group.getPendingEvaluationsCount();
 
         return new IndividualReportData(
                 getGeneratedAt(),

@@ -20,25 +20,32 @@ import co.edu.unicesar.sierap.dto.response.report.MomentReportData;
 public class MomentReport extends Report {
 
     private static final MathContext PRECISION = MathContext.DECIMAL64;
-    private static final BigDecimal PASSING_THRESHOLD = new BigDecimal("3.00");
 
     private final Moment moment;
     private final List<ProjectGroup> groups;
     private final LocalDate today;
+    private final GradeScale gradeScale;
 
     /**
-     * Construye un reporte consolidado de momento.
+     * Construye un reporte consolidado de momento con su escala de calificación.
      *
      * @param generatedAt marca de tiempo de generación
      * @param moment      momento consultado
      * @param groups      grupos del momento
      * @param today       fecha actual
+     * @param gradeScale  escala de calificación para aprobación y distribución
      */
-    public MomentReport(LocalDateTime generatedAt, Moment moment, List<ProjectGroup> groups, LocalDate today) {
+    public MomentReport(
+            LocalDateTime generatedAt,
+            Moment moment,
+            List<ProjectGroup> groups,
+            LocalDate today,
+            GradeScale gradeScale) {
         super(generatedAt, moment.getPeriod());
         this.moment = Objects.requireNonNull(moment, "moment no puede ser nulo");
         this.groups = Objects.requireNonNull(groups, "groups no puede ser nulo");
         this.today = Objects.requireNonNull(today, "today no puede ser nulo");
+        this.gradeScale = Objects.requireNonNull(gradeScale, "gradeScale no puede ser nulo");
     }
 
     /**
@@ -59,10 +66,18 @@ public class MomentReport extends Report {
         return groups;
     }
 
+    /**
+     * Escala de calificación aplicada en el reporte.
+     *
+     * @return escala de calificación
+     */
+    public GradeScale getGradeScale() {
+        return gradeScale;
+    }
+
     @Override
     public MomentReportData generate() {
-        LocalDate gradingEnd = moment.getGradingEnd();
-        boolean finalResults = gradingEnd != null && today.isAfter(gradingEnd);
+        boolean finalResults = moment.isGradingClosed(today);
 
         int totalGroups = groups.size();
         List<BigDecimal> groupGrades = new ArrayList<>();
@@ -104,7 +119,7 @@ public class MomentReport extends Report {
                 if (maxGrade == null || g.compareTo(maxGrade) > 0) {
                     maxGrade = g;
                 }
-                if (g.compareTo(PASSING_THRESHOLD) >= 0) {
+                if (gradeScale.isPassing(g, moment.getMaxScore())) {
                     passingCount++;
                 }
             }
@@ -150,7 +165,8 @@ public class MomentReport extends Report {
             ));
         }
 
-        List<MomentReportData.DistributionBucket> distribution = calculateDistribution(studentGrades, gradedStudents);
+        List<MomentReportData.DistributionBucket> distribution =
+                gradeScale.calculateDistribution(studentGrades, gradedStudents, moment.getMaxScore());
 
         return new MomentReportData(
                 getGeneratedAt(),
@@ -179,35 +195,5 @@ public class MomentReport extends Report {
                 outcomes,
                 distribution
         );
-    }
-
-    private static List<MomentReportData.DistributionBucket> calculateDistribution(List<BigDecimal> grades, int totalGraded) {
-        BucketConfig[] configs = new BucketConfig[] {
-                new BucketConfig("0.00 - 2.99", "Bajo", new BigDecimal("0.00"), new BigDecimal("2.99")),
-                new BucketConfig("3.00 - 3.79", "Básico", new BigDecimal("3.00"), new BigDecimal("3.79")),
-                new BucketConfig("3.80 - 4.49", "Alto", new BigDecimal("3.80"), new BigDecimal("4.49")),
-                new BucketConfig("4.50 - 5.00", "Sobresaliente", new BigDecimal("4.50"), new BigDecimal("5.00"))
-        };
-
-        List<MomentReportData.DistributionBucket> result = new ArrayList<>();
-        for (BucketConfig cfg : configs) {
-            int count = 0;
-            for (BigDecimal g : grades) {
-                if (g.compareTo(cfg.min) >= 0 && g.compareTo(cfg.max) <= 0) {
-                    count++;
-                }
-            }
-            BigDecimal pct = BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
-            if (totalGraded > 0) {
-                pct = BigDecimal.valueOf(count)
-                        .multiply(BigDecimal.valueOf(100))
-                        .divide(BigDecimal.valueOf(totalGraded), 2, RoundingMode.HALF_UP);
-            }
-            result.add(new MomentReportData.DistributionBucket(cfg.range, cfg.label, cfg.min, cfg.max, count, pct));
-        }
-        return result;
-    }
-
-    private record BucketConfig(String range, String label, BigDecimal min, BigDecimal max) {
     }
 }

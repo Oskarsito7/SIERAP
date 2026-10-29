@@ -13,6 +13,8 @@ import co.edu.unicesar.sierap.dto.response.report.MomentReportData;
 import co.edu.unicesar.sierap.entity.AcademicPeriod;
 import co.edu.unicesar.sierap.entity.Admin;
 import co.edu.unicesar.sierap.entity.ComparativeReport;
+import co.edu.unicesar.sierap.entity.GlobalParameter;
+import co.edu.unicesar.sierap.entity.GradeScale;
 import co.edu.unicesar.sierap.entity.GroupReport;
 import co.edu.unicesar.sierap.entity.IndividualReport;
 import co.edu.unicesar.sierap.entity.Moment;
@@ -28,6 +30,7 @@ import co.edu.unicesar.sierap.exception.BusinessRuleException;
 import co.edu.unicesar.sierap.exception.ForbiddenAccessException;
 import co.edu.unicesar.sierap.exception.ResourceNotFoundException;
 import co.edu.unicesar.sierap.repository.AcademicPeriodRepository;
+import co.edu.unicesar.sierap.repository.GlobalParameterRepository;
 import co.edu.unicesar.sierap.repository.MomentRepository;
 import co.edu.unicesar.sierap.repository.ProgramRepository;
 import co.edu.unicesar.sierap.repository.ProjectGroupRepository;
@@ -47,24 +50,29 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class ReportServiceImpl implements ReportService {
 
+    public static final String PARAM_PASSING_PERCENTAGE = "report.passing-percentage";
+    public static final String PARAM_GRADE_BANDS = "report.grade-bands";
+
     private final MomentRepository momentRepository;
     private final ProjectGroupRepository projectGroupRepository;
     private final ProgramRepository programRepository;
     private final AcademicPeriodRepository academicPeriodRepository;
     private final UserRepository userRepository;
+    private final GlobalParameterRepository globalParameterRepository;
     private final AccessScope accessScope;
     private final Clock clock;
 
     /**
      * Construye el servicio de reportes.
      *
-     * @param momentRepository         repositorio de momentos
-     * @param projectGroupRepository   repositorio de grupos
-     * @param programRepository        repositorio de programas
-     * @param academicPeriodRepository repositorio de periodos académicos
-     * @param userRepository           repositorio de usuarios
-     * @param accessScope              control de alcance de acceso
-     * @param clock                    reloj inyectable de la aplicación
+     * @param momentRepository          repositorio de momentos
+     * @param projectGroupRepository    repositorio de grupos
+     * @param programRepository         repositorio de programas
+     * @param academicPeriodRepository  repositorio de periodos académicos
+     * @param userRepository            repositorio de usuarios
+     * @param globalParameterRepository repositorio de parámetros globales
+     * @param accessScope               control de alcance de acceso
+     * @param clock                     reloj inyectable de la aplicación
      */
     public ReportServiceImpl(
             MomentRepository momentRepository,
@@ -72,6 +80,7 @@ public class ReportServiceImpl implements ReportService {
             ProgramRepository programRepository,
             AcademicPeriodRepository academicPeriodRepository,
             UserRepository userRepository,
+            GlobalParameterRepository globalParameterRepository,
             AccessScope accessScope,
             Clock clock) {
         this.momentRepository = momentRepository;
@@ -79,6 +88,7 @@ public class ReportServiceImpl implements ReportService {
         this.programRepository = programRepository;
         this.academicPeriodRepository = academicPeriodRepository;
         this.userRepository = userRepository;
+        this.globalParameterRepository = globalParameterRepository;
         this.accessScope = accessScope;
         this.clock = clock;
     }
@@ -173,11 +183,13 @@ public class ReportServiceImpl implements ReportService {
         }
 
         List<ProjectGroup> groups = projectGroupRepository.findByMomentIdOrderByName(momentId);
+        GradeScale gradeScale = loadGradeScale();
         MomentReport report = new MomentReport(
                 LocalDateTime.now(clock),
                 moment,
                 groups,
-                LocalDate.now(clock)
+                LocalDate.now(clock),
+                gradeScale
         );
         return report.generate();
     }
@@ -220,6 +232,7 @@ public class ReportServiceImpl implements ReportService {
 
         List<ProjectGroup> groupsA = projectGroupRepository.findByMomentIdOrderByName(momentA.getId());
         List<ProjectGroup> groupsB = projectGroupRepository.findByMomentIdOrderByName(momentB.getId());
+        GradeScale gradeScale = loadGradeScale();
 
         ComparativeReport report = new ComparativeReport(
                 LocalDateTime.now(clock),
@@ -227,9 +240,21 @@ public class ReportServiceImpl implements ReportService {
                 groupsA,
                 momentB,
                 groupsB,
-                LocalDate.now(clock)
+                LocalDate.now(clock),
+                gradeScale
         );
         return report.generate();
+    }
+
+    private GradeScale loadGradeScale() {
+        GlobalParameter passingParam = globalParameterRepository.findByKey(PARAM_PASSING_PERCENTAGE)
+                .orElseThrow(() -> new BusinessRuleException(
+                        "Falta configurar el parámetro global '" + PARAM_PASSING_PERCENTAGE + "'"));
+        GlobalParameter bandsParam = globalParameterRepository.findByKey(PARAM_GRADE_BANDS)
+                .orElseThrow(() -> new BusinessRuleException(
+                        "Falta configurar el parámetro global '" + PARAM_GRADE_BANDS + "'"));
+
+        return GradeScale.of(passingParam.getValue(), bandsParam.getValue());
     }
 
     private static boolean canSeeGroupReport(User viewer, ProjectGroup group) {

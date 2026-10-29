@@ -8,8 +8,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import co.edu.unicesar.sierap.dto.response.report.GroupReportData;
 
@@ -46,8 +44,7 @@ public class GroupReport extends Report {
     @Override
     public GroupReportData generate() {
         Moment moment = group.getMoment();
-        LocalDate gradingEnd = moment.getGradingEnd();
-        boolean finalResults = gradingEnd != null && today.isAfter(gradingEnd);
+        boolean finalResults = moment.isGradingClosed(today);
 
         BigDecimal groupGrade = group.getGroupGrade().orElse(null);
         BigDecimal maxScore = moment.getMaxScore();
@@ -123,14 +120,7 @@ public class GroupReport extends Report {
 
         List<Evaluation> submitted = group.getSubmittedEvaluations();
         int submittedCount = submitted.size();
-        Set<Long> submittedEvaluatorIds = submitted.stream()
-                .map(e -> e.getEvaluator().getId())
-                .collect(Collectors.toSet());
-
-        int pendingCount = (group.getTeacher() != null && submittedEvaluatorIds.contains(group.getTeacher().getId())) ? 0 : 1;
-        pendingCount += (int) group.getEvaluators().stream()
-                .filter(ext -> !submittedEvaluatorIds.contains(ext.getId()))
-                .count();
+        int pendingCount = group.getPendingEvaluationsCount();
 
         return new GroupReportData(
                 getGeneratedAt(),

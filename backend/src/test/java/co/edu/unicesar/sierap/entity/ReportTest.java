@@ -1,6 +1,7 @@
 package co.edu.unicesar.sierap.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -13,6 +14,8 @@ import co.edu.unicesar.sierap.dto.response.report.IndividualReportData;
 import co.edu.unicesar.sierap.dto.response.report.MomentReportData;
 import co.edu.unicesar.sierap.dto.response.report.ReportData;
 import co.edu.unicesar.sierap.entity.enums.DocumentType;
+import co.edu.unicesar.sierap.entity.enums.MomentStatus;
+import co.edu.unicesar.sierap.exception.BusinessRuleException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -46,9 +49,12 @@ class ReportTest {
     private Student ana;
     private Student beto;
     private ProjectGroup group;
+    private GradeScale defaultGradeScale;
 
     @BeforeEach
     void setUp() {
+        defaultGradeScale = GradeScale.of("60", "Bajo:0;Básico:60;Alto:76;Sobresaliente:90");
+
         period1 = new AcademicPeriod("2026-1", LocalDate.of(2026, 2, 1), LocalDate.of(2026, 6, 30), LocalDate.of(2026, 6, 25));
         ReflectionTestUtils.setField(period1, "id", 1L);
 
@@ -87,6 +93,7 @@ class ReportTest {
         moment2.addLearningOutcome(rap2);
         moment2.setTeacherWeight(new BigDecimal("60"));
         moment2.setEvaluatorWeight(businessType, new BigDecimal("20"));
+        ReflectionTestUtils.setField(moment2, "status", MomentStatus.LAUNCHED);
 
         teacher = new Teacher("Marta", "Díaz", DocumentType.CC, "101", "marta@unicesar.edu.co", "pwd", NOW, faculty);
         ReflectionTestUtils.setField(teacher, "id", 50L);
@@ -132,12 +139,12 @@ class ReportTest {
     void polymorphismReportHierarchy() {
         Report reportInd = new IndividualReport(NOW, ana, group, TODAY);
         Report reportGrp = new GroupReport(NOW, group, TODAY);
-        Report reportMom = new MomentReport(NOW, moment2, List.of(group), TODAY);
+        Report reportMom = new MomentReport(NOW, moment2, List.of(group), TODAY, defaultGradeScale);
 
         // Momento para periodo 1 (para comparative)
         Moment mom1 = createMomentPeriod1();
         ProjectGroup grp1 = createGroupPeriod1(mom1);
-        Report reportComp = new ComparativeReport(NOW, mom1, List.of(grp1), moment2, List.of(group), TODAY);
+        Report reportComp = new ComparativeReport(NOW, mom1, List.of(grp1), moment2, List.of(group), TODAY, defaultGradeScale);
 
         List<Report> reports = List.of(reportInd, reportGrp, reportMom, reportComp);
 
@@ -216,7 +223,7 @@ class ReportTest {
     @Test
     @DisplayName("MomentReport consolida promedios, porcentajes de aprobación y distribución")
     void momentReportCalculations() {
-        MomentReport report = new MomentReport(NOW, moment2, List.of(group), TODAY);
+        MomentReport report = new MomentReport(NOW, moment2, List.of(group), TODAY, defaultGradeScale);
         MomentReportData data = report.generate();
 
         assertThat(data.totalGroups()).isEqualTo(1);
@@ -229,25 +236,29 @@ class ReportTest {
         assertThat(data.minGrade()).isEqualByComparingTo("1.63");
         assertThat(data.maxGrade()).isEqualByComparingTo("2.75");
 
-        // Aprobados (>= 3.00): 0 de 2 -> 0.00%
-        assertThat(data.passingCount()).isEqualTo(0);
-        assertThat(data.passingPercentage()).isEqualByComparingTo("0.00");
+        // Aprobados (>= 1.80 para maxScore 3.00 con 60%): Beto (2.75) aprueba, Ana (1.63) no -> 1 de 2 = 50.00%
+        assertThat(data.passingCount()).isEqualTo(1);
+        assertThat(data.passingPercentage()).isEqualByComparingTo("50.00");
 
-        // Distribución: 4 buckets
+        // Distribución: 4 buckets para maxScore 3.00:
+        // Bajo: 0.00 - 1.79 -> Ana (1.63)
+        // Básico: 1.80 - 2.27 -> 0
+        // Alto: 2.28 - 2.69 -> 0
+        // Sobresaliente: 2.70 - 3.00 -> Beto (2.75)
         assertThat(data.distribution()).hasSize(4);
-        // Ambos están < 3.00 (1.63 y 2.75) -> Bajo: 2 (100%), resto 0
-        assertThat(data.distribution().get(0).count()).isEqualTo(2);
-        assertThat(data.distribution().get(0).percentage()).isEqualByComparingTo("100.00");
+        assertThat(data.distribution().get(0).count()).isEqualTo(1);
+        assertThat(data.distribution().get(0).percentage()).isEqualByComparingTo("50.00");
         assertThat(data.distribution().get(1).count()).isEqualTo(0);
         assertThat(data.distribution().get(2).count()).isEqualTo(0);
-        assertThat(data.distribution().get(3).count()).isEqualTo(0);
+        assertThat(data.distribution().get(3).count()).isEqualTo(1);
+        assertThat(data.distribution().get(3).percentage()).isEqualByComparingTo("50.00");
     }
 
     @Test
     @DisplayName("MomentReport maneja momentos sin grupos calificados")
     void momentReportEmptyGroups() {
         ProjectGroup emptyGroup = new ProjectGroup(moment2, teacher, "Grupo vacío");
-        MomentReport report = new MomentReport(NOW, moment2, List.of(emptyGroup), TODAY);
+        MomentReport report = new MomentReport(NOW, moment2, List.of(emptyGroup), TODAY, defaultGradeScale);
         MomentReportData data = report.generate();
 
         assertThat(data.totalGroups()).isEqualTo(1);
@@ -264,27 +275,140 @@ class ReportTest {
         Moment mom1 = createMomentPeriod1();
         ProjectGroup grp1 = createGroupPeriod1(mom1);
 
-        ComparativeReport report = new ComparativeReport(NOW, mom1, List.of(grp1), moment2, List.of(group), TODAY);
+        ComparativeReport report = new ComparativeReport(NOW, mom1, List.of(grp1), moment2, List.of(group), TODAY, defaultGradeScale);
         ComparativeReportData data = report.generate();
 
         assertThat(data.momentNumber()).isEqualTo(1);
         assertThat(data.periodA().period().code()).isEqualTo("2026-1");
         assertThat(data.periodB().period().code()).isEqualTo("2026-2");
 
-        // Período A tuvo nota 3.00 (aprobado 100%), Periodo B tuvo promedio 2.19 (aprobado 0%)
+        // Período A tuvo nota 3.00 (aprobado 100%), Periodo B tuvo promedio 2.19 (aprobado 50%)
         assertThat(data.periodA().averageGrade()).isEqualByComparingTo("3.00");
         assertThat(data.periodB().averageGrade()).isEqualByComparingTo("2.19");
         assertThat(data.deltaAverageGrade()).isEqualByComparingTo("-0.81");
 
         assertThat(data.periodA().passingPercentage()).isEqualByComparingTo("100.00");
-        assertThat(data.periodB().passingPercentage()).isEqualByComparingTo("0.00");
-        assertThat(data.deltaPassingPercentage()).isEqualByComparingTo("-100.00");
+        assertThat(data.periodB().passingPercentage()).isEqualByComparingTo("50.00");
+        assertThat(data.deltaPassingPercentage()).isEqualByComparingTo("-50.00");
 
         // RAPs pareados
         assertThat(data.learningOutcomes()).isNotEmpty();
         for (ComparativeReportData.OutcomeComparison comp : data.learningOutcomes()) {
             assertThat(comp.code()).isIn("RAP1", "RAP2");
         }
+    }
+
+    @Test
+    @DisplayName("GradeScale valida parámetros globales faltantes o inválidos")
+    void gradeScaleValidation() {
+        // Faltantes
+        assertThatThrownBy(() -> GradeScale.of(null, "Bajo:0;Alto:70"))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("report.passing-percentage");
+
+        assertThatThrownBy(() -> GradeScale.of("60", ""))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("report.grade-bands");
+
+        // Inválidos
+        assertThatThrownBy(() -> GradeScale.of("cien", "Bajo:0;Alto:70"))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("número válido");
+
+        assertThatThrownBy(() -> GradeScale.of("120", "Bajo:0;Alto:70"))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("entre 0 y 100");
+
+        assertThatThrownBy(() -> GradeScale.of("60", "Bajo;Alto:70"))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("formato inválido");
+
+        // Válido
+        GradeScale scale = GradeScale.of("60", "Bajo:0;Básico:60;Alto:76;Sobresaliente:90");
+        assertThat(scale.getPassingPercentage()).isEqualByComparingTo("60");
+        assertThat(scale.getBands()).hasSize(4);
+        assertThat(scale.getPassingScore(new BigDecimal("5.00"))).isEqualByComparingTo("3.00");
+        assertThat(scale.getPassingScore(new BigDecimal("4.00"))).isEqualByComparingTo("2.40");
+    }
+
+    @Test
+    @DisplayName("MomentReport escala porcentaje de aprobación y rangos cuando la nota máxima no es 5.00")
+    void momentReportWithNonFiveMaxScore() {
+        // Momento con nota máxima 4.00
+        Moment moment4 = new Moment();
+        ReflectionTestUtils.setField(moment4, "id", 400L);
+        ReflectionTestUtils.setField(moment4, "period", period2);
+        ReflectionTestUtils.setField(moment4, "program", program);
+        moment4.setNumber(2);
+        moment4.setName("Momento 2 (Escala 4.0)");
+        moment4.setSubject("Estructuras de Datos");
+        moment4.setGradingEnd(LocalDate.of(2026, 11, 20));
+
+        EvaluationCriterion critA = criterion("Criterio A", "1.00", "4.00");
+        LearningOutcome rapA = new LearningOutcome("RAP-A", "Dominio de Grafos");
+        ReflectionTestUtils.setField(rapA, "id", 401L);
+        rapA.addCriterion(critA); // maxScore = 4.00
+        moment4.addLearningOutcome(rapA);
+        moment4.setTeacherWeight(new BigDecimal("100"));
+        ReflectionTestUtils.setField(moment4, "status", MomentStatus.LAUNCHED);
+
+        assertThat(moment4.getMaxScore()).isEqualByComparingTo("4.00");
+
+        GradeScale scale = GradeScale.of("60", "Bajo:0;Básico:60;Alto:76;Sobresaliente:90");
+        assertThat(scale.getPassingScore(moment4.getMaxScore())).isEqualByComparingTo("2.40");
+
+        // Grupo con dos estudiantes: uno con nota 2.50 (pasa) y otro con nota 2.20 (no pasa)
+        ProjectGroup grp = new ProjectGroup(moment4, teacher, "Grupo Escala 4.0");
+        Student est1 = new Student("Diana", "Díaz", DocumentType.CC, "701", "diana@unicesar.edu.co", "pwd", NOW, "2026701", 4, program);
+        Student est2 = new Student("Eduardo", "Estrada", DocumentType.CC, "702", "eduardo@unicesar.edu.co", "pwd", NOW, "2026702", 4, program);
+        grp.addMember(est1);
+        grp.addMember(est2);
+
+        PerformanceLevel level250 = new PerformanceLevel("Medio", null, new BigDecimal("2.50"), 3);
+        PerformanceLevel level220 = new PerformanceLevel("Bajo-Medio", null, new BigDecimal("2.20"), 4);
+        critA.addLevel(level250);
+        critA.addLevel(level220);
+
+        Evaluation ev = new Evaluation(teacher, NOW);
+        grp.addEvaluation(ev);
+        ev.grade(level(critA, "4.00"));
+        ev.adjust(est1, level250);
+        ev.adjust(est2, level220);
+        ev.submit();
+
+        MomentReport report = new MomentReport(NOW, moment4, List.of(grp), TODAY, scale);
+        MomentReportData data = report.generate();
+
+        assertThat(data.moment().maxScore()).isEqualByComparingTo("4.00");
+        assertThat(data.gradedStudents()).isEqualTo(2);
+
+        assertThat(data.passingCount()).isEqualTo(1);
+        assertThat(data.passingPercentage()).isEqualByComparingTo("50.00");
+
+        List<MomentReportData.DistributionBucket> dist = data.distribution();
+        assertThat(dist).hasSize(4);
+
+        assertThat(dist.get(0).label()).isEqualTo("Bajo");
+        assertThat(dist.get(0).range()).isEqualTo("0.00 - 2.39");
+        assertThat(dist.get(0).min()).isEqualByComparingTo("0.00");
+        assertThat(dist.get(0).max()).isEqualByComparingTo("2.39");
+        assertThat(dist.get(0).count()).isEqualTo(1);
+        assertThat(dist.get(0).percentage()).isEqualByComparingTo("50.00");
+
+        assertThat(dist.get(1).label()).isEqualTo("Básico");
+        assertThat(dist.get(1).range()).isEqualTo("2.40 - 3.03");
+        assertThat(dist.get(1).min()).isEqualByComparingTo("2.40");
+        assertThat(dist.get(1).max()).isEqualByComparingTo("3.03");
+        assertThat(dist.get(1).count()).isEqualTo(1);
+        assertThat(dist.get(1).percentage()).isEqualByComparingTo("50.00");
+
+        assertThat(dist.get(2).label()).isEqualTo("Alto");
+        assertThat(dist.get(2).range()).isEqualTo("3.04 - 3.59");
+        assertThat(dist.get(2).count()).isEqualTo(0);
+
+        assertThat(dist.get(3).label()).isEqualTo("Sobresaliente");
+        assertThat(dist.get(3).range()).isEqualTo("3.60 - 4.00");
+        assertThat(dist.get(3).count()).isEqualTo(0);
     }
 
     private Moment createMomentPeriod1() {
@@ -299,6 +423,7 @@ class ReportTest {
         mom.addLearningOutcome(rap1);
         mom.addLearningOutcome(rap2);
         mom.setTeacherWeight(new BigDecimal("100"));
+        ReflectionTestUtils.setField(mom, "status", MomentStatus.LAUNCHED);
         return mom;
     }
 

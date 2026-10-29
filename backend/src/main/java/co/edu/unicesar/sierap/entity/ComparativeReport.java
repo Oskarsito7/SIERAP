@@ -25,9 +25,10 @@ public class ComparativeReport extends Report {
     private final Moment momentB;
     private final List<ProjectGroup> groupsB;
     private final LocalDate today;
+    private final GradeScale gradeScale;
 
     /**
-     * Construye un reporte comparativo.
+     * Construye un reporte comparativo con la escala de calificación configurada.
      *
      * @param generatedAt marca de tiempo de generación
      * @param momentA     momento del periodo base A
@@ -35,6 +36,7 @@ public class ComparativeReport extends Report {
      * @param momentB     momento del periodo objetivo B
      * @param groupsB     grupos del periodo B
      * @param today       fecha actual
+     * @param gradeScale  escala de calificación para aprobación y distribución
      */
     public ComparativeReport(
             LocalDateTime generatedAt,
@@ -42,13 +44,15 @@ public class ComparativeReport extends Report {
             List<ProjectGroup> groupsA,
             Moment momentB,
             List<ProjectGroup> groupsB,
-            LocalDate today) {
+            LocalDate today,
+            GradeScale gradeScale) {
         super(generatedAt, momentB.getPeriod());
         this.momentA = Objects.requireNonNull(momentA, "momentA no puede ser nulo");
         this.groupsA = Objects.requireNonNull(groupsA, "groupsA no puede ser nulo");
         this.momentB = Objects.requireNonNull(momentB, "momentB no puede ser nulo");
         this.groupsB = Objects.requireNonNull(groupsB, "groupsB no puede ser nulo");
         this.today = Objects.requireNonNull(today, "today no puede ser nulo");
+        this.gradeScale = Objects.requireNonNull(gradeScale, "gradeScale no puede ser nulo");
     }
 
     /**
@@ -69,10 +73,19 @@ public class ComparativeReport extends Report {
         return momentB;
     }
 
+    /**
+     * Escala de calificación aplicada en la comparación.
+     *
+     * @return escala de calificación
+     */
+    public GradeScale getGradeScale() {
+        return gradeScale;
+    }
+
     @Override
     public ComparativeReportData generate() {
-        MomentReportData dataA = new MomentReport(getGeneratedAt(), momentA, groupsA, today).generate();
-        MomentReportData dataB = new MomentReport(getGeneratedAt(), momentB, groupsB, today).generate();
+        MomentReportData dataA = new MomentReport(getGeneratedAt(), momentA, groupsA, today, gradeScale).generate();
+        MomentReportData dataB = new MomentReport(getGeneratedAt(), momentB, groupsB, today, gradeScale).generate();
 
         ComparativeReportData.PeriodComparisonSummary summaryA = toPeriodSummary(dataA);
         ComparativeReportData.PeriodComparisonSummary summaryB = toPeriodSummary(dataB);

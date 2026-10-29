@@ -40,6 +40,7 @@ import co.edu.unicesar.sierap.entity.enums.DocumentType;
 import co.edu.unicesar.sierap.repository.AcademicPeriodRepository;
 import co.edu.unicesar.sierap.repository.EvaluatorTypeRepository;
 import co.edu.unicesar.sierap.repository.FacultyRepository;
+import co.edu.unicesar.sierap.repository.GlobalParameterRepository;
 import co.edu.unicesar.sierap.repository.ProjectGroupRepository;
 import co.edu.unicesar.sierap.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -104,6 +105,9 @@ class ReportIntegrationTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private GlobalParameterRepository globalParameterRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -443,12 +447,17 @@ class ReportIntegrationTest {
                     .andExpect(jsonPath("$.averageGrade").value(2.19))
                     .andExpect(jsonPath("$.minGrade").value(1.63))
                     .andExpect(jsonPath("$.maxGrade").value(2.75))
-                    .andExpect(jsonPath("$.passingCount").value(0))
-                    .andExpect(jsonPath("$.passingPercentage").value(0.0))
+                    .andExpect(jsonPath("$.passingCount").value(1))
+                    .andExpect(jsonPath("$.passingPercentage").value(50.0))
                     .andExpect(jsonPath("$.distribution", hasSize(4)))
                     .andExpect(jsonPath("$.distribution[0].label").value("Bajo"))
-                    .andExpect(jsonPath("$.distribution[0].count").value(2))
-                    .andExpect(jsonPath("$.distribution[0].percentage").value(100.0))
+                    .andExpect(jsonPath("$.distribution[0].range").value("0.00 - 1.79"))
+                    .andExpect(jsonPath("$.distribution[0].count").value(1))
+                    .andExpect(jsonPath("$.distribution[0].percentage").value(50.0))
+                    .andExpect(jsonPath("$.distribution[3].label").value("Sobresaliente"))
+                    .andExpect(jsonPath("$.distribution[3].range").value("2.70 - 3.00"))
+                    .andExpect(jsonPath("$.distribution[3].count").value(1))
+                    .andExpect(jsonPath("$.distribution[3].percentage").value(50.0))
                     .andExpect(jsonPath("$.learningOutcomes", hasSize(2)));
         }
 
@@ -475,6 +484,17 @@ class ReportIntegrationTest {
             mockMvc.perform(get("/api/reports/moments/" + closedMomentPeriod2.getId())
                             .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(ana))))
                     .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("Si falta un parámetro global de reporte, responde 422 con mensaje claro")
+        void missingGlobalParameterReturns422() throws Exception {
+            globalParameterRepository.deleteAll();
+
+            mockMvc.perform(get("/api/reports/moments/" + closedMomentPeriod2.getId())
+                            .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(facultyAdmin))))
+                    .andExpect(status().isUnprocessableEntity())
+                    .andExpect(jsonPath("$.message", containsString("Falta configurar el parámetro global")));
         }
     }
 
@@ -505,6 +525,9 @@ class ReportIntegrationTest {
                     .andExpect(jsonPath("$.periodB.averageGrade").value(2.19))
                     // Delta: 2.19 - 3.00 = -0.81
                     .andExpect(jsonPath("$.deltaAverageGrade").value(-0.81))
+                    .andExpect(jsonPath("$.periodA.passingPercentage").value(100.0))
+                    .andExpect(jsonPath("$.periodB.passingPercentage").value(50.0))
+                    .andExpect(jsonPath("$.deltaPassingPercentage").value(-50.0))
                     .andExpect(jsonPath("$.learningOutcomes", hasSize(2)))
                     .andExpect(jsonPath("$.learningOutcomes[0].code").value("RAP1"))
                     .andExpect(jsonPath("$.learningOutcomes[1].code").value("RAP2"));

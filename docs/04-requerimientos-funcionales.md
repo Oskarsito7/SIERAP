@@ -192,6 +192,7 @@ Defined by the project lead on 2026-09-24.
 | Reporting scope (Moment 1) | Reports are shown on screen with charts and tables (individual, group, consolidated per moment and comparative across periods); exporting to PDF or Excel is deferred to Moment 2. `Report.generate()` returns a `ReportData` DTO instead of `byte[]`, keeping the polymorphic hierarchy. *(2026-10-29)* |
 | Comparative reports | Handled strictly at an aggregate level, without student names, codes or individual rows: they compare cohort averages, per-RAP achievement percentages and grade distributions across two periods of the same program and moment number. *(2026-10-29)* |
 | Bulk upload of students | Moves to Moment 2; students are created one by one or register with a code. *(2026-10-29)* |
+| Configurable passing score and grade bands | The passing threshold and grade distribution bands are configured as global parameters (`report.passing-percentage`, `report.grade-bands`) and scaled dynamically to each moment's `maxScore`. Scores and levels are never hardcoded in Java. Missing parameters return `422 Unprocessable Entity` with a clear message. *(2026-10-29)* |
 | Moment 1 delivery | Between November 15 and 30, 2026. *(2026-10-29)* |
 
 ## Still to be defined with the team
