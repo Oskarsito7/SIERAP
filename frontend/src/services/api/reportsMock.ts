@@ -33,12 +33,15 @@ import { momentService } from './momentService'
 const SAMPLE_PERCENTAGES = [78, 71, 66, 69, 74]
 const PREVIOUS_PERCENTAGES = [72, 65, 58, 70, 61]
 
-/** Franjas de la rúbrica de la UPC y qué parte de los estudiantes cae en cada una. */
+/**
+ * Franjas de ejemplo, relativas a la nota máxima del momento (en la API salen de los
+ * parámetros globales), y qué parte de los estudiantes cae en cada una.
+ */
 const BUCKETS = [
-  { range: '0.00 - 2.99', label: 'Bajo', min: 0, max: 2.99 },
-  { range: '3.00 - 3.79', label: 'Básico', min: 3, max: 3.79 },
-  { range: '3.80 - 4.49', label: 'Alto', min: 3.8, max: 4.49 },
-  { range: '4.50 - 5.00', label: 'Sobresaliente', min: 4.5, max: 5 },
+  { label: 'Bajo', from: 0 },
+  { label: 'Básico', from: 0.6 },
+  { label: 'Alto', from: 0.76 },
+  { label: 'Sobresaliente', from: 0.9 },
 ]
 const SHARES = [0.1, 0.3, 0.4, 0.2]
 const PREVIOUS_SHARES = [0.16, 0.37, 0.31, 0.16]
@@ -106,15 +109,23 @@ function total(list: OutcomeAchievement[]): number {
   return round(list.reduce((sum, item) => sum + item.score, 0))
 }
 
-/** Reparte `count` estudiantes en las 4 franjas sin perder ninguno por el redondeo. */
-function distribution(count: number, shares: number[]): GradeBucket[] {
+/** Reparte `count` estudiantes en las franjas sin perder ninguno por el redondeo. */
+function distribution(count: number, shares: number[], maxScore: number): GradeBucket[] {
   const counts = shares.map((share) => Math.floor(count * share))
   counts[2] += count - counts.reduce((sum, value) => sum + value, 0)
-  return BUCKETS.map((bucket, index) => ({
-    ...bucket,
-    count: counts[index],
-    percentage: count > 0 ? round((counts[index] / count) * 100) : 0,
-  }))
+  return BUCKETS.map((bucket, index) => {
+    const min = round(maxScore * bucket.from)
+    const next = BUCKETS[index + 1]
+    const max = next ? round(maxScore * next.from - 0.01) : maxScore
+    return {
+      range: `${min.toFixed(2)} - ${max.toFixed(2)}`,
+      label: bucket.label,
+      min,
+      max,
+      count: counts[index],
+      percentage: count > 0 ? round((counts[index] / count) * 100) : 0,
+    }
+  })
 }
 
 export async function sampleMomentReport(momentId: number): Promise<MomentReportData> {
@@ -123,7 +134,7 @@ export async function sampleMomentReport(momentId: number): Promise<MomentReport
   const graded = groups.length > 1 ? groups.slice(0, -1) : groups
   const totalStudents = groups.reduce((sum, group) => sum + group.memberCount, 0)
   const gradedStudents = graded.reduce((sum, group) => sum + group.memberCount, 0)
-  const buckets = distribution(gradedStudents, SHARES)
+  const buckets = distribution(gradedStudents, SHARES, moment.maxScore)
   const averages = outcomes(moment)
   const average = gradedStudents > 0 ? total(averages) : null
   return {
@@ -251,7 +262,7 @@ export async function sampleComparativeReport(query: ComparativeReportQuery): Pr
     shares: number[],
     averageGrade: number,
   ): ComparativePeriod => {
-    const buckets = distribution(students, shares)
+    const buckets = distribution(students, shares, moment.maxScore)
     return {
       period,
       momentId,
@@ -265,15 +276,17 @@ export async function sampleComparativeReport(query: ComparativeReportQuery): Pr
       distribution: buckets,
     }
   }
-  const periodA = side(periodOf(query.periodAId), summaryA.id, 19, PREVIOUS_SHARES, 3.78)
-  const periodB = side(periodOf(query.periodBId), summaryB.id, 20, SHARES, 4.12)
+  const averageA = round(moment.maxScore * 0.756)
+  const averageB = round(moment.maxScore * 0.824)
+  const periodA = side(periodOf(query.periodAId), summaryA.id, 19, PREVIOUS_SHARES, averageA)
+  const periodB = side(periodOf(query.periodBId), summaryB.id, 20, SHARES, averageB)
   return {
     generatedAt: `${todayIso()}T10:30:00`,
     program: { id: query.programId, code: String(query.programId), name: summaryB.programName },
     momentNumber: query.momentNumber,
     periodA,
     periodB,
-    deltaAverageGrade: round(4.12 - 3.78),
+    deltaAverageGrade: round(averageB - averageA),
     deltaPassingPercentage: round((periodB.passingPercentage ?? 0) - (periodA.passingPercentage ?? 0)),
     learningOutcomes: rows,
   }

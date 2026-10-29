@@ -37,6 +37,22 @@ describe('reportsMock', () => {
     expect(report.learningOutcomes.map((item) => item.percentage)).toEqual([78, 71])
   })
 
+  it('sets the limits of the buckets relative to the maximum grade of the moment', async () => {
+    vi.mocked(momentService.get).mockResolvedValue(
+      momentDetailFixture({ maxScore: 10, learningOutcomes: [outcome(1)] }),
+    )
+    vi.mocked(groupService.list).mockResolvedValue([groupFixture({ memberCount: 4 })])
+
+    const report = await sampleMomentReport(1)
+
+    expect(report.distribution.map((bucket) => [bucket.min, bucket.max])).toEqual([
+      [0, 5.99],
+      [6, 7.59],
+      [7.6, 8.99],
+      [9, 10],
+    ])
+  })
+
   it('rejects comparing a period with itself, as the API does', async () => {
     await expect(
       sampleComparativeReport({ programId: 1, momentNumber: 1, periodAId: 1, periodBId: 1 }),

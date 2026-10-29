@@ -95,7 +95,10 @@ export interface GroupReportData {
   pendingEvaluations: number
 }
 
-/** Franja de la distribución de notas (siempre 4, en la escala de 0,00 a 5,00). */
+/**
+ * Franja de la distribución de notas. Sus límites y su nombre salen de los parámetros
+ * globales, relativos a la nota máxima del momento: la pantalla pinta los que lleguen.
+ */
 export interface GradeBucket {
   range: string
   label: string
@@ -131,7 +134,7 @@ export interface MomentReportData {
   averageGrade: number | null
   minGrade: number | null
   maxGrade: number | null
-  /** Estudiantes calificados con nota individual de 3,00 o más. */
+  /** Estudiantes calificados con nota individual de aprobado (un parámetro global). */
   passingCount: number
   passingPercentage: number | null
   learningOutcomes: MomentOutcomeAverage[]

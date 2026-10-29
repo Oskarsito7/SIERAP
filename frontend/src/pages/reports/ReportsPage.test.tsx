@@ -94,6 +94,31 @@ describe('ReportsPage', () => {
     expect(within(screen.getByRole('table', { name: 'Detalle por RAP' })).getAllByRole('row')).toHaveLength(3)
   })
 
+  it('draws the buckets of the distribution with the limits and names that the API sends', async () => {
+    const bucket = (label: string, min: number, max: number, count: number) => ({
+      range: `${min} - ${max}`,
+      label,
+      min,
+      max,
+      count,
+      percentage: count * 10,
+    })
+    reports.moment.mockResolvedValue(
+      momentReportFixture({
+        moment: { id: 1, momentNumber: 1, name: 'Momento 1', subject: 'Programación II', maxScore: 10 },
+        distribution: [bucket('Insuficiente', 0, 6.49, 3), bucket('Suficiente', 6.5, 10, 7)],
+      }),
+    )
+    renderAt('moment')
+
+    const distribution = await screen.findByRole('list', { name: 'Distribución de notas' })
+    const items = within(distribution).getAllByRole('listitem')
+    expect(items).toHaveLength(2)
+    expect(items[0]).toHaveTextContent('Insuficiente0,00 – 6,493 · 30 %')
+    expect(items[1]).toHaveTextContent('Suficiente6,50 – 10,007 · 70 %')
+    expect(screen.getByText(/de 10,00/)).toBeInTheDocument()
+  })
+
   it('says so when a moment has no graded students yet', async () => {
     reports.moment.mockResolvedValue(momentReportFixture({ gradedStudents: 0, final: false }))
     renderAt('moment')

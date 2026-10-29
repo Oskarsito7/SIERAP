@@ -1,6 +1,6 @@
 /**
  * Cifra destacada de un reporte: su nombre, el valor y, si hace falta, un detalle
- * (p. ej. "de 5,00" o "18 de 20 estudiantes").
+ * (p. ej. "18 de 20 estudiantes").
  */
 export function StatTile({ label, value, detail }: { label: string; value: string; detail?: string }) {
   return (

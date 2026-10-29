@@ -233,10 +233,11 @@ function Comparative({ report }: { report: ComparativeReportData }) {
           labelA={codeA}
           labelB={codeB}
           format={formatPercentage}
-          items={periodB.distribution.map((bucket, index) => ({
-            key: bucket.range,
+          items={periodB.distribution.map((bucket) => ({
+            key: bucket.label,
             label: bucket.label,
-            a: periodA.distribution[index]?.percentage ?? null,
+            // Las franjas se emparejan por nombre: sus límites pueden cambiar entre periodos.
+            a: periodA.distribution.find((item) => item.label === bucket.label)?.percentage ?? null,
             b: bucket.percentage,
           }))}
         />
