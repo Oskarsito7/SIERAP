@@ -626,6 +626,40 @@ group levels only. Reports can compare group and individual grades.
 
 ---
 
+## ADR-019 — Whole system runnable with Docker Compose
+
+**Date:** 2026-10-29
+**Status:** Accepted (requested by the project team).
+
+**Context:** testing SIERAP required JDK 21, Node 22 and Docker installed and three
+terminals (database, backend, frontend). People who only want to try the system (for
+example, entering the admin panel) need a single command.
+
+**Decision:**
+
+- `backend/Dockerfile`: multi-stage build, the jar is packaged with the Maven Wrapper on
+  `eclipse-temurin:21-jdk` (tests skipped: they run in CI and with `./mvnw verify`) and
+  runs on `eclipse-temurin:21-jre`.
+- `frontend/Dockerfile`: the app is built with Vite on `node:22-alpine` and served by
+  `nginx`, which forwards `/api` to the backend container (same as the Vite proxy in
+  development) and falls back to `index.html` for React Router routes.
+- Both services are in `docker-compose.yml` under the Compose profile `app`, so
+  `docker compose up -d` still starts only PostgreSQL and Mailpit for developers, and
+  `docker compose --profile app up -d --build` starts everything. The backend runs with
+  the `dev` profile (development JWT key, refresh cookie without https), sends emails to
+  Mailpit and stores submission files in the `sierap-files` volume (ADR-015). The app is
+  served on `http://localhost:5173`, the same URL the email links use in development.
+
+**Alternatives considered:** a separate compose file for the full system (two files to
+keep in sync); running the backend with `prod` (requires real SMTP and secrets, not
+meant for local trials).
+
+**Consequences:** these images are for local trials and demos, not for production: a
+production deployment must use the `prod` profile with its environment variables
+(section 8 of the README).
+
+---
+
 ## Template for new entries
 
 ```

@@ -162,7 +162,7 @@ SIERAP/
 │       ├── entity/  entity/enums/              ← domain entities
 │       └── security/  exception/  config/      ← cross-cutting
 ├── frontend/                          ← React + TypeScript app (Vite, Tailwind, shadcn/ui)
-├── docker-compose.yml                 ← PostgreSQL and Mailpit for local development
+├── docker-compose.yml                 ← PostgreSQL and Mailpit; with --profile app, the whole system
 └── .github/workflows/ci.yml           ← CI: backend and frontend build and tests
 ```
 
@@ -201,6 +201,19 @@ land in Mailpit (http://localhost:8025). The API is described in
 > **Production:** this temporary password is public (it is in this repository). Change
 > it **right after the first deployment**, before announcing the URL: until then,
 > whoever logs in first takes the super_admin account.
+
+**Whole system in Docker (ADR-019):** to try SIERAP without installing Java or Node,
+only Docker is needed:
+
+```bash
+docker compose --profile app up -d --build
+```
+
+The first build takes a few minutes. Then open http://localhost:5173 (Mailpit on
+http://localhost:8025) and log in with the super_admin above. After pulling new changes,
+run the same command again to rebuild. To stop: `docker compose --profile app down`
+(add `-v` to also wipe the database and the submission files). Without `--profile app`,
+`docker compose up -d` keeps starting only PostgreSQL and Mailpit for development.
 
 **Tests:**
 
