@@ -11,6 +11,13 @@ vi.mock('@/services/api/systemStatusService', () => ({
   systemStatusService: { getStatus: vi.fn(() => new Promise(() => {})) },
 }))
 
+vi.mock('@/services/api/catalogService', () => ({
+  catalogService: {
+    periods: vi.fn(() => new Promise(() => {})),
+    programs: vi.fn(() => new Promise(() => {})),
+  },
+}))
+
 function userWith(role: UserRole, overrides: Partial<UserSummary> = {}): UserSummary {
   return {
     id: 1,
@@ -68,20 +75,24 @@ describe('AppLayout', () => {
   })
 
   it('opens a menu option without a page as coming soon, with its stage', async () => {
-    renderAt('/', userWith('ADMIN'))
+    renderAt('/', userWith('SUPER_ADMIN'))
 
-    await userEvent.click(screen.getByRole('link', { name: 'Reportes' }))
+    await userEvent.click(screen.getByRole('link', { name: 'Administradores' }))
 
     expect(screen.getByRole('heading', { name: 'Próximamente' })).toBeInTheDocument()
-    const notice = 'Los reportes individuales, grupales y comparativos llega en la Etapa 7.'
+    const notice = 'La gestión de las cuentas de administradores llega en la Etapa 2.'
     expect(screen.getByText(notice)).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Reportes' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Administradores' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('uses the text of the role when two roles share a page', () => {
     renderAt('/reports', userWith('TEACHER'))
 
-    expect(screen.getByText('Los reportes de tus grupos llega en la Etapa 7.')).toBeInTheDocument()
+    expect(
+      screen.getByText(
+        'Consulta el desempeño individual y por grupo de tus estudiantes, el consolidado del momento y el comparativo entre semestres.',
+      ),
+    ).toBeInTheDocument()
   })
 
   it('does not open a page of another role', () => {
