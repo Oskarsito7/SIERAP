@@ -185,11 +185,11 @@ Defined by the project lead on 2026-09-24.
 | Wireframes | Medium-fidelity grayscale HTML pages in `docs/wireframes/` (one per role), exported to PNG for the delivery document and published as a private link for the team; changes go through PRs. *(2026-09-28)* |
 | Evaluator weights | The weights of a moment (the teacher and each evaluator type) are percentages that must add up to **100 %**; the moment cannot be launched otherwise. If a kind has no submitted evaluation, its weight is still redistributed among the present kinds. *(2026-10-02)* |
 | Stage 6 split | D3: `individual_grade` (V7), the evaluation endpoints and the screens to grade, the group results and "My grades". D2: the weights in the moment configuration (V9) while finishing Stage 3. D1: the grade calculation (ADR-018 formula) and the two results routes. *(2026-10-02)* |
+| Reporting scope (Moment 1) | Reports are shown on screen with charts and tables (individual, group, consolidated per moment and comparative across periods); exporting to PDF or Excel is deferred to Moment 2. `Report.generate()` returns a `ReportData` DTO instead of `byte[]`, keeping the polymorphic hierarchy. *(2026-10-29)* |
+| Comparative reports | Handled strictly at an aggregate level, without student names, codes or individual rows: they compare cohort averages, per-RAP achievement percentages and grade distributions across two periods of the same program and moment number. *(2026-10-29)* |
 
 ## Still to be defined with the team
 
 - Bulk upload of students: file format (CSV or Excel) and columns.
 - What happens if a teacher needs to reassign a group to another teacher in the
   middle of a moment?
-- Do comparative reports require anonymizing student data, or are they always
-  handled at an aggregate level?

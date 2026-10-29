@@ -57,7 +57,8 @@ moment" and "Team decisions" sections) and in ADR-009 to ADR-014 of
 | Evaluacion | `Evaluation` | `evaluation` |
 | CalificacionCriterio | `CriterionGrade` | `criterion_grade` |
 | AjusteIndividual | `IndividualGrade` | `individual_grade` |
-| Reporte (Individual / Grupal / Comparativo) | `Report` (`IndividualReport` / `GroupReport` / `ComparativeReport`) | — |
+| Reporte (Individual / Grupal / Consolidado / Comparativo) | `Report` (`IndividualReport` / `GroupReport` / `MomentReport` / `ComparativeReport`) | — |
+| DatosReporte | `ReportData` (sealed interface) | — |
 
 The D1 and D2 names are already in the code. The D3 names are the proposal for its
 branch and should be confirmed by whoever implements it. The `ExternalEvaluator`
@@ -137,8 +138,8 @@ opened, the configuration of the previous period is copied as a starting point.
 | `Evaluation` | Evaluación | Grade that an `Evaluator` (the group's teacher or an assigned external evaluator) gives a `ProjectGroup`; groups one `CriterionGrade` per criterion of the moment. It has a `status` (`DRAFT` → `SUBMITTED`): the evaluator can save it half done and submit it later; only submitted evaluations count, and they can be corrected while the grading window is open. One evaluation per evaluator per group. Attributes: projectGroup, evaluator (`User`: JPA cannot map the `Evaluator` interface), status, evaluatedAt, comment (optional). |
 | `CriterionGrade` | Calificación por criterio | Performance level the evaluator picked in an `EvaluationCriterion` for the **whole group**, with a **copy of its score** taken when grading. Performance per RAP is the sum of that RAP's criteria, and the evaluation grade is the sum of all of them. Attributes: evaluation, criterion, level, score. One grade per criterion in each evaluation. |
 | `IndividualGrade` | Ajuste individual | Level an evaluator gives **one student** in one criterion when it differs from the group's level (e.g. that student did better in the presentation). By default every member inherits the group's levels; an `IndividualGrade` replaces the group's level only for that student and that criterion, so their individual grade differs from the others' (ADR-018). Attributes: evaluation, student (a member of the group), criterion, level, score (copy). At most one per student and criterion in each evaluation. |
-| `Report` (abstract) | Reporte | Report generated from the recorded `Evaluation`s, filterable by semester, moment, program or year. Defines an abstract `generate()`. |
-| `IndividualReport` / `GroupReport` / `ComparativeReport` | Reporte individual / grupal / comparativo | Subclasses of `Report`: each implements its own `generate()` (per student and RAP, per group, or comparing two periods). |
+| `Report` (abstract) | Reporte | Report generated on demand from the grades of `ProjectGroup` and its `Evaluation`s, filterable by period, moment or program. Defines an abstract `generate(): ReportData` (in Moment 1 reports are rendered on screen with charts; exporting to PDF or Excel is deferred to Moment 2). |
+| `IndividualReport` / `GroupReport` / `MomentReport` / `ComparativeReport` | Reporte individual / grupal / consolidado / comparativo | Subclasses of `Report`: each overrides `generate()` with its own `ReportData` record (per student and RAP, per group and its members, consolidated averages and grade distribution of a moment, or aggregate comparison of two periods of the same program and moment number). |
 
 **Group grade and individual grade (ADR-018):** the group is graded once. The
 **group grade** uses the group's levels only; the **individual grade** of each member

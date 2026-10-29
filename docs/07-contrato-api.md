@@ -656,3 +656,246 @@ proportion. The group grade uses the group levels; each individual grade uses th
 levels replaced by that student's adjustments. Per RAP, the same with the scores of that
 RAP's criteria. Every grade is `BigDecimal` (ADR-013) with 2 decimals in the answer.
 
+## Stage 7 — Reporting (D2, with D3 on charts)
+
+Reports (RF 12) are SIERAP's main differentiator compared with AULAWEB. In Moment 1 they
+are rendered on screen with charts and tables; exporting to PDF or Excel is deferred to
+Moment 2 (`docs/04`, `docs/06`).
+
+### Polymorphic domain model (`Report` and `generate()`)
+
+The `Report` hierarchy in the class diagram (`docs/03`, `docs/diagramas/`) is preserved
+as an in-memory domain hierarchy (no database table: reports are computed on demand from
+the grades of `ProjectGroup`):
+
+- `Report` (abstract): holds `generatedAt: LocalDateTime` (from the injected `Clock`) and
+  `period: AcademicPeriod`, and declares `public abstract ReportData generate()`.
+- `ReportData`: sealed interface implemented by the four response records below
+  (`IndividualReportData`, `GroupReportData`, `MomentReportData`,
+  `ComparativeReportData`).
+- Subclasses — each overrides `generate()` with a covariant return type and computes its
+  figures using `ProjectGroup.getGroupGrade()`, `getGroupScoreFor(outcome)`,
+  `getIndividualGrade(student)` and `getIndividualScoreFor(outcome, student)`:
+  - `IndividualReport`: performance of a student in a moment, overall and per RAP.
+  - `GroupReport`: performance of a group per RAP and each member's individual grade.
+  - `MomentReport`: consolidated averages per RAP and grade distribution of a moment.
+  - `ComparativeReport`: semester X vs. semester Y for the same program and moment
+    number across two academic periods.
+
+### Aggregate-only rule for comparative reports (`docs/04`)
+
+Comparative reports (`ComparativeReport`) are handled **strictly at an aggregate level,
+without student names, document numbers, student codes or individual rows**. Comparing
+two cohorts across semesters serves curricular analysis and accreditation (evaluating how
+each RAP evolved from one period to another), not auditing individual students from past
+periods. Individual performance belongs exclusively to `IndividualReport` and
+`GroupReport`.
+
+### Who can read which report
+
+| Report | `super_admin` | `admin` | `teacher` | `student` |
+|---|---|---|---|---|
+| Individual (`GET /api/reports/individual`) | any | moments of their faculty | students of the groups they enabled | only their own (`studentId` omitted or their own id), after the grading window ends |
+| Group (`GET /api/reports/groups/{groupId}`) | any | groups of their faculty | the groups they enabled | — |
+| Consolidated per moment (`GET /api/reports/moments/{momentId}`) | any | moments of their faculty | moments of their faculty | — |
+| Comparative (`GET /api/reports/comparative`) | any | programs of their faculty | programs of their faculty | — |
+
+Out of scope answers `403`.
+
+### 1. Individual report — performance of a student per RAP
+
+```jsonc
+// IndividualReportData
+{
+  "generatedAt": "2026-11-29T10:30:00",
+  "period": { "id": 2, "code": "2026-2" },
+  "program": { "id": 1, "code": "108", "name": "Ingeniería de Sistemas" },
+  "moment": {
+    "id": 1, "momentNumber": 1, "name": "Momento 1",
+    "subject": "Programación II", "maxScore": 5.00
+  },
+  "student": {
+    "id": 40, "studentCode": "20241001",
+    "fullName": "Juan Rojas", "currentSemester": 4
+  },
+  "group": {
+    "id": 7, "name": "Grupo 3",
+    "projectTitle": "SIERAP", "teacherName": "Marta Díaz"
+  },
+  "final": true,                    // true once the grading window ended
+  "individualGrade": 4.40,          // null while the group has no countable submitted evaluation
+  "groupGrade": 4.52,
+  "percentage": 88.00,              // individualGrade / maxScore * 100 (null if individualGrade is null)
+  "learningOutcomes": [
+    {
+      "id": 10, "code": "RAP1", "description": "...",
+      "score": 0.48,                // student's individual score in this RAP
+      "groupScore": 0.60,           // group score in this RAP before individual adjustments
+      "maxScore": 0.60,
+      "percentage": 80.00           // score / maxScore * 100, rounded half up to 2 decimals
+    }
+  ],
+  "submittedEvaluations": 2,
+  "pendingEvaluations": 0
+}
+```
+
+### 2. Group report
+
+```jsonc
+// GroupReportData
+{
+  "generatedAt": "2026-11-29T10:30:00",
+  "period": { "id": 2, "code": "2026-2" },
+  "program": { "id": 1, "code": "108", "name": "Ingeniería de Sistemas" },
+  "moment": {
+    "id": 1, "momentNumber": 1, "name": "Momento 1",
+    "subject": "Programación II", "maxScore": 5.00
+  },
+  "group": {
+    "id": 7, "name": "Grupo 3",
+    "projectTitle": "SIERAP", "teacherName": "Marta Díaz"
+  },
+  "final": true,
+  "groupGrade": 4.52,               // null while there is no countable submitted evaluation
+  "percentage": 90.40,              // groupGrade / maxScore * 100
+  "learningOutcomes": [
+    {
+      "id": 10, "code": "RAP1", "description": "...",
+      "score": 0.60, "maxScore": 0.60, "percentage": 100.00
+    }
+  ],
+  "members": [
+    {
+      "studentId": 40, "studentCode": "20241001", "fullName": "Juan Rojas",
+      "individualGrade": 4.40,
+      "adjusted": true,             // true when individualGrade or any RAP score differs from the group's
+      "learningOutcomes": [
+        { "id": 10, "code": "RAP1", "score": 0.48, "maxScore": 0.60, "percentage": 80.00 }
+      ]
+    }
+  ],
+  "submittedEvaluations": 2,
+  "pendingEvaluations": 0
+}
+```
+
+### 3. Consolidated report per moment and program
+
+Aggregates all groups and students of a moment. Only groups with a computed grade
+(`getGroupGrade().isPresent()`, i.e. at least one countable submitted evaluation) enter
+the averages and the grade distribution; ungraded groups and students are reflected in
+`totalGroups` vs. `gradedGroups` and `totalStudents` vs. `gradedStudents`. Student-level
+metrics (`averageGrade`, `minGrade`, `maxGrade`, `passingCount`, `passingPercentage`, per-RAP
+averages and `distribution`) use each member's **individual grade** (`getIndividualGrade(student)`
+and `getIndividualScoreFor(outcome, student)`), which is their final grade (ADR-018).
+
+```jsonc
+// MomentReportData
+{
+  "generatedAt": "2026-11-29T10:30:00",
+  "period": { "id": 2, "code": "2026-2" },
+  "program": { "id": 1, "code": "108", "name": "Ingeniería de Sistemas" },
+  "moment": {
+    "id": 1, "momentNumber": 1, "name": "Momento 1",
+    "subject": "Programación II", "maxScore": 5.00
+  },
+  "final": true,
+  "totalGroups": 6,
+  "gradedGroups": 5,
+  "totalStudents": 24,
+  "gradedStudents": 20,
+  "averageGroupGrade": 4.18,        // null when gradedGroups is 0
+  "averageGrade": 4.12,             // average of graded students' individual grades; null when gradedStudents is 0
+  "minGrade": 2.65,
+  "maxGrade": 4.85,
+  "passingCount": 18,               // graded students with individualGrade >= 3.00
+  "passingPercentage": 90.00,       // passingCount / gradedStudents * 100 (null when gradedStudents is 0)
+  "learningOutcomes": [
+    {
+      "id": 10, "code": "RAP1", "description": "...",
+      "averageScore": 0.47,         // average of getIndividualScoreFor(outcome, student) across graded students
+      "maxScore": 0.60,
+      "percentage": 78.33           // averageScore / maxScore * 100
+    }
+  ],
+  "distribution": [                 // always 4 buckets on the 0.00–5.00 scale, matching the UPC rubric levels
+    { "range": "0.00 - 2.99", "label": "Bajo",          "min": 0.00, "max": 2.99, "count": 2, "percentage": 10.00 },
+    { "range": "3.00 - 3.79", "label": "Básico",        "min": 3.00, "max": 3.79, "count": 6, "percentage": 30.00 },
+    { "range": "3.80 - 4.49", "label": "Alto",          "min": 3.80, "max": 4.49, "count": 8, "percentage": 40.00 },
+    { "range": "4.50 - 5.00", "label": "Sobresaliente", "min": 4.50, "max": 5.00, "count": 4, "percentage": 20.00 }
+  ]
+}
+```
+
+### 4. Comparative report — semester X vs. semester Y
+
+Compares two academic periods (`periodA` as baseline and `periodB` as target) for the
+**same program and moment number** (`momentNumber`). Aggregate only (no student names or
+individual rows). RAPs are paired by their `code` (case-insensitive, ordered by appearance
+in `periodB` and then any RAP present only in `periodA`); if a RAP exists in only one of
+the two periods, the other period's fields (`averageScore`, `maxScore`, `percentage`) and
+`deltaPercentage` are `null`. Because `maxScore` can change between periods (ADR-010), the
+comparison across periods is expressed as achievement percentage (`0–100 %`) and its
+change in percentage points (`deltaPercentage = percentageB - percentageA`, as shown in
+wireframe `AD-08`).
+
+```jsonc
+// ComparativeReportData
+{
+  "generatedAt": "2026-11-29T10:30:00",
+  "program": { "id": 1, "code": "108", "name": "Ingeniería de Sistemas" },
+  "momentNumber": 1,
+  "periodA": {
+    "period": { "id": 1, "code": "2026-1" },
+    "momentId": 4, "momentName": "Momento 1", "subject": "Programación II", "maxScore": 5.00,
+    "gradedGroups": 5, "gradedStudents": 19,
+    "averageGrade": 3.78, "passingPercentage": 84.21,
+    "distribution": [
+      { "range": "0.00 - 2.99", "label": "Bajo",          "min": 0.00, "max": 2.99, "count": 3, "percentage": 15.79 },
+      { "range": "3.00 - 3.79", "label": "Básico",        "min": 3.00, "max": 3.79, "count": 7, "percentage": 36.84 },
+      { "range": "3.80 - 4.49", "label": "Alto",          "min": 3.80, "max": 4.49, "count": 6, "percentage": 31.58 },
+      { "range": "4.50 - 5.00", "label": "Sobresaliente", "min": 4.50, "max": 5.00, "count": 3, "percentage": 15.79 }
+    ]
+  },
+  "periodB": {
+    "period": { "id": 2, "code": "2026-2" },
+    "momentId": 1, "momentName": "Momento 1", "subject": "Programación II", "maxScore": 5.00,
+    "gradedGroups": 5, "gradedStudents": 20,
+    "averageGrade": 4.12, "passingPercentage": 90.00,
+    "distribution": [
+      { "range": "0.00 - 2.99", "label": "Bajo",          "min": 0.00, "max": 2.99, "count": 2, "percentage": 10.00 },
+      { "range": "3.00 - 3.79", "label": "Básico",        "min": 3.00, "max": 3.79, "count": 6, "percentage": 30.00 },
+      { "range": "3.80 - 4.49", "label": "Alto",          "min": 3.80, "max": 4.49, "count": 8, "percentage": 40.00 },
+      { "range": "4.50 - 5.00", "label": "Sobresaliente", "min": 4.50, "max": 5.00, "count": 4, "percentage": 20.00 }
+    ]
+  },
+  "deltaAverageGrade": 0.34,        // periodB.averageGrade - periodA.averageGrade (null if either is null)
+  "deltaPassingPercentage": 5.79,   // periodB.passingPercentage - periodA.passingPercentage
+  "learningOutcomes": [
+    {
+      "code": "RAP1",
+      "description": "...",         // description in periodB (or periodA if absent in periodB)
+      "averageScoreA": 0.43, "maxScoreA": 0.60, "percentageA": 71.67,
+      "averageScoreB": 0.47, "maxScoreB": 0.60, "percentageB": 78.33,
+      "deltaPercentage": 6.66       // percentageB - percentageA (null if either percentage is null)
+    }
+  ]
+}
+```
+
+### Routes and error rules
+
+| Method and route | Who | Answer |
+|---|---|---|
+| `GET /api/reports/individual?momentId=&studentId=` | `super_admin`, `admin` of the faculty, `teacher` of the student's group in that moment, or the `student` themselves (`studentId` optional for a student) | `200 IndividualReportData`. `404` if the moment or student does not exist. `422` "El estudiante no pertenece a ningún grupo de este momento." if the student has no group in that moment. `422` "Los resultados de este momento aún no están disponibles." when called by a student before the grading window ends |
+| `GET /api/reports/groups/{groupId}` | `super_admin`, `admin` of the faculty, the `teacher` who enabled the group | `200 GroupReportData` (sorted by member `fullName` and RAP `id`). `404` if the group does not exist |
+| `GET /api/reports/moments/{momentId}` | `super_admin`, `admin` and `teacher` of the faculty | `200 MomentReportData`. `404` if the moment does not exist |
+| `GET /api/reports/comparative?programId=&momentNumber=&periodAId=&periodBId=` | `super_admin`, `admin` and `teacher` of the faculty | `200 ComparativeReportData`. `422` "Debe elegir dos periodos académicos distintos para comparar." if `periodAId = periodBId`. `404` if the program or a period does not exist, or if the program has no moment with `momentNumber` in one of the two periods |
+
+**Rounding rule:** as decided for Stage 6 (`docs/04`, 2026-10-16), intermediate sums and
+averages keep 16 significant digits (`Decimal128`) and every decimal returned in a report
+(grades, RAP averages and percentages) is a `BigDecimal` rounded half up to 2 decimals at
+the end.
+
+
