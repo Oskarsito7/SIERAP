@@ -1,4 +1,4 @@
-package co.edu.unicesar.sierap.service.impl;
+package co.edu.unicesar.sierap.entity;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import co.edu.unicesar.sierap.service.impl.GradeCalculator.EvaluatorKind;
-import co.edu.unicesar.sierap.service.impl.GradeCalculator.KindScore;
+import co.edu.unicesar.sierap.entity.GradeCalculator.EvaluatorKind;
+import co.edu.unicesar.sierap.entity.GradeCalculator.KindScore;
 import org.junit.jupiter.api.Test;
 
 /**

@@ -1,4 +1,4 @@
-package co.edu.unicesar.sierap.service.impl;
+package co.edu.unicesar.sierap.entity;
 
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -26,8 +26,10 @@ import java.util.Optional;
  *
  * <p>La misma fórmula sirve para la nota total y para la de cada RAP, y para la nota
  * del grupo y la individual: solo cambia el puntaje de cada evaluación que se le pasa.
- * Los pasos intermedios usan 16 dígitos significativos y solo el resultado se redondea
- * a 2 decimales, mitad hacia arriba (ADR-013, decisión del 2026-10-16).</p>
+ * La usa {@link ProjectGroup}, que le pasa sus evaluaciones enviadas y los pesos de su
+ * {@link Moment}. Los pasos intermedios usan 16 dígitos significativos y solo el
+ * resultado se redondea a 2 decimales, mitad hacia arriba (ADR-013, decisión del
+ * 2026-10-16).</p>
  */
 final class GradeCalculator {
 
