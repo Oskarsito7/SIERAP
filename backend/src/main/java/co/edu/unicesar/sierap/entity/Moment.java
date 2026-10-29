@@ -268,6 +268,18 @@ public class Moment {
     }
 
     /**
+     * Indica si la calificación del momento ya cerró: el momento está lanzado y la fecha
+     * actual es posterior al fin de la ventana de calificación.
+     *
+     * @param today fecha actual, obtenida del {@code Clock} inyectado en el service
+     * @return {@code true} si el momento está lanzado y ya cerró su ventana de calificación
+     */
+    public boolean isGradingClosed(LocalDate today) {
+        return status == MomentStatus.LAUNCHED && gradingEnd != null
+                && today.isAfter(gradingEnd);
+    }
+
+    /**
      * Puntaje máximo que se puede obtener en el momento: la suma de los puntajes
      * máximos de sus RAP.
      *

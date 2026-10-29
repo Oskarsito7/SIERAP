@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -263,6 +264,23 @@ public class ProjectGroup {
      */
     public List<Evaluation> getSubmittedEvaluations() {
         return evaluations.stream().filter(Evaluation::isSubmitted).toList();
+    }
+
+    /**
+     * Cantidad de evaluaciones pendientes por enviar: el docente titular y los evaluadores
+     * externos asignados que aún no han enviado su evaluación.
+     *
+     * @return número de evaluaciones pendientes
+     */
+    public int getPendingEvaluationsCount() {
+        Set<Long> submittedBy = getSubmittedEvaluations().stream()
+                .map(evaluation -> evaluation.getEvaluator().getId())
+                .collect(Collectors.toSet());
+        int pending = (teacher != null && submittedBy.contains(teacher.getId())) ? 0 : 1;
+        pending += (int) evaluators.stream()
+                .filter(evaluator -> !submittedBy.contains(evaluator.getId()))
+                .count();
+        return pending;
     }
 
     /**
