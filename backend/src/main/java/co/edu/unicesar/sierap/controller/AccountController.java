@@ -62,6 +62,18 @@ public class AccountController {
     }
 
     /**
+     * Lista los administradores de una facultad.
+     *
+     * @param facultyId facultad
+     * @return administradores
+     */
+    @GetMapping("/admins")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
+    public List<UserSummaryResponse> listAdmins(@RequestParam Long facultyId) {
+        return accountService.listAdmins(facultyId);
+    }
+
+    /**
      * Crea un docente.
      *
      * @param actor   usuario autenticado

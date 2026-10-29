@@ -1,6 +1,7 @@
 package co.edu.unicesar.sierap.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -26,6 +27,7 @@ import co.edu.unicesar.sierap.TestcontainersConfiguration;
 import co.edu.unicesar.sierap.entity.Admin;
 import co.edu.unicesar.sierap.entity.Faculty;
 import co.edu.unicesar.sierap.entity.Program;
+import co.edu.unicesar.sierap.entity.SuperAdmin;
 import co.edu.unicesar.sierap.entity.Teacher;
 import co.edu.unicesar.sierap.entity.User;
 import co.edu.unicesar.sierap.entity.enums.DocumentType;
@@ -266,6 +268,24 @@ class AuthIntegrationTest {
                                 "facultyId", engineering.getId())))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.message").value("No tiene permisos para realizar esta operación."));
+    }
+
+    @Test
+    void onlyTheSuperAdminListsTheAdminsOfAFaculty() throws Exception {
+        int n = SEQUENCE.incrementAndGet();
+        Faculty faculty = facultyRepository.save(new Faculty("A" + n, "Facultad de administradores " + n));
+        User admin = persistAdmin(faculty);
+        User superAdmin = userRepository.save(new SuperAdmin("Super", "Prueba " + n, DocumentType.CC, "60" + n,
+                "super.prueba" + n + "@unicesar.edu.co", passwordEncoder.encode(PASSWORD), LocalDateTime.now(clock)));
+
+        mockMvc.perform(get("/api/admins").param("facultyId", faculty.getId().toString())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(superAdmin.getEmail()))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].email", contains(admin.getEmail())))
+                .andExpect(jsonPath("$[0].role").value("ADMIN"));
+        mockMvc.perform(get("/api/admins").param("facultyId", faculty.getId().toString())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(admin.getEmail()))))
+                .andExpect(status().isForbidden());
     }
 
     @Test

@@ -107,6 +107,7 @@ the link sent by email.
 | Method and route | Who | Body (besides `NewUserRequest`) | Answer |
 |---|---|---|---|
 | `POST /api/admins` | super_admin | `facultyId` | `201 UserSummary` |
+| `GET /api/admins?facultyId=` | super_admin | — | `200 UserSummary[]` (SA-05) |
 | `POST /api/teachers` | super_admin, admin of the faculty | `facultyId` | `201 UserSummary` |
 | `POST /api/students` | super_admin, admin or teacher of the faculty | `programId`, `studentCode`, `currentSemester` | `201 UserSummary` |
 | `POST /api/students/bulk` | same as above | `multipart/form-data`: `file`, `programId` | `200 { "created": n, "errors": [ { "row", "message" } ] }`. **Not implemented yet:** the file format is pending (see `docs/04`) |
