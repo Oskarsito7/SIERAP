@@ -57,6 +57,14 @@ public interface AccountService {
     UserSummaryResponse createExternalEvaluator(AuthenticatedUser actor, NewExternalEvaluatorRequest request);
 
     /**
+     * Lista los administradores de una facultad (solo el super_admin, SA-05).
+     *
+     * @param facultyId facultad
+     * @return administradores de la facultad
+     */
+    List<UserSummaryResponse> listAdmins(Long facultyId);
+
+    /**
      * Lista los docentes de una facultad dentro del alcance del usuario.
      *
      * @param actor     usuario que consulta

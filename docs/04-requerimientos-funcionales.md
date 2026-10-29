@@ -185,11 +185,16 @@ Defined by the project lead on 2026-09-24.
 | Wireframes | Medium-fidelity grayscale HTML pages in `docs/wireframes/` (one per role), exported to PNG for the delivery document and published as a private link for the team; changes go through PRs. *(2026-09-28)* |
 | Evaluator weights | The weights of a moment (the teacher and each evaluator type) are percentages that must add up to **100 %**; the moment cannot be launched otherwise. If a kind has no submitted evaluation, its weight is still redistributed among the present kinds. *(2026-10-02)* |
 | Stage 6 split | D3: `individual_grade` (V7), the evaluation endpoints and the screens to grade, the group results and "My grades". D2: the weights in the moment configuration (V9) while finishing Stage 3. D1: the grade calculation (ADR-018 formula) and the two results routes. *(2026-10-02)* |
+| Evaluator type without weight | The evaluation of an external evaluator whose type has no weight in the moment (or 0 %) does not count in the grade. The screen to assign evaluators warns about it but does not block the assignment, because the admin may still be setting the weights. *(2026-10-16)* |
+| Rounding of grades | Averages and weighting keep 16 significant digits; only the result (the total and each RAP, group and individual) is rounded to 2 decimals, half up: 2.995 → 3.00. *(2026-10-16)* |
+| Grade in the domain model | `ProjectGroup` computes the group grade and each individual grade (in total and per RAP) from its submitted evaluations and the weights of its moment, with the `GradeCalculator` utility; the results service only checks who sees them and when. *(2026-10-16)* |
+| Comments of evaluators without weight | The student also sees the comment of an evaluator whose type has no weight: the grade does not count, but the feedback does. *(2026-10-16)* |
 | Reporting scope (Moment 1) | Reports are shown on screen with charts and tables (individual, group, consolidated per moment and comparative across periods); exporting to PDF or Excel is deferred to Moment 2. `Report.generate()` returns a `ReportData` DTO instead of `byte[]`, keeping the polymorphic hierarchy. *(2026-10-29)* |
 | Comparative reports | Handled strictly at an aggregate level, without student names, codes or individual rows: they compare cohort averages, per-RAP achievement percentages and grade distributions across two periods of the same program and moment number. *(2026-10-29)* |
+| Bulk upload of students | Moves to Moment 2; students are created one by one or register with a code. *(2026-10-29)* |
+| Moment 1 delivery | Between November 15 and 30, 2026. *(2026-10-29)* |
 
 ## Still to be defined with the team
 
-- Bulk upload of students: file format (CSV or Excel) and columns.
 - What happens if a teacher needs to reassign a group to another teacher in the
   middle of a moment?

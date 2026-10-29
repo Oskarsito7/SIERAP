@@ -127,15 +127,21 @@ Implementation progress, by stages of [`docs/06-plan-de-trabajo.md`](docs/06-pla
   (academic model, users, operations and the CHECK constraints from the PR #3 review);
   the detailed class, hierarchy and layer diagrams regenerated in English.
 - [ ] Stage 2 — Authentication and access control: backend, login screens, layout per
-  role, registration codes and external evaluators pages done (ADR-017, API contract
-  in `docs/07-contrato-api.md`); the other account screens are pending.
-- [ ] Stage 3 — Academic configuration: the read routes of moments are done; the CRUD,
-  the evaluator weights, launching, copying the configuration and the admin screens
-  are pending.
+  role, registration codes, teachers, students and external evaluators pages done
+  (ADR-017, API contract in `docs/07-contrato-api.md`); the "Administradores" screen
+  (SA-05) is pending.
+- [x] **Stage 3 — Academic configuration:** catalogs, moments with windows and
+  weights, RAP, criteria and levels, launching and copying the configuration, with the
+  admin and super_admin screens.
 - [x] **Stage 4 — Teacher operations:** groups, dates and external evaluators.
 - [x] **Stage 5 — Student and versioned submissions:** joining groups and uploading
   versions, with the files on the server disk (ADR-015).
-- [ ] Stage 6 — Multi-role evaluation: split agreed on 2026-10-02 (`docs/06`).
+- [ ] Stage 6 — Multi-role evaluation: grading and individual adjustments done; the
+  grade calculation and the results routes are ready, and the results screens still
+  have to switch from sample data to them.
+- [ ] Stage 7 — Reporting: on screen with charts, including the comparison of
+  semesters; export moves to Moment 2.
+- [ ] Stage 8 — Stabilization and delivery (Moment 1, between November 15 and 30).
 
 ## 7. Structure of this repository
 

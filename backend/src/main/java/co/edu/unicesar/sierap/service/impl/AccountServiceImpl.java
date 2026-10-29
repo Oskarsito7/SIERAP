@@ -24,6 +24,7 @@ import co.edu.unicesar.sierap.exception.BusinessRuleException;
 import co.edu.unicesar.sierap.exception.ForbiddenAccessException;
 import co.edu.unicesar.sierap.exception.ResourceNotFoundException;
 import co.edu.unicesar.sierap.mapper.UserMapper;
+import co.edu.unicesar.sierap.repository.AdminRepository;
 import co.edu.unicesar.sierap.repository.EvaluatorTypeRepository;
 import co.edu.unicesar.sierap.repository.ExternalEvaluatorRepository;
 import co.edu.unicesar.sierap.repository.FacultyRepository;
@@ -52,6 +53,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class AccountServiceImpl implements AccountService {
 
     private final UserRepository userRepository;
+    private final AdminRepository adminRepository;
     private final TeacherRepository teacherRepository;
     private final StudentRepository studentRepository;
     private final ExternalEvaluatorRepository externalEvaluatorRepository;
@@ -68,6 +70,7 @@ public class AccountServiceImpl implements AccountService {
      * Crea el servicio con sus dependencias.
      *
      * @param userRepository              repositorio de usuarios
+     * @param adminRepository             repositorio de administradores
      * @param teacherRepository           repositorio de docentes
      * @param studentRepository           repositorio de estudiantes
      * @param externalEvaluatorRepository repositorio de evaluadores externos
@@ -80,7 +83,8 @@ public class AccountServiceImpl implements AccountService {
      * @param accountValidator            validaciones de cuentas nuevas
      * @param clock                       reloj de la aplicación
      */
-    public AccountServiceImpl(UserRepository userRepository, TeacherRepository teacherRepository,
+    public AccountServiceImpl(UserRepository userRepository, AdminRepository adminRepository,
+                              TeacherRepository teacherRepository,
                               StudentRepository studentRepository,
                               ExternalEvaluatorRepository externalEvaluatorRepository,
                               FacultyRepository facultyRepository, ProgramRepository programRepository,
@@ -89,6 +93,7 @@ public class AccountServiceImpl implements AccountService {
                               PasswordLinkService passwordLinkService, AccessScope accessScope,
                               AccountValidator accountValidator, Clock clock) {
         this.userRepository = userRepository;
+        this.adminRepository = adminRepository;
         this.teacherRepository = teacherRepository;
         this.studentRepository = studentRepository;
         this.externalEvaluatorRepository = externalEvaluatorRepository;
@@ -155,6 +160,13 @@ public class AccountServiceImpl implements AccountService {
             evaluator.setGraduationProgram(findProgram(request.graduationProgramId()));
         }
         return register(evaluator, creator);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserSummaryResponse> listAdmins(Long facultyId) {
+        findFaculty(facultyId);
+        return adminRepository.findByFacultyId(facultyId).stream().map(UserMapper::toSummary).toList();
     }
 
     @Override

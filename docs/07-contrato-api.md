@@ -107,6 +107,7 @@ the link sent by email.
 | Method and route | Who | Body (besides `NewUserRequest`) | Answer |
 |---|---|---|---|
 | `POST /api/admins` | super_admin | `facultyId` | `201 UserSummary` |
+| `GET /api/admins?facultyId=` | super_admin | — | `200 UserSummary[]` (SA-05) |
 | `POST /api/teachers` | super_admin, admin of the faculty | `facultyId` | `201 UserSummary` |
 | `POST /api/students` | super_admin, admin or teacher of the faculty | `programId`, `studentCode`, `currentSemester` | `201 UserSummary` |
 | `POST /api/students/bulk` | same as above | `multipart/form-data`: `file`, `programId` | `200 { "created": n, "errors": [ { "row", "message" } ] }`. **Not implemented yet:** the file format is pending (see `docs/04`) |
@@ -609,7 +610,7 @@ evaluation per group. They grade the group once and may adjust single students
 | `POST /api/groups/{id}/evaluation/submit` | same | — | `200 EvaluationForm` with `status: SUBMITTED`. `422` "Falta calificar N criterios." if it is incomplete |
 | `GET /api/groups/{id}/evaluations` | the group's teacher, admin of the faculty, super_admin | — | `200 [ { "id", "evaluator": { "id", "fullName", "kind" }, "status", "evaluatedAt", "totalScore", "comment" } ]`. `kind` is "Docente" or the evaluator type name. External evaluators only see their own evaluation |
 
-### Results (Stage 6) — D2 + D3
+### Results (Stage 6) — D1 (calculation and routes) + D3 (screens)
 
 ```jsonc
 // GroupResults: group grade and each member's individual grade
@@ -618,7 +619,7 @@ evaluation per group. They grade the group once and may adjust single students
   "final": false,                   // true once the grading window ended
   "maxScore": 5.0,
   "groupGrade": 4.52,               // null while there is no submitted evaluation
-  "groupLearningOutcomes": [ { "id": 10, "code": "RAP1", "score": 0.6, "maxScore": 0.6 } ],
+  "groupLearningOutcomes": [ { "id": 10, "code": "RAP1", "score": 0.6, "maxScore": 0.6 } ], // score null while there is no grade
   "members": [
     {
       "studentId": 40, "fullName": "Juan Rojas",
@@ -654,7 +655,8 @@ then weight the kinds with the weights the admin set in the moment (Stage 3),
 redistributing the weight of a kind without submitted evaluations among the others in
 proportion. The group grade uses the group levels; each individual grade uses the group
 levels replaced by that student's adjustments. Per RAP, the same with the scores of that
-RAP's criteria. Every grade is `BigDecimal` (ADR-013) with 2 decimals in the answer.
+RAP's criteria. A kind without weight in the moment (or 0 %) does not count. Every grade
+is `BigDecimal` (ADR-013), rounded half up to 2 decimals only at the end (2.995 → 3.00).
 
 ## Stage 7 — Reporting (D2, with D3 on charts)
 

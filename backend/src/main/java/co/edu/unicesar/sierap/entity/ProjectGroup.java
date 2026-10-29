@@ -1,11 +1,16 @@
 package co.edu.unicesar.sierap.entity;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -249,6 +254,90 @@ public class ProjectGroup {
     public void addEvaluation(Evaluation evaluation) {
         evaluations.add(evaluation);
         evaluation.setProjectGroup(this);
+    }
+
+    /**
+     * Evaluaciones enviadas del grupo: las únicas que cuentan en las notas.
+     *
+     * @return evaluaciones en estado {@code SUBMITTED}
+     */
+    public List<Evaluation> getSubmittedEvaluations() {
+        return evaluations.stream().filter(Evaluation::isSubmitted).toList();
+    }
+
+    /**
+     * Nota del grupo (ADR-018): promedio ponderado por tipo de evaluador de las
+     * evaluaciones enviadas, con los niveles del grupo y los pesos del momento.
+     *
+     * @return la nota con 2 decimales, o vacío si ninguna evaluación enviada cuenta
+     */
+    public Optional<BigDecimal> getGroupGrade() {
+        return weightedGrade(Evaluation::getTotalScore);
+    }
+
+    /**
+     * Puntaje del grupo en un RAP, con la misma fórmula que {@link #getGroupGrade()}.
+     *
+     * @param outcome RAP del momento
+     * @return el puntaje con 2 decimales, o vacío si ninguna evaluación enviada cuenta
+     */
+    public Optional<BigDecimal> getGroupScoreFor(LearningOutcome outcome) {
+        return weightedGrade(evaluation -> evaluation.getScoreFor(outcome));
+    }
+
+    /**
+     * Nota individual de un integrante, la definitiva (ADR-018): la misma fórmula, con
+     * los niveles del grupo cambiados por sus ajustes. Sin ajustes es igual a la del grupo.
+     *
+     * @param student integrante del grupo
+     * @return la nota con 2 decimales, o vacío si ninguna evaluación enviada cuenta
+     */
+    public Optional<BigDecimal> getIndividualGrade(Student student) {
+        return weightedGrade(evaluation -> evaluation.getTotalScoreFor(student));
+    }
+
+    /**
+     * Puntaje de un integrante en un RAP, con sus ajustes.
+     *
+     * @param outcome RAP del momento
+     * @param student integrante del grupo
+     * @return el puntaje con 2 decimales, o vacío si ninguna evaluación enviada cuenta
+     */
+    public Optional<BigDecimal> getIndividualScoreFor(LearningOutcome outcome, Student student) {
+        return weightedGrade(evaluation -> evaluation.getScoreFor(outcome, student));
+    }
+
+    /**
+     * Aplica la fórmula de {@link GradeCalculator} a las evaluaciones enviadas: el
+     * puntaje de cada una con el tipo de su evaluador y los pesos del momento.
+     */
+    private Optional<BigDecimal> weightedGrade(Function<Evaluation, BigDecimal> score) {
+        List<GradeCalculator.KindScore> scores = new ArrayList<>();
+        for (Evaluation evaluation : getSubmittedEvaluations()) {
+            evaluatorKindOf(evaluation).ifPresent(kind ->
+                    scores.add(new GradeCalculator.KindScore(kind, score.apply(evaluation))));
+        }
+        Map<GradeCalculator.EvaluatorKind, BigDecimal> weights = new HashMap<>();
+        weights.put(GradeCalculator.EvaluatorKind.TEACHER, moment.getTeacherWeight());
+        moment.getEvaluatorWeights().forEach(weight -> weights.put(
+                GradeCalculator.EvaluatorKind.ofType(weight.getEvaluatorType().getId()), weight.getWeight()));
+        return GradeCalculator.weightedGrade(scores, weights);
+    }
+
+    /**
+     * Tipo de evaluador de una evaluación del grupo: el docente que lo habilitó o el tipo
+     * de uno de sus evaluadores externos. Se busca por id entre los evaluadores del grupo
+     * para no depender del proxy con que Hibernate carga {@link Evaluation#getEvaluator()}.
+     */
+    private Optional<GradeCalculator.EvaluatorKind> evaluatorKindOf(Evaluation evaluation) {
+        User evaluator = evaluation.getEvaluator();
+        if (sameUser(evaluator, teacher)) {
+            return Optional.of(GradeCalculator.EvaluatorKind.TEACHER);
+        }
+        return evaluators.stream()
+                .filter(external -> sameUser(external, evaluator))
+                .findFirst()
+                .map(external -> GradeCalculator.EvaluatorKind.ofType(external.getEvaluatorType().getId()));
     }
 
     /** Dos usuarios son el mismo si son la misma referencia o tienen el mismo id. */

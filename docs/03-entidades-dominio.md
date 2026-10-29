@@ -154,8 +154,11 @@ up to 100 % (to be modeled by D2 in Stage 3, together with the rest of the momen
 configuration; the moment cannot be launched otherwise). Several evaluators of
 the same kind are averaged within that kind; if a kind has no submitted evaluation,
 its weight is redistributed among the present kinds in proportion to their weights.
-The graded submission is the last on-time version, or the last late one if there is
-none on time.
+A kind without weight in the moment does not count, and only the result is rounded,
+half up, to 2 decimals (2026-10-16). `ProjectGroup` computes both grades in the domain
+model (`getGroupGrade()`, `getIndividualGrade(student)` and their per-RAP versions)
+with the `GradeCalculator` utility. The graded submission is the last on-time
+version, or the last late one if there is none on time.
 
 ## Enumerations
 
