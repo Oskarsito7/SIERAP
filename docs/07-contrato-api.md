@@ -109,11 +109,11 @@ the link sent by email.
 | `POST /api/admins` | super_admin | `facultyId` | `201 UserSummary` |
 | `GET /api/admins?facultyId=` | super_admin | — | `200 UserSummary[]` (SA-05) |
 | `POST /api/teachers` | super_admin, admin of the faculty | `facultyId` | `201 UserSummary` |
-| `POST /api/students` | super_admin, admin or teacher of the faculty | `programId`, `studentCode`, `currentSemester` | `201 UserSummary` |
-| `POST /api/students/bulk` | same as above | `multipart/form-data`: `file`, `programId` | `200 { "created": n, "errors": [ { "row", "message" } ] }`. **Not implemented yet:** the file format is pending (see `docs/04`) |
+| `POST /api/students` | super_admin, admin or teacher of the faculty | `programId`, `studentCode`, `currentSemester` | `201 Student` |
+| `POST /api/students/bulk` | same as above | `multipart/form-data`: `file`, `programId` | `200 { "created": n, "errors": [ { "row", "message" } ] }`. **Not implemented:** moves to Moment 2 (`docs/04`, 2026-10-29) |
 | `POST /api/external-evaluators` | super_admin, admin, teacher | `evaluatorTypeId`; optional `organization`, `position`, `graduationYear`, `graduationProgramId` | `201 UserSummary` |
 | `GET /api/teachers?facultyId=` | super_admin, admin of the faculty | — | `200 UserSummary[]` |
-| `GET /api/students?programId=` | super_admin, admin or teacher of the faculty | — | `200 UserSummary[]` |
+| `GET /api/students?programId=` | super_admin, admin or teacher of the faculty | — | `200 Student[]` ordered by last and first names (DO-08). Optional `withoutGroupInMoment={momentId}`: only the active students of the program with their semester in the range of that moment and no group in it, the same rule as `students-without-group`; `404` if the moment does not exist, `422` if it belongs to another program |
 | `GET /api/external-evaluators` | super_admin (all), admin and teacher (the ones they created) | — | `200 UserSummary[]` |
 | `POST /api/users/{id}/password-link` | whoever manages that user (see below) | — | `204`; sends a new link: to create the password if the account has none yet, otherwise to reset it |
 | `PATCH /api/users/{id}` | whoever manages that user (see below) | `{ "active": false }` | `200 UserSummary`; deactivating also closes their sessions. `422` when deactivating your own account |
@@ -122,7 +122,23 @@ the link sent by email.
 **Who manages a user** (password link and activation): the super_admin, anyone; an
 admin, the teachers and students of their faculty and the external evaluators created
 by them or by users of their faculty; a teacher, the students and external evaluators
-they created. Out of scope answers `403`.
+they created, which includes those who registered with one of their codes. Out of scope
+answers `403`.
+
+```jsonc
+// Student (GET and POST /api/students): UserSummary plus
+{
+  /* ...UserSummary fields, "role": "STUDENT" */
+  "studentCode": "20261053",
+  "currentSemester": 2,
+  "registrationCode": "K7MQ4TZP",  // code they registered with; null if someone created the account
+  "createdBy": { "id": 4, "fullName": "Luis Gómez" },  // creator, or the owner of the code; null if unknown
+  "manageable": true               // the viewer can send the password link and activate or deactivate it
+}
+```
+
+`manageable` only lets the screen hide the actions it cannot use: the password link and
+`PATCH /api/users/{id}` still answer `403` out of scope.
 
 **Registration codes** (teacher, or admin/super_admin on behalf of a teacher):
 

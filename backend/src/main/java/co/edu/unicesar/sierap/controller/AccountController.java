@@ -7,6 +7,7 @@ import co.edu.unicesar.sierap.dto.request.NewExternalEvaluatorRequest;
 import co.edu.unicesar.sierap.dto.request.NewStudentRequest;
 import co.edu.unicesar.sierap.dto.request.NewTeacherRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateUserRequest;
+import co.edu.unicesar.sierap.dto.response.StudentResponse;
 import co.edu.unicesar.sierap.dto.response.UserSummaryResponse;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
 import co.edu.unicesar.sierap.service.AccountService;
@@ -107,28 +108,30 @@ public class AccountController {
      *
      * @param actor   usuario autenticado
      * @param request datos del estudiante
-     * @return usuario creado
+     * @return estudiante creado
      */
     @PostMapping("/students")
     @ResponseStatus(HttpStatus.CREATED)
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'TEACHER')")
-    public UserSummaryResponse createStudent(@AuthenticationPrincipal AuthenticatedUser actor,
-                                             @Valid @RequestBody NewStudentRequest request) {
+    public StudentResponse createStudent(@AuthenticationPrincipal AuthenticatedUser actor,
+                                         @Valid @RequestBody NewStudentRequest request) {
         return accountService.createStudent(actor, request);
     }
 
     /**
-     * Lista los estudiantes de un programa.
+     * Lista los estudiantes de un programa ("Mis estudiantes", DO-08).
      *
-     * @param actor     usuario autenticado
-     * @param programId programa
-     * @return estudiantes
+     * @param actor                usuario autenticado
+     * @param programId            programa
+     * @param withoutGroupInMoment opcional: solo los que no tienen grupo en ese momento
+     * @return estudiantes, con la marca de los que puede gestionar
      */
     @GetMapping("/students")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'TEACHER')")
-    public List<UserSummaryResponse> listStudents(@AuthenticationPrincipal AuthenticatedUser actor,
-                                                  @RequestParam Long programId) {
-        return accountService.listStudents(actor, programId);
+    public List<StudentResponse> listStudents(@AuthenticationPrincipal AuthenticatedUser actor,
+                                              @RequestParam Long programId,
+                                              @RequestParam(required = false) Long withoutGroupInMoment) {
+        return accountService.listStudents(actor, programId, withoutGroupInMoment);
     }
 
     /**
