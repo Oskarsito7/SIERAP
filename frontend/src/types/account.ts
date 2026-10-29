@@ -32,3 +32,16 @@ export interface NewTeacherRequest {
   documentNumber: string
   email: string
 }
+
+/** Cuerpo de `POST /api/students` (`NewStudentRequest`). */
+export interface NewStudentRequest {
+  firstNames: string
+  lastNames: string
+  documentType: DocumentType
+  documentNumber: string
+  email: string
+  programId: number
+  studentCode: string
+  /** Semestre que cursa, desde 1. */
+  currentSemester: number
+}
