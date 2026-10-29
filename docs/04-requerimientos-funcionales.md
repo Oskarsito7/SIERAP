@@ -193,6 +193,7 @@ Defined by the project lead on 2026-09-24.
 | Comparative reports | Handled strictly at an aggregate level, without student names, codes or individual rows: they compare cohort averages, per-RAP achievement percentages and grade distributions across two periods of the same program and moment number. *(2026-10-29)* |
 | Bulk upload of students | Moves to Moment 2; students are created one by one or register with a code. *(2026-10-29)* |
 | Moment 1 delivery | Between November 15 and 30, 2026. *(2026-10-29)* |
+| Students list (DO-08) | `GET /api/students` returns each student's code, semester and how they arrived (registration code or creator), plus whether the viewer can manage them, so the screen hides the actions it cannot use. The "Without a group" filter is in Moment 1, with the same rule as the list used to add members to a group. *(2026-10-29)* |
 
 ## Still to be defined with the team
 

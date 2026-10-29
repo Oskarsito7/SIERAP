@@ -25,9 +25,9 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
      * Lista los estudiantes de un programa.
      *
      * @param programId identificador del programa
-     * @return estudiantes del programa
+     * @return estudiantes del programa, ordenados por apellidos y nombres
      */
-    List<Student> findByProgramId(Long programId);
+    List<Student> findByProgramIdOrderByLastNamesAscFirstNamesAsc(Long programId);
 
     /**
      * Indica si ya existe un estudiante con ese código estudiantil.
