@@ -303,20 +303,27 @@ class Report {
   <<abstract>>
   -generatedAt: LocalDateTime
   -period: AcademicPeriod
-  +generate()* byte[]
+  +generate()* ReportData
 }
 class IndividualReport {
   -student: Student
-  +generate() byte[]
+  -group: ProjectGroup
+  +generate() ReportData
 }
 class GroupReport {
   -group: ProjectGroup
-  +generate() byte[]
+  +generate() ReportData
+}
+class MomentReport {
+  -moment: Moment
+  +generate() ReportData
 }
 class ComparativeReport {
+  -momentA: Moment
+  -momentB: Moment
   -periodA: AcademicPeriod
   -periodB: AcademicPeriod
-  +generate() byte[]
+  +generate() ReportData
 }
 
 %% ================= Relationships =================
@@ -375,6 +382,7 @@ IndividualGrade "*" -- "1" PerformanceLevel : level for that student
 
 Report <|-- IndividualReport
 Report <|-- GroupReport
+Report <|-- MomentReport
 Report <|-- ComparativeReport
 Report ..> Evaluation : «use»
 ```
@@ -415,6 +423,12 @@ Report ..> Evaluation : «use»
 | Change | Reason |
 |---|---|
 | `IndividualGrade` (new), composed by `Evaluation`, with `adjust()`, `getTotalScoreFor()` and an overload of `getScoreFor()` per student | The group is graded once and every member inherits it; an evaluator can change the level of some criteria for one student, so each student has an individual grade besides the group grade (ADR-018). |
+
+## Changes of the Stage 7 contract (2026-10-29 decisions)
+
+| Change | Reason |
+|---|---|
+| `Report.generate()` and its subclasses return `ReportData` instead of `byte[]`; new `MomentReport` subclass | In Moment 1 reports are shown on screen with charts and tables (exporting to PDF or Excel is deferred to Moment 2). Each subclass overrides `generate()` and returns its own `ReportData` record (covariant return type), keeping the polymorphic hierarchy for the rubric (RAP2) across the four reports: individual, group, consolidated per moment and comparative across periods. |
 
 ## Changes compared with the preliminary diagram (Phase 1)
 

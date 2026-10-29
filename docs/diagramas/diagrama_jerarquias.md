@@ -105,23 +105,31 @@ class Report {
   <<abstract>>
   -generatedAt: LocalDateTime
   -period: AcademicPeriod
-  +generate()* byte[]
+  +generate()* ReportData
 }
 class IndividualReport {
   -student: Student
-  +generate() byte[]
+  -group: ProjectGroup
+  +generate() ReportData
 }
 class GroupReport {
   -group: ProjectGroup
-  +generate() byte[]
+  +generate() ReportData
+}
+class MomentReport {
+  -moment: Moment
+  +generate() ReportData
 }
 class ComparativeReport {
+  -momentA: Moment
+  -momentB: Moment
   -periodA: AcademicPeriod
   -periodB: AcademicPeriod
-  +generate() byte[]
+  +generate() ReportData
 }
 IndividualReport --|> Report : per student and RAP
 GroupReport --|> Report : per group
+MomentReport --|> Report : consolidated per moment
 ComparativeReport --|> Report : semester X vs. Y
 ```
 
