@@ -301,6 +301,9 @@ public class GroupServiceImpl implements GroupService {
             throw new BusinessRuleException(
                     "El grupo ya tiene una evaluación enviada: no se pueden retirar integrantes.");
         }
+        // Los borradores pueden tener ajustes individuales del estudiante que sale.
+        group.getEvaluations().forEach(evaluation -> evaluation.getAdjustmentsFor(student)
+                .forEach(adjustment -> evaluation.removeAdjustment(student, adjustment.getCriterion())));
         group.removeMember(student);
     }
 

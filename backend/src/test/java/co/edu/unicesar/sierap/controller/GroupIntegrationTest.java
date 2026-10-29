@@ -469,6 +469,25 @@ class GroupIntegrationTest {
     }
 
     @Test
+    void anEvaluatorCountsInTheGradeOnlyIfTheirTypeHasWeightInTheMoment() throws Exception {
+        long id = createGroup(teacherToken, configuring, "Grupo 1");
+        ExternalEvaluator evaluator = externalEvaluator();
+
+        // Se asigna aunque su tipo todavía no tenga peso: solo se avisa (16/10, docs/04).
+        assignEvaluator(id, evaluator)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.evaluators[0].countsInGrade").value(false));
+
+        configuring.setTeacherWeight(new BigDecimal("70"));
+        configuring.setEvaluatorWeight(evaluator.getEvaluatorType(), new BigDecimal("30"));
+        facultyRepository.saveAndFlush(faculty);
+
+        mockMvc.perform(get("/api/groups/" + id).header(HttpHeaders.AUTHORIZATION, bearer(teacherToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.evaluators[0].countsInGrade").value(true));
+    }
+
+    @Test
     void aDeactivatedEvaluatorCannotBeAssigned() throws Exception {
         long id = createGroup(teacherToken, configuring, "Grupo 1");
         ExternalEvaluator evaluator = externalEvaluator();

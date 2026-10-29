@@ -1,8 +1,10 @@
 import { useState, type FormEvent } from 'react'
-import { ArrowLeft, Search } from 'lucide-react'
-import { Link, useNavigate, useParams } from 'react-router'
+import { ArrowLeft, Search, TriangleAlert } from 'lucide-react'
+import { Link, NavLink, useNavigate, useParams } from 'react-router'
 
 import { LoadStatus } from '@/components/LoadStatus'
+import { EvaluationEditor } from '@/components/evaluation/EvaluationEditor'
+import { SubmissionHistoryCard } from '@/components/submissions/SubmissionHistoryCard'
 import { FormError, FormField } from '@/components/forms/FormField'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -12,11 +14,13 @@ import { useLoad } from '@/lib/useLoad'
 import { groupService } from '@/services/api/groupService'
 import { getErrorMessage } from '@/services/api/httpClient'
 import { momentService } from '@/services/api/momentService'
+import { submissionService } from '@/services/api/submissionService'
 import type { UserSummary } from '@/types/auth'
 import type { Group, StudentWithoutGroup, UpdateGroupRequest } from '@/types/group'
 import type { MomentSummary } from '@/types/moment'
 
 import { formatWindow, groupStatus } from './groupDisplay'
+import { GroupResultsTab } from './GroupResultsTab'
 
 interface GroupWithMoment {
   group: Group
@@ -26,13 +30,30 @@ interface GroupWithMoment {
 /** Recibe el grupo actualizado que devuelve la API después de una acción. */
 type OnGroupChange = (group: Group) => void
 
+/** Pestañas del detalle del grupo, cada una con su ruta. */
+export type GroupTab = 'summary' | 'submissions' | 'evaluation' | 'results'
+
+const TABS: { tab: GroupTab; label: string; path: string }[] = [
+  { tab: 'summary', label: 'Resumen', path: '' },
+  { tab: 'submissions', label: 'Entregas', path: '/submissions' },
+  { tab: 'evaluation', label: 'Mi calificación', path: '/evaluation' },
+  { tab: 'results', label: 'Resultados', path: '/results' },
+]
+
 /**
- * Detalle de un grupo del docente (wireframes DO-02 y DO-03): título del proyecto,
- * integrantes, fechas y evaluadores externos. Los botones se deshabilitan según el
- * estado y las ventanas del momento; el backend vuelve a validarlo y responde 422
- * con el motivo, que se muestra en la sección.
+ * Detalle de un grupo del docente, en pestañas:
+ * - "Resumen" (wireframes DO-02 y DO-03): título del proyecto, integrantes, fechas y
+ *   evaluadores externos;
+ * - "Entregas" (DO-04): el historial de versiones con sus descargas;
+ * - "Mi calificación" (DO-05 y DO-06): su evaluación del grupo con los ajustes
+ *   individuales;
+ * - "Resultados" (DO-07): la nota del grupo y de cada integrante con todas las
+ *   evaluaciones enviadas.
+ *
+ * Los botones se deshabilitan según el estado y las ventanas del momento; el backend
+ * vuelve a validarlo y responde 422 con el motivo, que se muestra en la sección.
  */
-export function GroupDetailPage() {
+export function GroupDetailPage({ tab = 'summary' }: { tab?: GroupTab }) {
   const id = Number(useParams().id)
   const { state, reload, setData } = useLoad<GroupWithMoment>(async () => {
     const group = await groupService.get(id)
@@ -60,6 +81,7 @@ export function GroupDetailPage() {
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-bold tracking-tight">{group.name}</h1>
         <Badge variant={status.variant}>{status.label}</Badge>
+        {group.projectTitle && <span className="text-muted-foreground">{group.projectTitle}</span>}
       </div>
 
       <Card className="bg-muted/40">
@@ -75,12 +97,48 @@ export function GroupDetailPage() {
         </CardContent>
       </Card>
 
-      <ProjectTitleSection group={group} moment={moment} today={today} onChange={onChange} />
-      <MembersSection group={group} disabled={gradingClosed} onChange={onChange} />
-      <DatesSection group={group} moment={moment} today={today} disabled={gradingClosed} onChange={onChange} />
-      <EvaluatorsSection group={group} disabled={gradingClosed} onChange={onChange} />
-      {moment.status === 'CONFIGURATION' && group.memberCount === 0 && <DeleteSection group={group} />}
+      <nav aria-label="Secciones del grupo" className="flex gap-1 border-b">
+        {TABS.map((item) => (
+          <NavLink
+            key={item.tab}
+            to={`/groups/${group.id}${item.path}`}
+            end
+            className={({ isActive }) =>
+              `-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
+                isActive ? 'border-primary text-foreground' : 'text-muted-foreground border-transparent'
+              }`
+            }
+          >
+            {item.label}
+          </NavLink>
+        ))}
+      </nav>
+
+      {tab === 'summary' && (
+        <>
+          <ProjectTitleSection group={group} moment={moment} today={today} onChange={onChange} />
+          <MembersSection group={group} disabled={gradingClosed} onChange={onChange} />
+          <DatesSection group={group} moment={moment} today={today} disabled={gradingClosed} onChange={onChange} />
+          <EvaluatorsSection group={group} disabled={gradingClosed} onChange={onChange} />
+          {moment.status === 'CONFIGURATION' && group.memberCount === 0 && <DeleteSection group={group} />}
+        </>
+      )}
+      {tab === 'submissions' && <SubmissionsTab groupId={group.id} />}
+      {tab === 'evaluation' && <EvaluationEditor groupId={group.id} />}
+      {tab === 'results' && <GroupResultsTab groupId={group.id} moment={moment} />}
     </div>
+  )
+}
+
+/** Entregas del grupo (DO-04). */
+function SubmissionsTab({ groupId }: { groupId: number }) {
+  const history = useLoad(() => submissionService.history(groupId), [groupId])
+  return (
+    <SubmissionHistoryCard
+      state={history.state}
+      onRetry={history.reload}
+      emptyMessage="El grupo todavía no ha subido entregas."
+    />
   )
 }
 
@@ -470,9 +528,12 @@ function EvaluatorsSection({
           <ul className="flex flex-col divide-y">
             {group.evaluators.map((evaluator) => (
               <li key={evaluator.id} className="flex items-center justify-between gap-3 py-3 text-sm">
-                <span>
-                  <span className="font-medium">{evaluator.fullName}</span>
-                  <span className="text-muted-foreground"> · {evaluator.evaluatorType}</span>
+                <span className="flex flex-col gap-1">
+                  <span>
+                    <span className="font-medium">{evaluator.fullName}</span>
+                    <span className="text-muted-foreground"> · {evaluator.evaluatorType}</span>
+                  </span>
+                  {!evaluator.countsInGrade && <NoWeightWarning evaluatorType={evaluator.evaluatorType} />}
                 </span>
                 <Button
                   variant="ghost"
@@ -489,6 +550,20 @@ function EvaluatorsSection({
         )}
       </CardContent>
     </Card>
+  )
+}
+
+/**
+ * Aviso de que la evaluación no contará en la nota porque el tipo del evaluador no tiene
+ * peso en el momento (o tiene 0 %). No impide asignarlo: el admin puede estar fijando
+ * los pesos todavía (decisión del 16/10, docs/04).
+ */
+function NoWeightWarning({ evaluatorType }: { evaluatorType: string }) {
+  return (
+    <span role="note" className="flex items-start gap-1 text-xs text-amber-700 dark:text-amber-400">
+      <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+      Su evaluación no contará en la nota: el tipo {evaluatorType} no tiene peso en este momento.
+    </span>
   )
 }
 

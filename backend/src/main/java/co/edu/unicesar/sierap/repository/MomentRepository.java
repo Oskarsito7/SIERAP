@@ -48,20 +48,91 @@ public interface MomentRepository extends JpaRepository<Moment, Long> {
     List<Moment> findByPeriodIdAndProgramFacultyIdOrderByProgramNameAscNumberAsc(Long periodId, Long facultyId);
 
     /**
+     * Momentos de un periodo en un programa específico ordenados por número.
+     *
+     * @param periodId  periodo académico
+     * @param programId programa académico
+     * @return momentos del programa en ese periodo ordenados por número
+     */
+    @EntityGraph(attributePaths = {"program", "period"})
+    List<Moment> findByPeriodIdAndProgramIdOrderByNumberAsc(Long periodId, Long programId);
+
+    /**
      * Momentos de un periodo en un programa cuyo rango de semestres incluye el
-     * semestre indicado (estudiante).
+     * semestre indicado (estudiante), o momentos en los que el estudiante ya tiene un
+     * grupo (incluso si su semestre está fuera del rango).
      *
      * @param periodId  periodo académico
      * @param programId programa del estudiante
      * @param semester  semestre actual del estudiante
+     * @param studentId id del estudiante
      * @return momentos ordenados por número
      */
     @EntityGraph(attributePaths = {"program", "period"})
     @Query("""
             SELECT m FROM Moment m
-            WHERE m.period.id = :periodId AND m.program.id = :programId
-              AND :semester BETWEEN m.semesterFrom AND m.semesterTo
+            WHERE m.period.id = :periodId
+              AND ((m.program.id = :programId AND :semester BETWEEN m.semesterFrom AND m.semesterTo)
+                   OR EXISTS (
+                       SELECT 1 FROM ProjectGroup g
+                       JOIN g.members mem
+                       WHERE g.moment = m AND mem.id = :studentId
+                   ))
             ORDER BY m.number""")
     List<Moment> findForStudent(@Param("periodId") Long periodId, @Param("programId") Long programId,
-                                @Param("semester") int semester);
+                                @Param("semester") int semester, @Param("studentId") Long studentId);
+
+    /**
+     * Indica si ya existe un momento con ese número en el programa y periodo.
+     *
+     * @param programId id del programa
+     * @param periodId  id del periodo académico
+     * @param number    número del momento
+     * @return {@code true} si ya existe
+     */
+    boolean existsByProgramIdAndPeriodIdAndNumber(Long programId, Long periodId, int number);
+
+    /**
+     * Indica si ya existe otro momento diferente con ese número en el programa y periodo.
+     *
+     * @param programId id del programa
+     * @param periodId  id del periodo académico
+     * @param number    número del momento
+     * @param id        id del momento a excluir
+     * @return {@code true} si otro momento ya tiene ese número
+     */
+    boolean existsByProgramIdAndPeriodIdAndNumberAndIdNot(Long programId, Long periodId, int number, Long id);
+
+    /**
+     * Cuenta la cantidad de momentos de un programa en un periodo académico.
+     *
+     * @param programId identificador del programa
+     * @param periodId  identificador del periodo académico
+     * @return cantidad de momentos
+     */
+    int countByProgramIdAndPeriodId(Long programId, Long periodId);
+
+    /**
+     * Indica si existen momentos configurados en un periodo académico.
+     *
+     * @param periodId identificador del periodo académico
+     * @return {@code true} si hay al menos un momento en el periodo
+     */
+    boolean existsByPeriodId(Long periodId);
+
+    /**
+     * Lista todos los momentos de un periodo académico.
+     *
+     * @param periodId identificador del periodo académico
+     * @return momentos del periodo
+     */
+    List<Moment> findByPeriodId(Long periodId);
+
+    /**
+     * Indica si algún momento utiliza el tipo de evaluador en su ponderación.
+     *
+     * @param evaluatorTypeId identificador del tipo de evaluador
+     * @return {@code true} si al menos un peso de momento referencia este tipo
+     */
+    boolean existsByEvaluatorWeightsEvaluatorTypeId(Long evaluatorTypeId);
 }

@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { groupService } from '@/services/api/groupService'
 import { momentService } from '@/services/api/momentService'
+import { submissionService } from '@/services/api/submissionService'
 import type { ApiError } from '@/types/api'
 import type { MomentDetail } from '@/types/moment'
 
@@ -13,6 +14,7 @@ import { GroupDetailPage } from './GroupDetailPage'
 import { groupFixture, momentFixture } from './testData'
 
 vi.mock('@/services/api/momentService', () => ({ momentService: { list: vi.fn(), get: vi.fn() } }))
+vi.mock('@/services/api/submissionService', () => ({ submissionService: { history: vi.fn() } }))
 vi.mock('@/services/api/groupService', () => ({
   groupService: {
     get: vi.fn(),
@@ -37,7 +39,8 @@ const members = [
 ]
 
 function momentDetail(overrides = {}): MomentDetail {
-  return { ...momentFixture(overrides), maxScore: 5, learningOutcomes: [] }
+  return { ...momentFixture(overrides), teacherWeight: 100, evaluatorWeights: [], totalWeight: 100, maxScore: 5,
+    learningOutcomes: [] }
 }
 
 function apiError(status: number, message: string): AxiosError {
@@ -45,11 +48,12 @@ function apiError(status: number, message: string): AxiosError {
   return new AxiosError(message, 'ERR_BAD_REQUEST', undefined, null, { status, data } as AxiosResponse)
 }
 
-function renderPage() {
+function renderPage(path = '/groups/7') {
   render(
-    <MemoryRouter initialEntries={['/groups/7']}>
+    <MemoryRouter initialEntries={[path]}>
       <Routes>
         <Route path="/groups/:id" element={<GroupDetailPage />} />
+        <Route path="/groups/:id/submissions" element={<GroupDetailPage tab="submissions" />} />
         <Route path="/groups" element={<p>Lista de grupos</p>} />
       </Routes>
     </MemoryRouter>,
@@ -76,7 +80,7 @@ describe('GroupDetailPage', () => {
   it('shows the members, the dates and the evaluators of the group', async () => {
     service.get.mockResolvedValue(groupFixture({
       memberCount: 2, members, submissionDeadline: '2026-10-15',
-      evaluators: [{ id: 51, fullName: 'Sofía Vega', evaluatorType: 'Empresario' }],
+      evaluators: [{ id: 51, fullName: 'Sofía Vega', evaluatorType: 'Empresario', countsInGrade: true }],
     }))
     renderPage()
 
@@ -153,7 +157,7 @@ describe('GroupDetailPage', () => {
       role: 'EXTERNAL_EVALUATOR', active: true, mustChangePassword: false,
     })
     service.assignEvaluator.mockResolvedValue(groupFixture({
-      evaluators: [{ id: 51, fullName: 'Sofía Vega', evaluatorType: 'Empresario' }],
+      evaluators: [{ id: 51, fullName: 'Sofía Vega', evaluatorType: 'Empresario', countsInGrade: true }],
     }))
     renderPage()
 
@@ -166,6 +170,22 @@ describe('GroupDetailPage', () => {
     expect(service.lookupEvaluator).toHaveBeenCalledWith('sofia@tecnosoft.co')
     expect(service.assignEvaluator).toHaveBeenCalledWith(7, 51)
     expect(await screen.findByText('· Empresario')).toBeInTheDocument()
+  })
+
+  it('warns when the type of an assigned evaluator has no weight in the moment', async () => {
+    service.get.mockResolvedValue(groupFixture({
+      evaluators: [
+        { id: 51, fullName: 'Sofía Vega', evaluatorType: 'Empresario', countsInGrade: true },
+        { id: 52, fullName: 'Carlos Pérez', evaluatorType: 'Egresado', countsInGrade: false },
+      ],
+    }))
+    renderPage()
+
+    const notes = await screen.findAllByRole('note')
+    expect(notes).toHaveLength(1)
+    expect(notes[0]).toHaveTextContent(
+      'Su evaluación no contará en la nota: el tipo Egresado no tiene peso en este momento.')
+    expect(screen.getByRole('button', { name: 'Quitar a Carlos Pérez' })).toBeEnabled()
   })
 
   it('says when no evaluator matches the search', async () => {
@@ -203,5 +223,20 @@ describe('GroupDetailPage', () => {
 
     expect(service.remove).toHaveBeenCalledWith(7)
     expect(await screen.findByText('Lista de grupos')).toBeInTheDocument()
+  })
+  it('shows the submissions of the group in their tab', async () => {
+    service.get.mockResolvedValue(groupFixture({ members, memberCount: 2 }))
+    vi.mocked(submissionService.history).mockResolvedValue({
+      versions: [{ id: 90, groupId: 7, versionNumber: 1, submittedAt: '2026-10-20T11:30:00', late: false,
+        zipFileName: 'sierap-v1.zip', zipSize: 1024, presentationFileName: null, presentationSize: null,
+        toGrade: true }],
+      currentPresentation: null,
+    })
+    renderPage('/groups/7/submissions')
+
+    expect(await screen.findByText('sierap-v1.zip')).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Entregas' })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: 'Mi calificación' })).toHaveAttribute('href', '/groups/7/evaluation')
+    expect(screen.queryByText('Proyecto de aula')).not.toBeInTheDocument()
   })
 })

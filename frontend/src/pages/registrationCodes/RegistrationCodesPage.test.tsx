@@ -5,9 +5,13 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AuthContext } from '@/auth/authContext'
+import { apiError } from '@/pages/catalogs/testHelpers'
+import { catalogService } from '@/services/api/catalogService'
 import { registrationCodeService } from '@/services/api/registrationCodeService'
+import { teacherService } from '@/services/api/teacherService'
 import type { ApiError } from '@/types/api'
 import type { UserRole, UserSummary } from '@/types/auth'
+import type { Program } from '@/types/catalog'
 import type { RegistrationCode } from '@/types/registrationCode'
 
 import { RegistrationCodesPage } from './RegistrationCodesPage'
@@ -16,8 +20,46 @@ vi.mock('@/services/api/registrationCodeService', () => ({
   registrationCodeService: { list: vi.fn(), create: vi.fn(), deactivate: vi.fn() },
 }))
 
+vi.mock('@/services/api/catalogService', () => ({
+  catalogService: { faculties: vi.fn(), programs: vi.fn() },
+}))
+
+vi.mock('@/services/api/teacherService', () => ({
+  teacherService: { list: vi.fn() },
+}))
+
 const list = vi.mocked(registrationCodeService.list)
+const create = vi.mocked(registrationCodeService.create)
 const deactivate = vi.mocked(registrationCodeService.deactivate)
+const faculties = vi.mocked(catalogService.faculties)
+const programs = vi.mocked(catalogService.programs)
+const teachers = vi.mocked(teacherService.list)
+
+function program(id: number, name: string): Program {
+  return {
+    id,
+    code: String(id),
+    name,
+    facultyId: 3,
+    facultyName: 'Facultad de Ingenierías',
+    currentPeriodMomentCount: 0,
+    studentCount: 0,
+  }
+}
+
+function teacher(id: number, fullName: string, active = true): UserSummary {
+  const [firstNames, lastNames] = fullName.split(' ')
+  return {
+    id,
+    firstNames,
+    lastNames,
+    fullName,
+    email: `${firstNames.toLowerCase()}@unicesar.edu.co`,
+    role: 'TEACHER',
+    active,
+    mustChangePassword: false,
+  }
+}
 
 function code(overrides: Partial<RegistrationCode>): RegistrationCode {
   return {
@@ -69,7 +111,15 @@ describe('RegistrationCodesPage', () => {
   beforeEach(() => {
     vi.useFakeTimers({ now: new Date('2026-09-29T10:00:00'), toFake: ['Date'] })
     list.mockReset()
+    create.mockReset()
     deactivate.mockReset()
+    programs.mockResolvedValue([program(1, 'Ingeniería de Sistemas'), program(2, 'Ingeniería Electrónica')])
+    faculties.mockResolvedValue([{ id: 3, code: '04', name: 'Facultad de Ingenierías', programCount: 2 }])
+    teachers.mockResolvedValue([
+      teacher(20, 'Rafael Ospino'),
+      teacher(12, 'Marta Díaz'),
+      teacher(30, 'Luis Pérez', false),
+    ])
   })
 
   afterEach(() => {
@@ -183,5 +233,87 @@ describe('RegistrationCodesPage', () => {
     await userEvent.click(screen.getByRole('button', { name: /reintentar/i }))
 
     expect(await screen.findByText('Todavía no hay códigos de registro.')).toBeInTheDocument()
+  })
+
+  it('lets a teacher generate a code for a program of their faculty', async () => {
+    list.mockResolvedValue(codes.slice(1, 2))
+    create.mockResolvedValue(
+      code({ id: 9, code: 'N3WC0DEX', programName: 'Ingeniería Electrónica', registeredCount: 0 }),
+    )
+    renderAs('TEACHER')
+
+    await screen.findByText('B8WJ3NQA')
+    await userEvent.click(screen.getByRole('button', { name: 'Generar código' }))
+    const form = await screen.findByRole('form', { name: 'Generar código de registro' })
+    expect(within(form).queryByLabelText('Docente')).not.toBeInTheDocument()
+    await userEvent.selectOptions(within(form).getByLabelText('Programa'), 'Ingeniería Electrónica')
+    await userEvent.type(within(form).getByLabelText('Vence el'), '2026-10-30')
+    await userEvent.click(within(form).getByRole('button', { name: 'Generar' }))
+
+    expect(create).toHaveBeenCalledWith({ programId: 2, expiresOn: '2026-10-30' })
+    expect(teachers).not.toHaveBeenCalled()
+    expect(await screen.findByRole('status')).toHaveTextContent('Se generó el código N3WC0DEX')
+    expect(screen.queryByRole('form')).not.toBeInTheDocument()
+    const rows = screen.getAllByRole('row')
+    expect(rows[1]).toHaveTextContent('N3WC0DEX')
+  })
+
+  it('asks an admin for the teacher and only offers the active teachers of the faculty', async () => {
+    list.mockResolvedValue([])
+    create.mockResolvedValue(code({ id: 9, code: 'N3WC0DEX', teacherId: 20, teacherName: 'Rafael Ospino' }))
+    renderAs('ADMIN')
+
+    await screen.findByText('Todavía no hay códigos de registro.')
+    await userEvent.click(screen.getByRole('button', { name: 'Generar código' }))
+    const form = await screen.findByRole('form', { name: 'Generar código de registro' })
+    const teacherSelect = within(form).getByLabelText('Docente')
+    expect(within(teacherSelect).getAllByRole('option').map((option) => option.textContent)).toEqual([
+      'Elige un docente',
+      'Marta Díaz',
+      'Rafael Ospino',
+    ])
+    expect(teachers).toHaveBeenCalledWith(3)
+
+    await userEvent.selectOptions(teacherSelect, 'Rafael Ospino')
+    await userEvent.selectOptions(within(form).getByLabelText('Programa'), 'Ingeniería de Sistemas')
+    await userEvent.type(within(form).getByLabelText('Vence el'), '2026-10-30')
+    await userEvent.click(within(form).getByRole('button', { name: 'Generar' }))
+
+    expect(create).toHaveBeenCalledWith({ programId: 1, expiresOn: '2026-10-30', teacherId: 20 })
+    expect(await screen.findByText('N3WC0DEX')).toBeInTheDocument()
+  })
+
+  it('checks the fields before generating a code', async () => {
+    list.mockResolvedValue([])
+    programs.mockResolvedValue([program(1, 'Ingeniería de Sistemas')])
+    renderAs('ADMIN')
+
+    await screen.findByText('Todavía no hay códigos de registro.')
+    await userEvent.click(screen.getByRole('button', { name: 'Generar código' }))
+    const form = await screen.findByRole('form', { name: 'Generar código de registro' })
+    expect(within(form).getByLabelText('Programa')).toHaveValue('1')
+    await userEvent.type(within(form).getByLabelText('Vence el'), '2026-09-28')
+    await userEvent.click(within(form).getByRole('button', { name: 'Generar' }))
+
+    expect(within(form).getByText('Elige el docente')).toBeInTheDocument()
+    expect(within(form).getByText('La fecha de vencimiento no puede estar en el pasado')).toBeInTheDocument()
+    expect(create).not.toHaveBeenCalled()
+  })
+
+  it('shows the API message when the code cannot be generated', async () => {
+    list.mockResolvedValue([])
+    create.mockRejectedValue(apiError(422, 'El programa no pertenece a la facultad del docente.'))
+    renderAs('TEACHER')
+
+    await screen.findByText('Todavía no hay códigos de registro.')
+    await userEvent.click(screen.getByRole('button', { name: 'Generar código' }))
+    const form = await screen.findByRole('form', { name: 'Generar código de registro' })
+    await userEvent.selectOptions(within(form).getByLabelText('Programa'), 'Ingeniería de Sistemas')
+    await userEvent.type(within(form).getByLabelText('Vence el'), '2026-10-30')
+    await userEvent.click(within(form).getByRole('button', { name: 'Generar' }))
+
+    expect(await within(form).findByRole('alert')).toHaveTextContent(
+      'El programa no pertenece a la facultad del docente.',
+    )
   })
 })

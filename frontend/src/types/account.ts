@@ -7,6 +7,8 @@ export interface EvaluatorType {
   description: string | null
   /** Solo los activos se asignan a evaluadores nuevos. */
   active: boolean
+  /** Evaluadores externos de este tipo. */
+  evaluatorCount: number
 }
 
 /** Cuerpo de `POST /api/external-evaluators` (`NewExternalEvaluatorRequest`). */
@@ -20,4 +22,13 @@ export interface NewExternalEvaluatorRequest {
   organization?: string
   position?: string
   graduationYear?: number
+}
+
+/** Datos de un docente nuevo; la facultad la agrega el servicio (la del admin). */
+export interface NewTeacherRequest {
+  firstNames: string
+  lastNames: string
+  documentType: DocumentType
+  documentNumber: string
+  email: string
 }

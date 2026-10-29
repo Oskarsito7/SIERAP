@@ -180,6 +180,94 @@ class MomentTest {
         assertThat(moment.getMaxScore()).isEqualByComparingTo("1.40");
     }
 
+    @Test
+    void startsWithTheTeacherAtOneHundredPercentAndNoEvaluatorTypes() {
+        Moment fresh = newMoment();
+
+        assertThat(fresh.getTeacherWeight()).isEqualByComparingTo("100");
+        assertThat(fresh.getEvaluatorWeights()).isEmpty();
+        assertThat(fresh.getTotalWeight()).isEqualByComparingTo("100");
+    }
+
+    @Test
+    void readsTheWeightOfEachEvaluatorTypeAndZeroWithoutWeight() {
+        EvaluatorType business = new EvaluatorType("Empresario", null);
+        EvaluatorType graduate = new EvaluatorType("Egresado", null);
+        moment.setTeacherWeight(new BigDecimal("60"));
+        moment.setEvaluatorWeight(business, new BigDecimal("40"));
+
+        assertThat(moment.getWeightFor(business)).isEqualByComparingTo("40");
+        assertThat(moment.hasWeightFor(business)).isTrue();
+        assertThat(moment.getWeightFor(graduate)).isEqualByComparingTo("0");
+        assertThat(moment.hasWeightFor(graduate)).isFalse();
+    }
+
+    @Test
+    void changesAndRemovesTheWeightOfAnEvaluatorType() {
+        EvaluatorType business = new EvaluatorType("Empresario", null);
+        moment.setEvaluatorWeight(business, new BigDecimal("40"));
+        moment.setEvaluatorWeight(business, new BigDecimal("33.33"));
+
+        assertThat(moment.getEvaluatorWeights()).hasSize(1);
+        assertThat(moment.getWeightFor(business)).isEqualByComparingTo("33.33");
+
+        moment.removeEvaluatorWeight(business);
+
+        assertThat(moment.getEvaluatorWeights()).isEmpty();
+    }
+
+    @Test
+    void rejectsWeightsOutsideTheRangeOrWithMoreThanTwoDecimals() {
+        EvaluatorType business = new EvaluatorType("Empresario", null);
+
+        for (String invalid : new String[] {"0", "-5", "100.01", "33.333"}) {
+            assertThatThrownBy(() -> moment.setTeacherWeight(new BigDecimal(invalid)))
+                    .isInstanceOf(BusinessRuleException.class);
+            assertThatThrownBy(() -> moment.setEvaluatorWeight(business, new BigDecimal(invalid)))
+                    .isInstanceOf(BusinessRuleException.class);
+        }
+        assertThatThrownBy(() -> moment.setTeacherWeight(null)).isInstanceOf(BusinessRuleException.class);
+        assertThat(moment.getTeacherWeight()).isEqualByComparingTo("100");
+    }
+
+    @Test
+    void launchesWhenTheWeightsAddUpToOneHundredWithDecimals() {
+        moment.setTeacherWeight(new BigDecimal("33.34"));
+        moment.setEvaluatorWeight(new EvaluatorType("Empresario", null), new BigDecimal("33.33"));
+        moment.setEvaluatorWeight(new EvaluatorType("Egresado", null), new BigDecimal("33.33"));
+
+        moment.launch();
+
+        assertThat(moment.getStatus()).isEqualTo(MomentStatus.LAUNCHED);
+    }
+
+    @Test
+    void cannotBeLaunchedIfTheWeightsDoNotAddUpToOneHundred() {
+        moment.setTeacherWeight(new BigDecimal("60"));
+        assertLaunchFails("hoy suman 60 %");
+
+        moment.setEvaluatorWeight(new EvaluatorType("Empresario", null), new BigDecimal("50"));
+        assertLaunchFails("hoy suman 110 %");
+    }
+
+    @Test
+    void locksTheWeightsOnceLaunched() {
+        EvaluatorType business = new EvaluatorType("Empresario", null);
+        moment.setTeacherWeight(new BigDecimal("70"));
+        moment.setEvaluatorWeight(business, new BigDecimal("30"));
+        moment.launch();
+
+        assertThatThrownBy(() -> moment.setTeacherWeight(new BigDecimal("80")))
+                .isInstanceOf(BusinessRuleException.class);
+        assertThatThrownBy(() -> moment.setEvaluatorWeight(business, new BigDecimal("20")))
+                .isInstanceOf(BusinessRuleException.class);
+        assertThatThrownBy(() -> moment.removeEvaluatorWeight(business))
+                .isInstanceOf(BusinessRuleException.class);
+        assertThatThrownBy(() -> moment.getEvaluatorWeights().clear())
+                .isInstanceOf(UnsupportedOperationException.class);
+        assertThat(moment.getWeightFor(business)).isEqualByComparingTo("30");
+    }
+
     private void assertLaunchFails(String message) {
         assertThatThrownBy(moment::launch)
                 .isInstanceOf(BusinessRuleException.class)

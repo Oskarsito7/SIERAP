@@ -17,4 +17,12 @@ public interface AdminRepository extends JpaRepository<Admin, Long> {
      * @return administradores de la facultad
      */
     List<Admin> findByFacultyId(Long facultyId);
+
+    /**
+     * Indica si existen administradores adscritos a una facultad.
+     *
+     * @param facultyId identificador de la facultad
+     * @return {@code true} si hay al menos un administrador en la facultad
+     */
+    boolean existsByFacultyId(Long facultyId);
 }
