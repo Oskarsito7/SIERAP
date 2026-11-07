@@ -40,3 +40,7 @@ application-local.yml
 # --- Logs generales ---
 *.log
 logs/
+
+# --- Respaldos locales de la base de datos (ver bd/README.md) ---
+bd/*.dump
+bd/*.backup

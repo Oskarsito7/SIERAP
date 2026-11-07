@@ -7,6 +7,7 @@ import co.edu.unicesar.sierap.dto.request.NewExternalEvaluatorRequest;
 import co.edu.unicesar.sierap.dto.request.NewStudentRequest;
 import co.edu.unicesar.sierap.dto.request.NewTeacherRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateUserRequest;
+import co.edu.unicesar.sierap.dto.response.StudentResponse;
 import co.edu.unicesar.sierap.dto.response.UserSummaryResponse;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
 
@@ -43,9 +44,9 @@ public interface AccountService {
      *
      * @param actor   usuario que crea la cuenta
      * @param request datos del estudiante
-     * @return usuario creado
+     * @return estudiante creado
      */
-    UserSummaryResponse createStudent(AuthenticatedUser actor, NewStudentRequest request);
+    StudentResponse createStudent(AuthenticatedUser actor, NewStudentRequest request);
 
     /**
      * Crea un evaluador externo de un tipo activo del catálogo.
@@ -74,13 +75,17 @@ public interface AccountService {
     List<UserSummaryResponse> listTeachers(AuthenticatedUser actor, Long facultyId);
 
     /**
-     * Lista los estudiantes de un programa dentro del alcance del usuario.
+     * Lista los estudiantes de un programa dentro del alcance del usuario (DO-08), con la
+     * marca de los que puede gestionar.
      *
-     * @param actor     usuario que consulta
-     * @param programId programa
-     * @return estudiantes del programa
+     * @param actor                usuario que consulta
+     * @param programId            programa
+     * @param withoutGroupInMoment si no es {@code null}, solo los activos del programa, con
+     *                             su semestre en el rango del momento, que no tienen grupo
+     *                             en él (lo mismo que {@code students-without-group})
+     * @return estudiantes ordenados por apellidos y nombres
      */
-    List<UserSummaryResponse> listStudents(AuthenticatedUser actor, Long programId);
+    List<StudentResponse> listStudents(AuthenticatedUser actor, Long programId, Long withoutGroupInMoment);
 
     /**
      * Lista los evaluadores externos: todos para el super_admin; los que creó el
