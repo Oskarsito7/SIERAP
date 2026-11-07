@@ -7,7 +7,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import co.edu.unicesar.sierap.dto.response.GroupResultsResponse;
 import co.edu.unicesar.sierap.dto.response.GroupResultsResponse.MemberResultResponse;
@@ -100,7 +99,7 @@ public class ResultServiceImpl implements ResultService {
 
         return new GroupResultsResponse(group.getId(), isGradingClosed(moment), moment.getMaxScore(),
                 group.getGroupGrade().orElse(null), groupOutcomes, members, submitted.size(),
-                pendingEvaluations(group, submitted));
+                group.getPendingEvaluationsCount());
     }
 
     @Override
@@ -129,21 +128,7 @@ public class ResultServiceImpl implements ResultService {
 
     /** Las notas son definitivas cuando el momento está lanzado y ya cerró su ventana de calificación. */
     private boolean isGradingClosed(Moment moment) {
-        LocalDate gradingEnd = moment.getGradingEnd();
-        return moment.getStatus() == MomentStatus.LAUNCHED && gradingEnd != null
-                && LocalDate.now(clock).isAfter(gradingEnd);
-    }
-
-    /** El docente y los evaluadores externos asignados que todavía no envían su evaluación. */
-    private static int pendingEvaluations(ProjectGroup group, List<Evaluation> submitted) {
-        Set<Long> submittedBy = submitted.stream()
-                .map(evaluation -> evaluation.getEvaluator().getId())
-                .collect(Collectors.toSet());
-        int pending = submittedBy.contains(group.getTeacher().getId()) ? 0 : 1;
-        pending += (int) group.getEvaluators().stream()
-                .filter(evaluator -> !submittedBy.contains(evaluator.getId()))
-                .count();
-        return pending;
+        return moment.isGradingClosed(LocalDate.now(clock));
     }
 
     private StudentResultResponse studentResult(ProjectGroup group, Student student) {

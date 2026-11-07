@@ -807,6 +807,10 @@ the averages and the grade distribution; ungraded groups and students are reflec
 metrics (`averageGrade`, `minGrade`, `maxGrade`, `passingCount`, `passingPercentage`, per-RAP
 averages and `distribution`) use each member's **individual grade** (`getIndividualGrade(student)`
 and `getIndividualScoreFor(outcome, student)`), which is their final grade (ADR-018).
+The passing threshold and grade distribution bands are dynamically computed from global parameters
+`report.passing-percentage` (e.g. `60`) and `report.grade-bands` (e.g. `Bajo:0;Básico:60;Alto:76;Sobresaliente:90`)
+scaled to `moment.maxScore` (decision 2026-10-29). If either parameter is missing, the API responds with
+`422 Unprocessable Entity`.
 
 ```jsonc
 // MomentReportData
@@ -827,7 +831,7 @@ and `getIndividualScoreFor(outcome, student)`), which is their final grade (ADR-
   "averageGrade": 4.12,             // average of graded students' individual grades; null when gradedStudents is 0
   "minGrade": 2.65,
   "maxGrade": 4.85,
-  "passingCount": 18,               // graded students with individualGrade >= 3.00
+  "passingCount": 18,               // graded students with individualGrade >= passing threshold (60% of maxScore)
   "passingPercentage": 90.00,       // passingCount / gradedStudents * 100 (null when gradedStudents is 0)
   "learningOutcomes": [
     {
@@ -837,7 +841,7 @@ and `getIndividualScoreFor(outcome, student)`), which is their final grade (ADR-
       "percentage": 78.33           // averageScore / maxScore * 100
     }
   ],
-  "distribution": [                 // always 4 buckets on the 0.00–5.00 scale, matching the UPC rubric levels
+  "distribution": [                 // buckets configured via 'report.grade-bands', scaled to moment.maxScore
     { "range": "0.00 - 2.99", "label": "Bajo",          "min": 0.00, "max": 2.99, "count": 2, "percentage": 10.00 },
     { "range": "3.00 - 3.79", "label": "Básico",        "min": 3.00, "max": 3.79, "count": 6, "percentage": 30.00 },
     { "range": "3.80 - 4.49", "label": "Alto",          "min": 3.80, "max": 4.49, "count": 8, "percentage": 40.00 },
