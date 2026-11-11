@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { UserPlus } from 'lucide-react'
 import { Link } from 'react-router'
 
+import { useAuth } from '@/auth/authContext'
 import { LoadStatus } from '@/components/LoadStatus'
 import { FormError, FormField } from '@/components/forms/FormField'
 import { SelectField } from '@/components/forms/SelectField'
@@ -13,17 +14,19 @@ import { useLoad } from '@/lib/useLoad'
 import { accountService } from '@/services/api/accountService'
 import { catalogService } from '@/services/api/catalogService'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
+import { momentService } from '@/services/api/momentService'
 import { studentService } from '@/services/api/studentService'
-import type { NewStudentRequest } from '@/types/account'
+import type { NewStudentRequest, Student } from '@/types/account'
 import type { DocumentType, UserSummary } from '@/types/auth'
 import type { Program } from '@/types/catalog'
 
 /**
  * "Mis estudiantes" del docente (wireframe DO-08): los estudiantes de cada programa de
- * su facultad, la creación de uno nuevo, el reenvío del enlace para crear la contraseña
- * y la desactivación de la cuenta. El docente solo gestiona a los que creó o se
- * registraron con un código suyo; con los demás la API responde 403 y se muestra su
- * mensaje. La carga masiva queda para el Momento 2.
+ * su facultad con su código, su semestre y cómo llegaron, la creación de uno nuevo, el
+ * reenvío del enlace para crear la contraseña y la desactivación de la cuenta. El docente
+ * solo gestiona a los que creó o se registraron con un código suyo: con los demás no se
+ * muestran esas acciones (`manageable`). El filtro "Sin grupo" ayuda a agregar a un
+ * grupo a quienes no se inscribieron (DO-02). La carga masiva queda para el Momento 2.
  */
 export function StudentsPage() {
   const programs = useLoad(() => catalogService.programs(), [])
@@ -49,24 +52,41 @@ export function StudentsPage() {
 }
 
 function ProgramStudents({ programs }: { programs: Program[] }) {
+  const { user } = useAuth()
   const [programId, setProgramId] = useState(programs[0].id)
-  const students = useLoad(() => studentService.list(programId), [programId])
+  // Momento del filtro "Sin grupo"; `null` muestra a todos los estudiantes del programa.
+  const [withoutGroupIn, setWithoutGroupIn] = useState<number | null>(null)
+  const moments = useLoad(() => momentService.list(), [])
+  const students = useLoad(
+    () => studentService.list(programId, withoutGroupIn ?? undefined),
+    [programId, withoutGroupIn],
+  )
   const [search, setSearch] = useState('')
   const [creating, setCreating] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const program = programs.find((item) => item.id === programId) ?? programs[0]
+  const programMoments =
+    moments.state.kind === 'success' ? moments.state.data.filter((moment) => moment.programId === programId) : []
+  const filterMoment = programMoments.find((moment) => moment.id === withoutGroupIn)
   const list = students.state.kind === 'success' ? sortByLastNames(students.state.data) : []
   const term = search.trim().toLowerCase()
   const visible = term
-    ? list.filter((student) => `${student.fullName} ${student.email}`.toLowerCase().includes(term))
+    ? list.filter((student) =>
+        `${student.fullName} ${student.studentCode} ${student.email}`.toLowerCase().includes(term),
+      )
     : list
 
-  const replace = (updated: UserSummary) =>
+  const replace = (updated: Student) =>
     students.setData((current) => current.map((student) => (student.id === updated.id ? updated : student)))
 
-  const resendLink = async (student: UserSummary) => {
+  const changeProgram = (id: number) => {
+    setProgramId(id)
+    setWithoutGroupIn(null)
+  }
+
+  const resendLink = async (student: Student) => {
     setNotice(null)
     setError(null)
     try {
@@ -77,7 +97,7 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
     }
   }
 
-  const toggleActive = async (student: UserSummary) => {
+  const toggleActive = async (student: Student) => {
     const question = `¿Desactivar la cuenta de ${student.fullName}? No podrá iniciar sesión.`
     if (student.active && !window.confirm(question)) return
     setNotice(null)
@@ -120,7 +140,12 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
             setError(null)
             const target = programs.find((item) => item.id === createdIn)?.name ?? 'el programa'
             setNotice(`Se creó a ${student.fullName} en ${target}. Recibirá un correo para crear su contraseña.`)
-            if (createdIn === programId) students.setData((current) => [...current, student])
+            // Con el filtro "Sin grupo" no se sabe si el nuevo cumple la regla: se vuelve a pedir la lista.
+            if (createdIn === programId && withoutGroupIn === null) {
+              students.setData((current) => [...current, student])
+            } else if (createdIn === programId) {
+              students.reload()
+            }
           }}
         />
       )}
@@ -134,11 +159,11 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
 
       <Card>
         <CardContent className="flex flex-col gap-4">
-          <div className="grid gap-4 sm:grid-cols-2 lg:max-w-2xl">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             <SelectField
               label="Programa"
               value={String(programId)}
-              onChange={(event) => setProgramId(Number(event.target.value))}
+              onChange={(event) => changeProgram(Number(event.target.value))}
             >
               {programs.map((item) => (
                 <option key={item.id} value={String(item.id)}>
@@ -146,8 +171,22 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
                 </option>
               ))}
             </SelectField>
+            {programMoments.length > 0 && (
+              <SelectField
+                label="Mostrar"
+                value={withoutGroupIn === null ? '' : String(withoutGroupIn)}
+                onChange={(event) => setWithoutGroupIn(event.target.value ? Number(event.target.value) : null)}
+              >
+                <option value="">Todos los estudiantes</option>
+                {programMoments.map((moment) => (
+                  <option key={moment.id} value={String(moment.id)}>
+                    Sin grupo en {moment.name}
+                  </option>
+                ))}
+              </SelectField>
+            )}
             <FormField
-              label="Buscar por nombre o correo"
+              label="Buscar por nombre, código o correo"
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
@@ -155,7 +194,11 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
           <LoadStatus state={students.state} onRetry={students.reload} label="Cargando los estudiantes…" />
           {students.state.kind === 'success' && visible.length === 0 && (
             <p className="text-muted-foreground text-sm">
-              {list.length === 0 ? `${program.name} todavía no tiene estudiantes.` : 'Ningún estudiante coincide.'}
+              {list.length > 0
+                ? 'Ningún estudiante coincide.'
+                : filterMoment
+                  ? `No hay estudiantes sin grupo en ${filterMoment.name}.`
+                  : `${program.name} todavía no tiene estudiantes.`}
             </p>
           )}
           {visible.length > 0 && (
@@ -164,7 +207,10 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
                 <thead className="text-muted-foreground border-b">
                   <tr>
                     <th className="py-2 pr-4 font-medium">Nombre</th>
+                    <th className="py-2 pr-4 font-medium">Código</th>
+                    <th className="py-2 pr-4 text-right font-medium">Semestre</th>
                     <th className="py-2 pr-4 font-medium">Correo</th>
+                    <th className="py-2 pr-4 font-medium">Cómo llegó</th>
                     <th className="py-2 pr-4 font-medium">Estado</th>
                     <th className="py-2 font-medium">
                       <span className="sr-only">Acciones</span>
@@ -175,30 +221,37 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
                   {visible.map((student) => (
                     <tr key={student.id} className="border-b last:border-0">
                       <td className="py-3 pr-4">{student.fullName}</td>
+                      <td className="py-3 pr-4 tabular-nums">{student.studentCode}</td>
+                      <td className="py-3 pr-4 text-right tabular-nums">{student.currentSemester}</td>
                       <td className="py-3 pr-4 break-all">{student.email}</td>
+                      <td className="py-3 pr-4">{arrival(student, user?.id)}</td>
                       <td className="py-3 pr-4">
                         <Badge variant={student.active ? 'default' : 'secondary'}>
                           {student.active ? 'Activo' : 'Desactivado'}
                         </Badge>
                       </td>
                       <td className="py-3 text-right whitespace-nowrap">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={!student.active}
-                          onClick={() => void resendLink(student)}
-                          aria-label={`Reenviar enlace a ${student.fullName}`}
-                        >
-                          Reenviar enlace
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => void toggleActive(student)}
-                          aria-label={`${student.active ? 'Desactivar' : 'Reactivar'} a ${student.fullName}`}
-                        >
-                          {student.active ? 'Desactivar' : 'Reactivar'}
-                        </Button>
+                        {student.manageable && (
+                          <>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={!student.active}
+                              onClick={() => void resendLink(student)}
+                              aria-label={`Reenviar enlace a ${student.fullName}`}
+                            >
+                              Reenviar enlace
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => void toggleActive(student)}
+                              aria-label={`${student.active ? 'Desactivar' : 'Reactivar'} a ${student.fullName}`}
+                            >
+                              {student.active ? 'Desactivar' : 'Reactivar'}
+                            </Button>
+                          </>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -232,7 +285,7 @@ function NewStudentForm({
 }: {
   programs: Program[]
   initialProgramId: number
-  onCreated: (student: UserSummary, programId: number) => void
+  onCreated: (student: Student, programId: number) => void
   onCancel: () => void
 }) {
   const [form, setForm] = useState<StudentForm>({
@@ -393,6 +446,13 @@ function toRequest(form: StudentForm): NewStudentRequest {
   }
 }
 
-function sortByLastNames(students: UserSummary[]): UserSummary[] {
+function sortByLastNames<T extends UserSummary>(students: T[]): T[] {
   return [...students].sort((a, b) => a.lastNames.localeCompare(b.lastNames, 'es'))
+}
+
+/** Cómo llegó el estudiante: con un código de registro o creado por alguien. */
+function arrival(student: Student, viewerId: number | undefined): string {
+  if (student.registrationCode) return `Código ${student.registrationCode}`
+  if (!student.createdBy) return '—'
+  return student.createdBy.id === viewerId ? 'Creado por mí' : `Creado por ${student.createdBy.fullName}`
 }
