@@ -16,16 +16,17 @@ export interface PercentBar {
  * Barras horizontales de una sola serie en una escala de 0 a 100 % (el logro de cada
  * RAP o la parte de los estudiantes en cada franja). Cada fila lleva su valor escrito,
  * así que la barra nunca es la única forma de leerlo; el detalle aparece con el puntero
- * o con el teclado. Se dibuja con HTML y Tailwind, sin librería de gráficas.
+ * o con el teclado. Se dibuja con HTML y Tailwind, sin librería de gráficas; las filas
+ * comparten las columnas de la lista (subgrid) para que todas las barras empiecen igual.
  */
 export function PercentBars({ label, items }: { label: string; items: PercentBar[] }) {
   return (
-    <ul aria-label={label} className="flex flex-col gap-3">
+    <ul aria-label={label} className="grid grid-cols-[minmax(4rem,auto)_1fr_auto] gap-x-3 gap-y-3">
       {items.map((item) => (
         <li
           key={item.key}
           tabIndex={item.detail ? 0 : undefined}
-          className="group focus-visible:ring-ring/50 relative grid grid-cols-[minmax(4rem,auto)_1fr_auto] items-center gap-3 rounded-sm outline-none focus-visible:ring-2"
+          className="group focus-visible:ring-ring/50 relative col-span-3 grid grid-cols-subgrid items-center rounded-sm outline-none focus-visible:ring-2"
         >
           <span className="flex flex-col">
             <span className="text-sm font-medium">{item.label}</span>

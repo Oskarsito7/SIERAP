@@ -4,7 +4,7 @@
 -- SOLO PARA DESARROLLO Y SUSTENTACIÓN. Nunca ejecutar en producción: crea
 -- usuarios con una contraseña conocida y borra los usuarios existentes.
 --
--- Requisito: las migraciones V1..V9 ya aplicadas (por el backend al arrancar, o
+-- Requisito: las migraciones V1..V10 ya aplicadas (por el backend al arrancar, o
 -- ejecutando bd/01-schema.sql). Este archivo NO crea tablas, solo datos.
 --
 -- Qué deja en la base (el periodo 2026-2 visto a 2026-10-30, con la ventana de
@@ -27,6 +27,9 @@
 --       - Grupo D  es de la otra docente, está conformado y sin entrega
 --     Los grupos A, B y C son del docente Edwin y el D de la docente Claudia,
 --     para poder comprobar que cada docente solo ve los grupos que habilitó.
+--   * El periodo anterior 2026-1, ya cerrado, con el mismo Momento 1 y dos
+--     equipos calificados (sección 8): sirve para el reporte comparativo y para
+--     que los estudiantes vean una nota definitiva en "Mis notas".
 --
 -- CONTRASEÑA de todos los usuarios creados aquí: Sierap-Inicio-2026
 -- (el mismo hash bcrypt del super_admin de la V6; estos sí entran directo,
@@ -57,6 +60,12 @@ WHERE email <> 'sierap@unicesar.edu.co';
 
 DELETE FROM moment WHERE number <> 1;
 DELETE FROM evaluator_weight;
+
+-- El periodo 2026-1 de la sección 8 (sus RAP, criterios, niveles y pesos se borran
+-- en cascada con su momento).
+DELETE FROM moment
+WHERE period_id IN (SELECT id FROM academic_period WHERE code = '2026-1');
+DELETE FROM academic_period WHERE code = '2026-1';
 
 -- -----------------------------------------------------------------------------
 -- 1 · Parámetros globales (RF 11: reglas institucionales fuera del código)
@@ -479,6 +488,174 @@ JOIN evaluation_criterion c ON c.learning_outcome_id = lo.id
                           AND c.display_order = v.criterion_order
 JOIN performance_level pl ON pl.criterion_id = c.id AND pl.name = v.level_name;
 
+-- -----------------------------------------------------------------------------
+-- 8 · Periodo anterior 2026-1, ya cerrado, para el reporte comparativo (RF 12)
+-- -----------------------------------------------------------------------------
+-- El Momento 1 de Ingeniería de Sistemas también se dictó en 2026-1, con la
+-- misma rúbrica, y su calificación ya cerró: así el comparativo enfrenta
+-- 2026-1 con 2026-2, y "Mis notas" muestra a María Fernanda y a sus compañeros
+-- una nota definitiva con los comentarios de los evaluadores (RF 4).
+--   * Equipo Alfa (Edwin): docente 3.76 y empresario Jorge 3.36 → grupo 3.64;
+--     el docente sube la sustentación de María Fernanda → 3.76.
+--   * Equipo Beta (Claudia): solo la docente, 2.76 → bajo el 60 % para aprobar.
+
+INSERT INTO academic_period (code, start_date, end_date, upc_evaluation_deadline)
+VALUES ('2026-1', DATE '2026-02-02', DATE '2026-06-13', DATE '2026-06-06');
+
+INSERT INTO moment (program_id, period_id, number, name, subject, semester_from, semester_to,
+                    requirement_level, min_members, max_members, status,
+                    group_formation_start, group_formation_end, submission_start, submission_end,
+                    grading_start, grading_end, teacher_weight)
+SELECT m.program_id, prev.id, m.number, m.name, m.subject, m.semester_from, m.semester_to,
+       m.requirement_level, m.min_members, m.max_members, 'LAUNCHED',
+       DATE '2026-02-09', DATE '2026-02-27', DATE '2026-03-02', DATE '2026-05-08',
+       DATE '2026-05-11', DATE '2026-05-29', 60
+FROM moment m
+JOIN program p ON p.id = m.program_id AND p.code = '108'
+JOIN academic_period ap ON ap.id = m.period_id AND ap.code = '2026-2'
+CROSS JOIN academic_period prev
+WHERE m.number = 1 AND prev.code = '2026-1';
+
+-- Misma rúbrica que el Momento 1 de 2026-2: RAP, criterios y niveles copiados.
+INSERT INTO learning_outcome (moment_id, code, description)
+SELECT target.id, lo.code, lo.description
+FROM learning_outcome lo
+JOIN moment source ON source.id = lo.moment_id AND source.number = 1
+JOIN academic_period sp ON sp.id = source.period_id AND sp.code = '2026-2'
+JOIN moment target ON target.program_id = source.program_id AND target.number = 1
+JOIN academic_period tp ON tp.id = target.period_id AND tp.code = '2026-1';
+
+INSERT INTO evaluation_criterion (learning_outcome_id, description, display_order)
+SELECT tlo.id, c.description, c.display_order
+FROM evaluation_criterion c
+JOIN learning_outcome slo ON slo.id = c.learning_outcome_id
+JOIN moment source ON source.id = slo.moment_id AND source.number = 1
+JOIN academic_period sp ON sp.id = source.period_id AND sp.code = '2026-2'
+JOIN moment target ON target.program_id = source.program_id AND target.number = 1
+JOIN academic_period tp ON tp.id = target.period_id AND tp.code = '2026-1'
+JOIN learning_outcome tlo ON tlo.moment_id = target.id AND tlo.code = slo.code;
+
+INSERT INTO performance_level (criterion_id, name, description, score, display_order)
+SELECT tc.id, pl.name, pl.description, pl.score, pl.display_order
+FROM performance_level pl
+JOIN evaluation_criterion c ON c.id = pl.criterion_id
+JOIN learning_outcome slo ON slo.id = c.learning_outcome_id
+JOIN moment source ON source.id = slo.moment_id AND source.number = 1
+JOIN academic_period sp ON sp.id = source.period_id AND sp.code = '2026-2'
+JOIN moment target ON target.program_id = source.program_id AND target.number = 1
+JOIN academic_period tp ON tp.id = target.period_id AND tp.code = '2026-1'
+JOIN learning_outcome tlo ON tlo.moment_id = target.id AND tlo.code = slo.code
+JOIN evaluation_criterion tc ON tc.learning_outcome_id = tlo.id AND tc.display_order = c.display_order;
+
+INSERT INTO evaluator_weight (moment_id, evaluator_type_id, weight)
+SELECT m.id, et.id, v.weight
+FROM (VALUES ('Empresario', 25.00), ('Egresado', 15.00)) AS v (type_name, weight)
+JOIN evaluator_type et ON et.name = v.type_name
+JOIN moment m ON m.number = 1
+JOIN program p ON p.id = m.program_id AND p.code = '108'
+JOIN academic_period ap ON ap.id = m.period_id AND ap.code = '2026-1';
+
+INSERT INTO project_group (moment_id, teacher_id, name, project_title,
+                           submission_deadline, evaluation_date)
+SELECT m.id, t.id, v.name, v.project_title, DATE '2026-05-08', v.evaluation_date
+FROM (VALUES
+    ('edwin.mendoza@unicesar.edu.co', 'Equipo Alfa',
+     'AgendaUPC: reserva de salas de estudio', DATE '2026-05-15'),
+    ('claudia.onate@unicesar.edu.co', 'Equipo Beta',
+     'InventarioLab: préstamo de equipos de laboratorio', DATE '2026-05-20')
+) AS v (teacher_email, name, project_title, evaluation_date)
+JOIN app_user u ON u.email = v.teacher_email
+JOIN teacher t ON t.id = u.id
+JOIN moment m ON m.number = 1
+JOIN program p ON p.id = m.program_id AND p.code = '108'
+JOIN academic_period ap ON ap.id = m.period_id AND ap.code = '2026-1';
+
+INSERT INTO project_group_member (project_group_id, student_id)
+SELECT g.id, s.id
+FROM (VALUES
+    ('Equipo Alfa', 'oscar.palomino@unicesar.edu.co'),
+    ('Equipo Alfa', 'maria.ospino@unicesar.edu.co'),
+    ('Equipo Alfa', 'juan.araujo@unicesar.edu.co'),
+    ('Equipo Alfa', 'laura.cuello@unicesar.edu.co'),
+    ('Equipo Beta', 'camilo.zuleta@unicesar.edu.co'),
+    ('Equipo Beta', 'daniela.maestre@unicesar.edu.co'),
+    ('Equipo Beta', 'kevin.lobo@unicesar.edu.co')
+) AS v (group_name, student_email)
+JOIN project_group g ON g.name = v.group_name
+JOIN app_user u ON u.email = v.student_email
+JOIN student s ON s.id = u.id;
+
+INSERT INTO project_group_evaluator (project_group_id, external_evaluator_id)
+SELECT g.id, e.id
+FROM project_group g, app_user u
+JOIN external_evaluator e ON e.id = u.id
+WHERE g.name = 'Equipo Alfa' AND u.email = 'jorge.daza@softcaribe.com.co';
+
+INSERT INTO evaluation (project_group_id, evaluator_id, status, evaluated_at, comment)
+SELECT g.id, u.id, 'SUBMITTED', v.evaluated_at, v.comment
+FROM (VALUES
+    ('Equipo Alfa', 'edwin.mendoza@unicesar.edu.co', TIMESTAMP '2026-05-15 10:30:00',
+     'Buena solución. Falta separar mejor la capa de datos y documentar las clases del dominio.'),
+    ('Equipo Alfa', 'jorge.daza@softcaribe.com.co', TIMESTAMP '2026-05-15 11:10:00',
+     'La idea es útil, pero la interfaz todavía no es clara para un usuario nuevo.'),
+    ('Equipo Beta', 'claudia.onate@unicesar.edu.co', TIMESTAMP '2026-05-20 16:00:00',
+     'El diagrama de clases no refleja el código y faltan validaciones. Revisar la arquitectura por capas.')
+) AS v (group_name, evaluator_email, evaluated_at, comment)
+JOIN project_group g ON g.name = v.group_name
+JOIN app_user u ON u.email = v.evaluator_email;
+
+INSERT INTO criterion_grade (evaluation_id, criterion_id, performance_level_id, score)
+SELECT e.id, c.id, pl.id, pl.score
+FROM (VALUES
+    -- Equipo Alfa · docente Edwin → 3.76
+    ('Equipo Alfa', 'edwin.mendoza@unicesar.edu.co', 'RAP1', 1, 'Alto'),
+    ('Equipo Alfa', 'edwin.mendoza@unicesar.edu.co', 'RAP2', 1, 'Alto'),
+    ('Equipo Alfa', 'edwin.mendoza@unicesar.edu.co', 'RAP2', 2, 'Básico'),
+    ('Equipo Alfa', 'edwin.mendoza@unicesar.edu.co', 'RAP3', 1, 'Alto'),
+    ('Equipo Alfa', 'edwin.mendoza@unicesar.edu.co', 'RAP4', 1, 'Básico'),
+    ('Equipo Alfa', 'edwin.mendoza@unicesar.edu.co', 'RAP4', 2, 'Alto'),
+    ('Equipo Alfa', 'edwin.mendoza@unicesar.edu.co', 'RAP5', 1, 'Alto'),
+    ('Equipo Alfa', 'edwin.mendoza@unicesar.edu.co', 'RAP5', 2, 'Alto'),
+    -- Equipo Alfa · empresario Jorge → 3.36
+    ('Equipo Alfa', 'jorge.daza@softcaribe.com.co', 'RAP1', 1, 'Básico'),
+    ('Equipo Alfa', 'jorge.daza@softcaribe.com.co', 'RAP2', 1, 'Alto'),
+    ('Equipo Alfa', 'jorge.daza@softcaribe.com.co', 'RAP2', 2, 'Básico'),
+    ('Equipo Alfa', 'jorge.daza@softcaribe.com.co', 'RAP3', 1, 'Básico'),
+    ('Equipo Alfa', 'jorge.daza@softcaribe.com.co', 'RAP4', 1, 'Alto'),
+    ('Equipo Alfa', 'jorge.daza@softcaribe.com.co', 'RAP4', 2, 'Básico'),
+    ('Equipo Alfa', 'jorge.daza@softcaribe.com.co', 'RAP5', 1, 'Alto'),
+    ('Equipo Alfa', 'jorge.daza@softcaribe.com.co', 'RAP5', 2, 'Básico'),
+    -- Equipo Beta · docente Claudia → 2.76
+    ('Equipo Beta', 'claudia.onate@unicesar.edu.co', 'RAP1', 1, 'Básico'),
+    ('Equipo Beta', 'claudia.onate@unicesar.edu.co', 'RAP2', 1, 'Básico'),
+    ('Equipo Beta', 'claudia.onate@unicesar.edu.co', 'RAP2', 2, 'Bajo'),
+    ('Equipo Beta', 'claudia.onate@unicesar.edu.co', 'RAP3', 1, 'Básico'),
+    ('Equipo Beta', 'claudia.onate@unicesar.edu.co', 'RAP4', 1, 'Básico'),
+    ('Equipo Beta', 'claudia.onate@unicesar.edu.co', 'RAP4', 2, 'Básico'),
+    ('Equipo Beta', 'claudia.onate@unicesar.edu.co', 'RAP5', 1, 'Alto'),
+    ('Equipo Beta', 'claudia.onate@unicesar.edu.co', 'RAP5', 2, 'Básico')
+) AS v (group_name, evaluator_email, outcome_code, criterion_order, level_name)
+JOIN project_group g ON g.name = v.group_name
+JOIN app_user u ON u.email = v.evaluator_email
+JOIN evaluation e ON e.project_group_id = g.id AND e.evaluator_id = u.id
+JOIN moment m ON m.id = g.moment_id
+JOIN learning_outcome lo ON lo.moment_id = m.id AND lo.code = v.outcome_code
+JOIN evaluation_criterion c ON c.learning_outcome_id = lo.id
+                          AND c.display_order = v.criterion_order
+JOIN performance_level pl ON pl.criterion_id = c.id AND pl.name = v.level_name;
+
+INSERT INTO individual_grade (evaluation_id, student_id, criterion_id, performance_level_id, score)
+SELECT e.id, s.id, c.id, pl.id, pl.score
+FROM project_group g
+JOIN app_user eu ON eu.email = 'edwin.mendoza@unicesar.edu.co'
+JOIN evaluation e ON e.project_group_id = g.id AND e.evaluator_id = eu.id
+JOIN app_user su ON su.email = 'maria.ospino@unicesar.edu.co'
+JOIN student s ON s.id = su.id
+JOIN learning_outcome lo ON lo.moment_id = g.moment_id AND lo.code = 'RAP5'
+JOIN evaluation_criterion c ON c.learning_outcome_id = lo.id AND c.display_order = 2
+JOIN performance_level pl ON pl.criterion_id = c.id AND pl.name = 'Sobresaliente'
+WHERE g.name = 'Equipo Alfa';
+
 COMMIT;
 
 -- -----------------------------------------------------------------------------
@@ -486,13 +663,13 @@ COMMIT;
 -- -----------------------------------------------------------------------------
 SELECT 'faculty'                AS tabla, COUNT(*) AS filas, 1  AS esperadas FROM faculty
 UNION ALL SELECT 'program',                COUNT(*), 1  FROM program
-UNION ALL SELECT 'academic_period',        COUNT(*), 1  FROM academic_period
-UNION ALL SELECT 'global_parameter',       COUNT(*), 6  FROM global_parameter
-UNION ALL SELECT 'moment',                 COUNT(*), 2  FROM moment
-UNION ALL SELECT 'evaluator_weight',       COUNT(*), 3  FROM evaluator_weight
-UNION ALL SELECT 'learning_outcome',       COUNT(*), 10 FROM learning_outcome
-UNION ALL SELECT 'evaluation_criterion',   COUNT(*), 8  FROM evaluation_criterion
-UNION ALL SELECT 'performance_level',      COUNT(*), 32 FROM performance_level
+UNION ALL SELECT 'academic_period',        COUNT(*), 2  FROM academic_period
+UNION ALL SELECT 'global_parameter',       COUNT(*), 8  FROM global_parameter
+UNION ALL SELECT 'moment',                 COUNT(*), 3  FROM moment
+UNION ALL SELECT 'evaluator_weight',       COUNT(*), 5  FROM evaluator_weight
+UNION ALL SELECT 'learning_outcome',       COUNT(*), 15 FROM learning_outcome
+UNION ALL SELECT 'evaluation_criterion',   COUNT(*), 16 FROM evaluation_criterion
+UNION ALL SELECT 'performance_level',      COUNT(*), 64 FROM performance_level
 UNION ALL SELECT 'evaluator_type',         COUNT(*), 2  FROM evaluator_type
 UNION ALL SELECT 'app_user',               COUNT(*), 24 FROM app_user
 UNION ALL SELECT 'super_admin',            COUNT(*), 1  FROM super_admin
@@ -501,11 +678,11 @@ UNION ALL SELECT 'teacher',                COUNT(*), 2  FROM teacher
 UNION ALL SELECT 'student',                COUNT(*), 15 FROM student
 UNION ALL SELECT 'external_evaluator',     COUNT(*), 4  FROM external_evaluator
 UNION ALL SELECT 'registration_code',      COUNT(*), 2  FROM registration_code
-UNION ALL SELECT 'project_group',          COUNT(*), 4  FROM project_group
-UNION ALL SELECT 'project_group_member',   COUNT(*), 13 FROM project_group_member
-UNION ALL SELECT 'project_group_evaluator',COUNT(*), 4  FROM project_group_evaluator
+UNION ALL SELECT 'project_group',          COUNT(*), 6  FROM project_group
+UNION ALL SELECT 'project_group_member',   COUNT(*), 20 FROM project_group_member
+UNION ALL SELECT 'project_group_evaluator',COUNT(*), 5  FROM project_group_evaluator
 UNION ALL SELECT 'submission',             COUNT(*), 4  FROM submission
-UNION ALL SELECT 'evaluation',             COUNT(*), 5  FROM evaluation
-UNION ALL SELECT 'criterion_grade',        COUNT(*), 36 FROM criterion_grade
-UNION ALL SELECT 'individual_grade',       COUNT(*), 3  FROM individual_grade
+UNION ALL SELECT 'evaluation',             COUNT(*), 8  FROM evaluation
+UNION ALL SELECT 'criterion_grade',        COUNT(*), 60 FROM criterion_grade
+UNION ALL SELECT 'individual_grade',       COUNT(*), 4  FROM individual_grade
 ORDER BY tabla;
