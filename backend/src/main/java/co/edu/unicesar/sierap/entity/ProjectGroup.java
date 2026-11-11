@@ -165,6 +165,28 @@ public class ProjectGroup {
     }
 
     /**
+     * Indica si el docente actual del grupo ya envió su evaluación.
+     *
+     * @return {@code true} si hay una evaluación enviada del docente que tiene el grupo
+     */
+    public boolean hasSubmittedTeacherEvaluation() {
+        return evaluations.stream()
+                .anyMatch(evaluation -> evaluation.isSubmitted() && sameUser(evaluation.getEvaluator(), teacher));
+    }
+
+    /**
+     * Pasa el grupo a otro docente (decisión del 2026-11-11). El borrador de evaluación
+     * del docente anterior, si lo tiene, se descarta: el nuevo docente califica desde cero.
+     * El service valida antes que el docente anterior no haya enviado su evaluación.
+     *
+     * @param newTeacher docente que recibe el grupo
+     */
+    public void reassignTo(Teacher newTeacher) {
+        evaluations.removeIf(evaluation -> sameUser(evaluation.getEvaluator(), teacher));
+        teacher = newTeacher;
+    }
+
+    /**
      * Asigna un evaluador externo al grupo.
      *
      * @param evaluator evaluador externo asignado por el docente

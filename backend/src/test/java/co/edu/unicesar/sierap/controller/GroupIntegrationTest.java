@@ -1,5 +1,6 @@
 package co.edu.unicesar.sierap.controller;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
@@ -425,6 +426,73 @@ class GroupIntegrationTest {
                 .andExpect(jsonPath("$.message", containsString("evaluación enviada")));
     }
 
+    // ------------------------------------------------------------ reasignar el grupo
+
+    @Test
+    void theAdminPassesAGroupToAnotherTeacherAndTheDraftOfTheFormerIsDiscarded() throws Exception {
+        ProjectGroup group = save(new ProjectGroup(launched, teacher, "Grupo 1"));
+        group.addEvaluation(new Evaluation(teacher, now()));
+        projectGroupRepository.saveAndFlush(group);
+        Teacher newTeacher = teacher(faculty);
+
+        reassign(group.getId(), loginToken(admin(faculty)), newTeacher)
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.teacher.id").value(newTeacher.getId()));
+
+        assertThat(group.getEvaluations()).isEmpty();
+        mockMvc.perform(get("/api/groups/" + group.getId()).header(HttpHeaders.AUTHORIZATION, bearer(teacherToken)))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get("/api/groups").header(HttpHeaders.AUTHORIZATION, bearer(loginToken(newTeacher))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].name", contains("Grupo 1")));
+    }
+
+    @Test
+    void aGroupCannotBeReassignedOnceItsTeacherSubmittedTheEvaluation() throws Exception {
+        ProjectGroup group = save(new ProjectGroup(launched, teacher, "Grupo 1"));
+        Evaluation evaluation = new Evaluation(teacher, now());
+        group.addEvaluation(evaluation);
+        evaluation.submit();
+        projectGroupRepository.saveAndFlush(group);
+
+        reassign(group.getId(), loginToken(admin(faculty)), teacher(faculty))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message", containsString("ya envió su evaluación")));
+    }
+
+    @Test
+    void onlyTheAdminOfTheFacultyReassignsToAnActiveTeacherOfItUntilGradingCloses() throws Exception {
+        ProjectGroup group = save(new ProjectGroup(launched, teacher, "Grupo 1"));
+        Teacher newTeacher = teacher(faculty);
+        String adminToken = loginToken(admin(faculty));
+
+        reassign(group.getId(), teacherToken, newTeacher).andExpect(status().isForbidden());
+        reassign(group.getId(), loginToken(admin(otherFaculty)), newTeacher).andExpect(status().isForbidden());
+        reassign(group.getId(), adminToken, teacher)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message", containsString("ya es de")));
+        reassign(group.getId(), adminToken, teacher(otherFaculty))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message", containsString("no es docente de la facultad")));
+
+        Teacher inactive = teacher(faculty);
+        inactive.setActive(false);
+        persist(inactive);
+        reassign(group.getId(), adminToken, inactive)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message", containsString("desactivada")));
+
+        save(new ProjectGroup(launched, newTeacher, "grupo 1"));
+        reassign(group.getId(), adminToken, newTeacher)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message", containsString("ya tiene un grupo llamado")));
+
+        ProjectGroup closedGroup = save(new ProjectGroup(closed, teacher, "Grupo 1"));
+        reassign(closedGroup.getId(), adminToken, newTeacher)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message", containsString("2026-08-20")));
+    }
+
     // ------------------------------------------------------------ evaluadores externos
 
     @Test
@@ -578,6 +646,15 @@ class GroupIntegrationTest {
         String code = "S" + SEQUENCE.incrementAndGet();
         return persist(new Student("Estudiante", "Prueba " + code, DocumentType.TI, document(), email("estudiante"),
                 passwordEncoder.encode(PASSWORD), now(), code, semester, ofProgram));
+    }
+
+    private ResultActions reassign(long groupId, String token, Teacher newTeacher) throws Exception {
+        return perform(put("/api/groups/" + groupId + "/teacher"), token, Map.of("teacherId", newTeacher.getId()));
+    }
+
+    private Admin admin(Faculty ofFaculty) {
+        return persist(new Admin("Admin", "Prueba", DocumentType.CC, document(), email("admin"),
+                passwordEncoder.encode(PASSWORD), now(), ofFaculty));
     }
 
     private ExternalEvaluator externalEvaluator() {

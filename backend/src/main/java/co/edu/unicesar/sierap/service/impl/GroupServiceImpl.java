@@ -10,6 +10,7 @@ import co.edu.unicesar.sierap.dto.request.AddMemberRequest;
 import co.edu.unicesar.sierap.dto.request.AssignEvaluatorRequest;
 import co.edu.unicesar.sierap.dto.request.NewGroupRequest;
 import co.edu.unicesar.sierap.dto.request.ProjectTitleRequest;
+import co.edu.unicesar.sierap.dto.request.ReassignGroupRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateGroupRequest;
 import co.edu.unicesar.sierap.dto.response.GroupResponse;
 import co.edu.unicesar.sierap.dto.response.StudentWithoutGroupResponse;
@@ -35,6 +36,7 @@ import co.edu.unicesar.sierap.repository.ExternalEvaluatorRepository;
 import co.edu.unicesar.sierap.repository.MomentRepository;
 import co.edu.unicesar.sierap.repository.ProjectGroupRepository;
 import co.edu.unicesar.sierap.repository.StudentRepository;
+import co.edu.unicesar.sierap.repository.TeacherRepository;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
 import co.edu.unicesar.sierap.service.GroupService;
 import org.springframework.stereotype.Service;
@@ -56,6 +58,7 @@ public class GroupServiceImpl implements GroupService {
     private final ProjectGroupRepository projectGroupRepository;
     private final MomentRepository momentRepository;
     private final StudentRepository studentRepository;
+    private final TeacherRepository teacherRepository;
     private final ExternalEvaluatorRepository externalEvaluatorRepository;
     private final EvaluationRepository evaluationRepository;
     private final AccessScope accessScope;
@@ -67,18 +70,20 @@ public class GroupServiceImpl implements GroupService {
      * @param projectGroupRepository      grupos
      * @param momentRepository            momentos
      * @param studentRepository           estudiantes
+     * @param teacherRepository           docentes
      * @param externalEvaluatorRepository evaluadores externos
      * @param evaluationRepository        evaluaciones
      * @param accessScope                 reglas de alcance de las cuentas
      * @param clock                       reloj de la aplicación
      */
     public GroupServiceImpl(ProjectGroupRepository projectGroupRepository, MomentRepository momentRepository,
-                            StudentRepository studentRepository,
+                            StudentRepository studentRepository, TeacherRepository teacherRepository,
                             ExternalEvaluatorRepository externalEvaluatorRepository,
                             EvaluationRepository evaluationRepository, AccessScope accessScope, Clock clock) {
         this.projectGroupRepository = projectGroupRepository;
         this.momentRepository = momentRepository;
         this.studentRepository = studentRepository;
+        this.teacherRepository = teacherRepository;
         this.externalEvaluatorRepository = externalEvaluatorRepository;
         this.evaluationRepository = evaluationRepository;
         this.accessScope = accessScope;
@@ -287,6 +292,38 @@ public class GroupServiceImpl implements GroupService {
         });
         group.addMember(student);
         return GroupMapper.toResponse(group, teacher);
+    }
+
+    @Override
+    public GroupResponse reassignTeacher(AuthenticatedUser actor, Long id, ReassignGroupRequest request) {
+        User viewer = accessScope.loadActor(actor);
+        ProjectGroup group = projectGroupRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Grupo", id));
+        Moment moment = group.getMoment();
+        accessScope.requireFaculty(viewer, facultyOf(moment));
+        requireGradingNotClosed(moment, today(), "reasignar el grupo");
+        Teacher newTeacher = teacherRepository.findById(request.teacherId())
+                .orElseThrow(() -> new ResourceNotFoundException("Docente", request.teacherId()));
+        if (group.isEnabledBy(newTeacher)) {
+            throw new BusinessRuleException("El grupo ya es de " + newTeacher.getFullName() + ".");
+        }
+        if (!Objects.equals(newTeacher.getFaculty().getId(), facultyOf(moment))) {
+            throw new BusinessRuleException(newTeacher.getFullName() + " no es docente de la facultad del programa.");
+        }
+        if (!newTeacher.isActive()) {
+            throw new BusinessRuleException("La cuenta de " + newTeacher.getFullName() + " está desactivada.");
+        }
+        if (group.hasSubmittedTeacherEvaluation()) {
+            throw new BusinessRuleException(group.getTeacher().getFullName()
+                    + " ya envió su evaluación del grupo: no se puede reasignar.");
+        }
+        if (projectGroupRepository.existsByMomentIdAndTeacherIdAndNameIgnoreCase(moment.getId(),
+                newTeacher.getId(), group.getName())) {
+            throw new BusinessRuleException(newTeacher.getFullName() + " ya tiene un grupo llamado \""
+                    + group.getName() + "\" en este momento.");
+        }
+        group.reassignTo(newTeacher);
+        return GroupMapper.toResponse(group, viewer);
     }
 
     @Override
