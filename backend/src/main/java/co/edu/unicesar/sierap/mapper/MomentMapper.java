@@ -91,11 +91,23 @@ public final class MomentMapper {
                 moment.getLearningOutcomes().stream().map(MomentMapper::toLearningOutcome).toList());
     }
 
+    /**
+     * Convierte un RAP con sus criterios y niveles.
+     *
+     * @param outcome RAP del momento
+     * @return RAP con su puntaje máximo y sus criterios
+     */
     public static LearningOutcomeResponse toLearningOutcome(LearningOutcome outcome) {
         return new LearningOutcomeResponse(outcome.getId(), outcome.getCode(), outcome.getDescription(),
                 outcome.getMaxScore(), outcome.getCriteria().stream().map(MomentMapper::toCriterion).toList());
     }
 
+    /**
+     * Convierte un criterio de evaluación con sus niveles de desempeño.
+     *
+     * @param criterion criterio del RAP
+     * @return criterio con su puntaje máximo y sus niveles
+     */
     public static CriterionResponse toCriterion(EvaluationCriterion criterion) {
         return new CriterionResponse(
                 criterion.getId(),
@@ -105,6 +117,12 @@ public final class MomentMapper {
                 criterion.getLevels().stream().map(MomentMapper::toLevel).toList());
     }
 
+    /**
+     * Convierte un nivel de desempeño.
+     *
+     * @param level nivel del criterio
+     * @return nivel con su puntaje
+     */
     public static LevelResponse toLevel(PerformanceLevel level) {
         return new LevelResponse(
                 level.getId(),
