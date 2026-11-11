@@ -3,13 +3,11 @@ import { useSearchParams } from 'react-router'
 
 import { useAuth } from '@/auth/authContext'
 import { LoadStatus } from '@/components/LoadStatus'
-import { SampleDataNotice } from '@/components/SampleDataNotice'
 import { SelectField } from '@/components/forms/SelectField'
 import { useLoad } from '@/lib/useLoad'
 import { catalogService } from '@/services/api/catalogService'
 import { groupService } from '@/services/api/groupService'
 import { momentService } from '@/services/api/momentService'
-import { REPORTS_API_READY } from '@/services/api/reportService'
 import type { AcademicPeriod } from '@/types/catalog'
 
 import { ComparativeReport } from './ComparativeReport'
@@ -50,7 +48,6 @@ export function ReportsPage() {
           Mientras la calificación esté abierta, las cifras son una vista previa.
         </p>
       </div>
-      {!REPORTS_API_READY && <SampleDataNotice reason="las rutas de reportes todavía no están publicadas." />}
 
       <nav aria-label="Tipos de reporte" className="flex flex-wrap gap-1 border-b">
         {TABS.map((item) => (
