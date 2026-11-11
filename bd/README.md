@@ -9,10 +9,13 @@ La fuente de verdad del esquema siguen siendo las migraciones de Flyway en
 
 | Archivo | Qué es |
 |---|---|
-| `01-schema.sql` | Todas las migraciones (V1..V9) concatenadas en orden. **Generado**, no editar a mano. |
+| `01-schema.sql` | Todas las migraciones (V1..V10) concatenadas en orden. **Generado**, no editar a mano. |
 | `generate-schema.sh` | Regenera `01-schema.sql` desde las migraciones: `bash bd/generate-schema.sh`. |
 | `02-seed-dev.sql` | Datos de demostración: usuarios, grupos, entregas, evaluaciones y notas. Solo desarrollo. |
 | `03-documento-ieee.md` | Documento en formato IEEE sobre el diseño de la base de datos: modelo, integridad, tipos de datos, índices y validación. |
+| `../docs/database/test-data.sql` | Datos de prueba para la rúbrica de datos: al menos cinco filas en cada una de las 26 tablas, filas relacionadas con muchas y con ninguna. Alternativa a `02-seed-dev.sql`, sobre una base recién creada. |
+| `../docs/database/rejection-tests.sql` | Once sentencias que el servidor rechaza por CHECK, UNIQUE y FOREIGN KEY, y una cascada que se deshace con ROLLBACK. Requiere `test-data.sql`. |
+| `../docs/diagramas/diagrama_er.md` | Diagrama entidad-relación del esquema físico (Mermaid), con llaves, tipos y acciones referenciales. |
 
 ---
 
@@ -57,7 +60,7 @@ Desde ahí hay dos caminos:
 **B.1.a — Dejar que el backend cree el esquema (más limpio)**
 
 1. No ejecutar `01-schema.sql`.
-2. Arrancar el backend: Flyway encuentra la base vacía y aplica V1..V9.
+2. Arrancar el backend: Flyway encuentra la base vacía y aplica V1..V10.
 3. Ejecutar `bd/02-seed-dev.sql` en el Query Tool sobre `sierap`.
 
 **B.1.b — Crear el esquema a mano desde pgAdmin**
@@ -68,11 +71,11 @@ Desde ahí hay dos caminos:
    línea base de Flyway (el esquema ya existe, pero sin la tabla de historial):
 
    ```bash
-   cd backend && ./mvnw spring-boot:run -Dspring-boot.run.arguments="--spring.flyway.baseline-on-migrate=true --spring.flyway.baseline-version=9"
+   cd backend && ./mvnw spring-boot:run -Dspring-boot.run.arguments="--spring.flyway.baseline-on-migrate=true --spring.flyway.baseline-version=10"
    ```
 
-   Flyway crea `flyway_schema_history` con la versión 9 como línea base y no
-   vuelve a aplicar V1..V9. De la V10 en adelante se aplican con normalidad y ya
+   Flyway crea `flyway_schema_history` con la versión 10 como línea base y no
+   vuelve a aplicar V1..V10. De la V11 en adelante se aplican con normalidad y ya
    no hace falta volver a pasar esos argumentos.
 
 ### B.2 · Copiar lo que ya está en el contenedor
