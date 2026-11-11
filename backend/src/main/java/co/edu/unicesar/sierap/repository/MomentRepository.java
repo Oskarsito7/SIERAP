@@ -90,6 +90,17 @@ public interface MomentRepository extends JpaRepository<Moment, Long> {
      * @param number    número del momento
      * @return {@code true} si ya existe
      */
+    /**
+     * Busca un momento por programa, periodo académico y número de momento.
+     *
+     * @param programId id del programa
+     * @param periodId  id del periodo académico
+     * @param number    número del momento
+     * @return el momento, si existe
+     */
+    @EntityGraph(attributePaths = {"program", "period"})
+    Optional<Moment> findByProgramIdAndPeriodIdAndNumber(Long programId, Long periodId, int number);
+
     boolean existsByProgramIdAndPeriodIdAndNumber(Long programId, Long periodId, int number);
 
     /**

@@ -25,6 +25,7 @@ import { MomentsPage } from '@/pages/moments/MomentsPage'
 import { NewMomentPage } from '@/pages/moments/NewMomentPage'
 import { NotFoundPage } from '@/pages/NotFoundPage'
 import { RegistrationCodesPage } from '@/pages/registrationCodes/RegistrationCodesPage'
+import { ReportsPage } from '@/pages/reports/ReportsPage'
 import { MomentGroupsPage } from '@/pages/student/MomentGroupsPage'
 import { MyGradesPage } from '@/pages/student/MyGradesPage'
 import { MyGroupPage } from '@/pages/student/MyGroupPage'
@@ -47,6 +48,7 @@ const MENU_PAGES: Record<string, ReactNode> = {
   '/evaluator-types': <EvaluatorTypesPage />,
   '/external-evaluators': <ExternalEvaluatorsPage />,
   '/registration-codes': <RegistrationCodesPage />,
+  '/reports': <ReportsPage />,
   '/moment-groups': <MomentGroupsPage />,
   '/my-group': <MyGroupPage />,
   '/my-grades': <MyGradesPage />,
