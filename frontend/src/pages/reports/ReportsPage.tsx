@@ -57,7 +57,7 @@ export function ReportsPage() {
             aria-current={item.tab === tab ? 'page' : undefined}
             onClick={() => setSearchParams({ tab: item.tab })}
             className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
-              item.tab === tab ? 'border-primary text-foreground' : 'text-muted-foreground border-transparent'
+              item.tab === tab ? 'border-primary text-upc-green-800 font-semibold' : 'text-muted-foreground border-transparent'
             }`}
           >
             {item.label}

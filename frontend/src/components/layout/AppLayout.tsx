@@ -9,11 +9,14 @@ import { CHANGE_PASSWORD_PATH } from '@/routes/guards'
 import type { UserSummary } from '@/types/auth'
 
 import { ACCOUNT_PATH, ROLE_LABELS, ROLE_MENUS, type MenuItem } from './roleMenus'
+import { UpcLogo } from './UpcLogo'
 
 /**
  * Layout de las páginas con sesión: menú lateral según el rol del usuario (aprobado en
  * `docs/06`), barra superior con el título de la sección y el usuario, y el contenido.
- * En pantallas pequeñas el menú se abre con un botón.
+ * En pantallas pequeñas el menú se abre con un botón. Sigue la identidad de la UPC
+ * (ADR-019): menú en verde oscuro con el logosímbolo en blanco y la opción activa en
+ * Verde Institucional con la marca amarilla.
  *
  * Mientras la contraseña sea temporal no hay menú: la única pantalla disponible es
  * "Cambiar contraseña", que trae su propio botón de cerrar sesión.
@@ -30,9 +33,12 @@ export function AppLayout() {
   if (user.mustChangePassword) {
     return (
       <div className="flex min-h-svh flex-col">
-        <header className="flex h-16 items-center gap-3 border-b px-4 md:px-8">
-          <span className="text-lg font-bold tracking-tight">SIERAP</span>
-          <UserBadge user={user} />
+        <header className="bg-sidebar text-sidebar-foreground flex h-16 items-center gap-3 px-4 md:px-8">
+          <UpcLogo variant="white" className="h-9" />
+          <span className="border-sidebar-border border-l pl-3 font-display text-lg font-bold">
+            SIERAP
+          </span>
+          <UserBadge user={user} onDark />
         </header>
         <main className="w-full flex-1 px-4 py-8">
           <Outlet />
@@ -56,17 +62,28 @@ export function AppLayout() {
           menuOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
-        <div className="flex items-center justify-between px-5 py-4">
-          <Link to="/" className="flex flex-col" onClick={closeMenu}>
-            <span className="text-lg font-bold tracking-tight">SIERAP</span>
-            <span className="text-muted-foreground text-xs">Universidad Popular del Cesar</span>
+        <div className="border-sidebar-border flex items-start justify-between border-b px-5 py-5">
+          <Link to="/" className="flex flex-col gap-3" onClick={closeMenu} aria-label="SIERAP, inicio">
+            <UpcLogo variant="white" className="h-10" />
+            <span className="flex flex-col">
+              <span className="font-display text-lg leading-tight font-bold">SIERAP</span>
+              <span className="text-xs leading-snug text-white/80">
+                Evaluación de resultados de aprendizaje
+              </span>
+            </span>
           </Link>
-          <Button variant="ghost" size="icon" className="md:hidden" onClick={closeMenu} aria-label="Cerrar menú">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-foreground md:hidden"
+            onClick={closeMenu}
+            aria-label="Cerrar menú"
+          >
             <X aria-hidden />
           </Button>
         </div>
 
-        <nav aria-label="Menú principal" className="flex flex-1 flex-col gap-1 overflow-y-auto px-3">
+        <nav aria-label="Menú principal" className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4">
           {items.map((item) => (
             <MenuLink key={item.path} to={item.path} icon={item.icon} onClick={closeMenu}>
               {item.label}
@@ -81,7 +98,7 @@ export function AppLayout() {
           <button
             type="button"
             onClick={() => void logout()}
-            className="hover:bg-sidebar-accent flex items-center gap-3 rounded-md px-3 py-2 text-left text-sm"
+            className="hover:bg-sidebar-accent focus-visible:ring-sidebar-ring flex items-center gap-3 rounded-md border-l-4 border-transparent px-3 py-2 text-left text-sm outline-none focus-visible:ring-2"
           >
             <LogOut className="size-4" aria-hidden />
             Cerrar sesión
@@ -90,7 +107,7 @@ export function AppLayout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex h-16 items-center gap-3 border-b px-4 md:px-8">
+        <header className="bg-card sticky top-0 z-20 flex h-16 items-center gap-3 border-b px-4 md:px-8">
           <Button
             variant="ghost"
             size="icon"
@@ -101,7 +118,9 @@ export function AppLayout() {
           >
             <Menu aria-hidden />
           </Button>
-          <p className="truncate text-lg font-semibold">{title}</p>
+          <p className="text-upc-green-800 truncate font-display text-lg font-semibold">
+            {title}
+          </p>
           <UserBadge user={user} />
         </header>
 
@@ -131,8 +150,8 @@ function MenuLink({
       onClick={onClick}
       className={({ isActive }) =>
         cn(
-          'hover:bg-sidebar-accent flex items-center gap-3 rounded-md px-3 py-2 text-sm',
-          isActive && 'bg-sidebar-accent text-sidebar-accent-foreground font-medium',
+          'hover:bg-sidebar-accent/70 focus-visible:ring-sidebar-ring flex items-center gap-3 rounded-md border-l-4 border-transparent px-3 py-2 text-sm text-white/90 outline-none focus-visible:ring-2',
+          isActive && 'bg-sidebar-accent text-sidebar-accent-foreground border-sidebar-primary font-semibold',
         )
       }
     >
@@ -142,17 +161,17 @@ function MenuLink({
   )
 }
 
-/** Nombre, rol e iniciales del usuario en la barra superior. */
-function UserBadge({ user }: { user: UserSummary }) {
+/** Nombre, rol e iniciales del usuario en la barra superior (clara, u oscura con `onDark`). */
+function UserBadge({ user, onDark = false }: { user: UserSummary; onDark?: boolean }) {
   const initials = (user.firstNames.charAt(0) + user.lastNames.charAt(0)).toUpperCase()
   return (
     <div className="ml-auto flex items-center gap-3">
       <div className="hidden text-right sm:block">
         <p className="text-sm font-medium">{user.fullName}</p>
-        <p className="text-muted-foreground text-xs">{ROLE_LABELS[user.role]}</p>
+        <p className={cn('text-xs', onDark ? 'text-white/80' : 'text-muted-foreground')}>{ROLE_LABELS[user.role]}</p>
       </div>
       <div
-        className="bg-muted grid size-9 shrink-0 place-items-center rounded-full text-sm font-semibold"
+        className="bg-upc-green-700 grid size-9 shrink-0 place-items-center rounded-full text-sm font-semibold text-white"
         aria-hidden
       >
         {initials}
