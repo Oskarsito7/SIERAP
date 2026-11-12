@@ -16,6 +16,7 @@ import { teacherService } from '@/services/api/teacherService'
 import type { NewTeacherRequest } from '@/types/account'
 import type { DocumentType, UserSummary } from '@/types/auth'
 import type { Faculty } from '@/types/catalog'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 /**
  * Docentes de la facultad del admin (wireframe AD-06): la lista, el reenvío del enlace
@@ -144,52 +145,50 @@ function FacultyTeachers({ faculty }: { faculty: Faculty }) {
             </p>
           )}
           {visible.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-muted-foreground border-b">
-                  <tr>
-                    <th className="py-2 pr-4 font-medium">Nombre</th>
-                    <th className="py-2 pr-4 font-medium">Correo</th>
-                    <th className="py-2 pr-4 font-medium">Estado</th>
-                    <th className="py-2 font-medium">
-                      <span className="sr-only">Acciones</span>
-                    </th>
+            <ResponsiveTable>
+              <thead className="text-muted-foreground border-b">
+                <tr>
+                  <th className="py-2 pr-4 font-medium">Nombre</th>
+                  <th className="py-2 pr-4 font-medium">Correo</th>
+                  <th className="py-2 pr-4 font-medium">Estado</th>
+                  <th className="py-2 font-medium">
+                    <span className="sr-only">Acciones</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((teacher) => (
+                  <tr key={teacher.id} className="border-b last:border-0">
+                    <td className="py-3 pr-4">{teacher.fullName}</td>
+                    <td className="py-3 pr-4 break-all">{teacher.email}</td>
+                    <td className="py-3 pr-4">
+                      <Badge variant={teacher.active ? 'default' : 'secondary'}>
+                        {teacher.active ? 'Activo' : 'Desactivado'}
+                      </Badge>
+                    </td>
+                    <td className="py-3 text-right whitespace-nowrap">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={!teacher.active}
+                        onClick={() => void resendLink(teacher)}
+                        aria-label={`Reenviar enlace a ${teacher.fullName}`}
+                      >
+                        Reenviar enlace
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => void toggleActive(teacher)}
+                        aria-label={`${teacher.active ? 'Desactivar' : 'Reactivar'} a ${teacher.fullName}`}
+                      >
+                        {teacher.active ? 'Desactivar' : 'Reactivar'}
+                      </Button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {visible.map((teacher) => (
-                    <tr key={teacher.id} className="border-b last:border-0">
-                      <td className="py-3 pr-4">{teacher.fullName}</td>
-                      <td className="py-3 pr-4 break-all">{teacher.email}</td>
-                      <td className="py-3 pr-4">
-                        <Badge variant={teacher.active ? 'default' : 'secondary'}>
-                          {teacher.active ? 'Activo' : 'Desactivado'}
-                        </Badge>
-                      </td>
-                      <td className="py-3 text-right whitespace-nowrap">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={!teacher.active}
-                          onClick={() => void resendLink(teacher)}
-                          aria-label={`Reenviar enlace a ${teacher.fullName}`}
-                        >
-                          Reenviar enlace
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => void toggleActive(teacher)}
-                          aria-label={`${teacher.active ? 'Desactivar' : 'Reactivar'} a ${teacher.fullName}`}
-                        >
-                          {teacher.active ? 'Desactivar' : 'Reactivar'}
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </ResponsiveTable>
           )}
         </CardContent>
       </Card>

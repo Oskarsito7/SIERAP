@@ -16,6 +16,7 @@ import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
 import type { NewAdminRequest } from '@/types/account'
 import type { DocumentType, UserSummary } from '@/types/auth'
 import type { Faculty } from '@/types/catalog'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 /**
  * Administradores de facultad para el super_admin (wireframe SA-05): la lista de una
@@ -165,52 +166,50 @@ function FacultyAdmins({ faculty, faculties, onFacultyChange }: FacultyAdminsPro
             </p>
           )}
           {visible.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-muted-foreground border-b">
-                  <tr>
-                    <th className="py-2 pr-4 font-medium">Nombre</th>
-                    <th className="py-2 pr-4 font-medium">Correo</th>
-                    <th className="py-2 pr-4 font-medium">Estado</th>
-                    <th className="py-2 font-medium">
-                      <span className="sr-only">Acciones</span>
-                    </th>
+            <ResponsiveTable>
+              <thead className="text-muted-foreground border-b">
+                <tr>
+                  <th className="py-2 pr-4 font-medium">Nombre</th>
+                  <th className="py-2 pr-4 font-medium">Correo</th>
+                  <th className="py-2 pr-4 font-medium">Estado</th>
+                  <th className="py-2 font-medium">
+                    <span className="sr-only">Acciones</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((admin) => (
+                  <tr key={admin.id} className="border-b last:border-0">
+                    <td className="py-3 pr-4">{admin.fullName}</td>
+                    <td className="py-3 pr-4 break-all">{admin.email}</td>
+                    <td className="py-3 pr-4">
+                      <Badge variant={admin.active ? 'default' : 'secondary'}>
+                        {admin.active ? 'Activo' : 'Desactivado'}
+                      </Badge>
+                    </td>
+                    <td className="py-3 text-right whitespace-nowrap">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={!admin.active}
+                        onClick={() => void resendLink(admin)}
+                        aria-label={`Reenviar enlace a ${admin.fullName}`}
+                      >
+                        Reenviar enlace
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => void toggleActive(admin)}
+                        aria-label={`${admin.active ? 'Desactivar' : 'Reactivar'} a ${admin.fullName}`}
+                      >
+                        {admin.active ? 'Desactivar' : 'Reactivar'}
+                      </Button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {visible.map((admin) => (
-                    <tr key={admin.id} className="border-b last:border-0">
-                      <td className="py-3 pr-4">{admin.fullName}</td>
-                      <td className="py-3 pr-4 break-all">{admin.email}</td>
-                      <td className="py-3 pr-4">
-                        <Badge variant={admin.active ? 'default' : 'secondary'}>
-                          {admin.active ? 'Activo' : 'Desactivado'}
-                        </Badge>
-                      </td>
-                      <td className="py-3 text-right whitespace-nowrap">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={!admin.active}
-                          onClick={() => void resendLink(admin)}
-                          aria-label={`Reenviar enlace a ${admin.fullName}`}
-                        >
-                          Reenviar enlace
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => void toggleActive(admin)}
-                          aria-label={`${admin.active ? 'Desactivar' : 'Reactivar'} a ${admin.fullName}`}
-                        >
-                          {admin.active ? 'Desactivar' : 'Reactivar'}
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </ResponsiveTable>
           )}
         </CardContent>
       </Card>

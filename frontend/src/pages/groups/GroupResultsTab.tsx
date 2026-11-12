@@ -9,6 +9,7 @@ import { resultsService } from '@/services/api/resultsService'
 import type { EvaluationSummary } from '@/types/evaluation'
 import type { MomentSummary } from '@/types/moment'
 import type { GroupResults } from '@/types/results'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 /**
  * Resultados del grupo para su docente (wireframe DO-07): la nota grupal por RAP, las
@@ -99,7 +100,7 @@ function EvaluationsCard({ results, evaluations }: { results: GroupResults; eval
         {evaluations.length === 0 ? (
           <p className="text-muted-foreground text-sm">Nadie ha empezado a calificar este grupo.</p>
         ) : (
-          <table className="w-full text-left text-sm">
+          <ResponsiveTable>
             <thead className="text-muted-foreground border-b">
               <tr>
                 <th className="py-2 pr-4 font-medium">Evaluador</th>
@@ -123,7 +124,7 @@ function EvaluationsCard({ results, evaluations }: { results: GroupResults; eval
                 )
               })}
             </tbody>
-          </table>
+          </ResponsiveTable>
         )}
       </CardContent>
     </Card>
@@ -138,8 +139,8 @@ function MembersCard({ results }: { results: GroupResults }) {
       <CardHeader>
         <CardTitle>Notas individuales</CardTitle>
       </CardHeader>
-      <CardContent className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+      <CardContent>
+        <ResponsiveTable>
           <thead className="text-muted-foreground border-b">
             <tr>
               <th className="py-2 pr-4 font-medium">Estudiante</th>
@@ -175,7 +176,7 @@ function MembersCard({ results }: { results: GroupResults }) {
               )
             })}
           </tbody>
-        </table>
+        </ResponsiveTable>
       </CardContent>
     </Card>
   )

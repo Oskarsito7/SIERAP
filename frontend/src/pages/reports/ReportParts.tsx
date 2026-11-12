@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDateTime } from '@/lib/dates'
 import type { ReportMoment, ReportPeriod, ReportProgram } from '@/types/report'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 /**
  * Encabezado de un reporte: de qué momento es, si las notas ya son definitivas y
@@ -74,32 +75,30 @@ export function ReportTable({
   rows: { key: string | number; cells: ReactNode[] }[]
 }) {
   return (
-    <div className="overflow-x-auto">
-      <table aria-label={label} className="w-full text-left text-sm">
-        <thead className="text-muted-foreground border-b">
-          <tr>
-            {columns.map((column) => (
-              <th key={column.header} className={`py-2 pr-4 font-medium ${column.numeric ? 'text-right' : ''}`}>
-                {column.header}
-              </th>
+    <ResponsiveTable aria-label={label}>
+      <thead className="text-muted-foreground border-b">
+        <tr>
+          {columns.map((column) => (
+            <th key={column.header} className={`py-2 pr-4 font-medium ${column.numeric ? 'text-right' : ''}`}>
+              {column.header}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.key} className="border-b last:border-0">
+            {row.cells.map((cell, index) => (
+              <td
+                key={columns[index].header}
+                className={`py-2 pr-4 ${columns[index].numeric ? 'text-right whitespace-nowrap tabular-nums' : ''}`}
+              >
+                {cell}
+              </td>
             ))}
           </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.key} className="border-b last:border-0">
-              {row.cells.map((cell, index) => (
-                <td
-                  key={columns[index].header}
-                  className={`py-2 pr-4 ${columns[index].numeric ? 'text-right whitespace-nowrap tabular-nums' : ''}`}
-                >
-                  {cell}
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        ))}
+      </tbody>
+    </ResponsiveTable>
   )
 }

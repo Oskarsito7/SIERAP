@@ -13,6 +13,7 @@ import type { EvaluatorType } from '@/types/account'
 import type { MomentDetail } from '@/types/moment'
 
 import { formatPercent, parsePercent, redistribute } from './weightValues'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 const TEACHER = 'Docente del grupo'
 
@@ -110,7 +111,7 @@ function WeightsForm({
         </CardHeader>
         <CardContent>
           <form className="flex flex-col gap-4" onSubmit={submit} noValidate>
-            <table className="w-full text-left text-sm">
+            <ResponsiveTable>
               <thead className="text-muted-foreground border-b">
                 <tr>
                   <th className="py-2 pr-4 font-medium">Quién califica</th>
@@ -148,7 +149,7 @@ function WeightsForm({
                   </td>
                 </tr>
               </tbody>
-            </table>
+            </ResponsiveTable>
             {Math.abs(total - 100) >= 0.001 && (
               <p role="note" className="text-sm">
                 Para lanzar el momento los pesos deben sumar 100 % (hoy suman {formatPercent(total)} %).

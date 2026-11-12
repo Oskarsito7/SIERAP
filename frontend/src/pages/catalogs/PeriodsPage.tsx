@@ -11,6 +11,7 @@ import { useLoad } from '@/lib/useLoad'
 import { catalogService } from '@/services/api/catalogService'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
 import type { AcademicPeriod, PeriodRequest, PeriodStatus } from '@/types/catalog'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 const STATUS: Record<PeriodStatus, { label: string; variant: 'default' | 'secondary' | 'outline' }> = {
   CURRENT: { label: 'Actual', variant: 'default' },
@@ -81,73 +82,71 @@ export function PeriodsPage() {
             <p className="text-muted-foreground text-sm">Todavía no hay periodos académicos.</p>
           )}
           {periods.state.kind === 'success' && periods.state.data.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-muted-foreground border-b">
-                  <tr>
-                    <th className="py-2 pr-4 font-medium">Periodo</th>
-                    <th className="py-2 pr-4 font-medium">Inicio</th>
-                    <th className="py-2 pr-4 font-medium">Fin</th>
-                    <th className="py-2 pr-4 font-medium">Límite de evaluación UPC</th>
-                    <th className="py-2 pr-4 font-medium">Estado</th>
-                    <th className="py-2 font-medium">
-                      <span className="sr-only">Acciones</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {periods.state.data.map((period) =>
-                    editing === period.id ? (
-                      <tr key={period.id} className="border-b">
-                        <td colSpan={6} className="py-3">
-                          <PeriodForm
-                            title={`Editar ${period.code}`}
-                            initial={period}
-                            submitLabel="Guardar"
-                            onCancel={() => setEditing(null)}
-                            onSave={async (request) => {
-                              const updated = await catalogService.updatePeriod(period.id, request)
-                              periods.setData((current) =>
-                                sortNewestFirst(current.map((item) => (item.id === updated.id ? updated : item))),
-                              )
-                              setEditing(null)
-                            }}
-                          />
-                        </td>
-                      </tr>
-                    ) : (
-                      <tr key={period.id} className="border-b last:border-0">
-                        <td className="py-3 pr-4 font-semibold">{period.code}</td>
-                        <td className="py-3 pr-4">{formatDate(period.startDate)}</td>
-                        <td className="py-3 pr-4">{formatDate(period.endDate)}</td>
-                        <td className="py-3 pr-4">{formatDate(period.upcEvaluationDeadline)}</td>
-                        <td className="py-3 pr-4">
-                          <Badge variant={STATUS[period.status].variant}>{STATUS[period.status].label}</Badge>
-                        </td>
-                        <td className="py-3 text-right whitespace-nowrap">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditing(period.id)}
-                            aria-label={`Editar ${period.code}`}
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => void remove(period)}
-                            aria-label={`Eliminar ${period.code}`}
-                          >
-                            Eliminar
-                          </Button>
-                        </td>
-                      </tr>
-                    ),
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveTable>
+              <thead className="text-muted-foreground border-b">
+                <tr>
+                  <th className="py-2 pr-4 font-medium">Periodo</th>
+                  <th className="py-2 pr-4 font-medium">Inicio</th>
+                  <th className="py-2 pr-4 font-medium">Fin</th>
+                  <th className="py-2 pr-4 font-medium">Límite de evaluación UPC</th>
+                  <th className="py-2 pr-4 font-medium">Estado</th>
+                  <th className="py-2 font-medium">
+                    <span className="sr-only">Acciones</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {periods.state.data.map((period) =>
+                  editing === period.id ? (
+                    <tr key={period.id} className="border-b">
+                      <td colSpan={6} className="py-3">
+                        <PeriodForm
+                          title={`Editar ${period.code}`}
+                          initial={period}
+                          submitLabel="Guardar"
+                          onCancel={() => setEditing(null)}
+                          onSave={async (request) => {
+                            const updated = await catalogService.updatePeriod(period.id, request)
+                            periods.setData((current) =>
+                              sortNewestFirst(current.map((item) => (item.id === updated.id ? updated : item))),
+                            )
+                            setEditing(null)
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={period.id} className="border-b last:border-0">
+                      <td className="py-3 pr-4 font-semibold">{period.code}</td>
+                      <td className="py-3 pr-4">{formatDate(period.startDate)}</td>
+                      <td className="py-3 pr-4">{formatDate(period.endDate)}</td>
+                      <td className="py-3 pr-4">{formatDate(period.upcEvaluationDeadline)}</td>
+                      <td className="py-3 pr-4">
+                        <Badge variant={STATUS[period.status].variant}>{STATUS[period.status].label}</Badge>
+                      </td>
+                      <td className="py-3 text-right whitespace-nowrap">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditing(period.id)}
+                          aria-label={`Editar ${period.code}`}
+                        >
+                          Editar
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => void remove(period)}
+                          aria-label={`Eliminar ${period.code}`}
+                        >
+                          Eliminar
+                        </Button>
+                      </td>
+                    </tr>
+                  ),
+                )}
+              </tbody>
+            </ResponsiveTable>
           )}
         </CardContent>
       </Card>
