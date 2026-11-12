@@ -117,7 +117,7 @@ API error messages, Javadoc and code comments are in Spanish.
 - [x] Improved class, hierarchy and package (layer) diagrams
 - [x] Functional requirements formalized by role with access control
 - [x] Preliminary GUI design: medium-fidelity wireframes of every screen per role (`docs/wireframes/`)
-- [ ] Code implementation (progress on the diagram classes)
+- [x] Code implementation: the full application, web GUI and PostgreSQL persistence
 
 Implementation progress, by stages of [`docs/06-plan-de-trabajo.md`](docs/06-plan-de-trabajo.md):
 
@@ -126,22 +126,24 @@ Implementation progress, by stages of [`docs/06-plan-de-trabajo.md`](docs/06-pla
 - [x] **Stage 1 — Domain model and persistence:** JPA entities and Flyway V1–V5
   (academic model, users, operations and the CHECK constraints from the PR #3 review);
   the detailed class, hierarchy and layer diagrams regenerated in English.
-- [ ] Stage 2 — Authentication and access control: backend, login screens, layout per
-  role, registration codes, teachers, students and external evaluators pages done
-  (ADR-017, API contract in `docs/07-contrato-api.md`); the "Administradores" screen
-  (SA-05) is pending.
+- [x] **Stage 2 — Authentication and access control:** backend, login screens, layout
+  per role, registration codes and the admins, teachers, students and external
+  evaluators pages (ADR-017, API contract in `docs/07-contrato-api.md`).
 - [x] **Stage 3 — Academic configuration:** catalogs, moments with windows and
   weights, RAP, criteria and levels, launching and copying the configuration, with the
   admin and super_admin screens.
 - [x] **Stage 4 — Teacher operations:** groups, dates and external evaluators.
 - [x] **Stage 5 — Student and versioned submissions:** joining groups and uploading
   versions, with the files on the server disk (ADR-015).
-- [ ] Stage 6 — Multi-role evaluation: grading and individual adjustments done; the
-  grade calculation and the results routes are ready, and the results screens still
-  have to switch from sample data to them.
-- [ ] Stage 7 — Reporting: on screen with charts, including the comparison of
-  semesters; export moves to Moment 2.
-- [ ] Stage 8 — Stabilization and delivery (Moment 1, between November 15 and 30).
+- [x] **Stage 6 — Multi-role evaluation:** grading with individual adjustments, the
+  weighted grade (ADR-018) computed in `ProjectGroup`, and the results of each group
+  and of each student.
+- [x] **Stage 7 — Reporting:** individual, group, per-moment and comparative reports
+  on screen with charts; the passing score and the bands are global parameters (V10).
+  Export moves to Moment 2.
+- [ ] Stage 8 — Stabilization and delivery (Moment 1, between November 15 and 30):
+  end-to-end pass of the 12 requirements, group reassignment, diagrams as built and
+  a demo seed with two periods done; the delivery document and `main` are pending.
 
 ## 7. Structure of this repository
 

@@ -2,7 +2,7 @@
 -- SIERAP · 01-schema.sql — Esquema completo (todas las migraciones de Flyway)
 -- =============================================================================
 -- GENERADO: no editar a mano. Es la concatenación, en orden de version, de
--- backend/src/main/resources/db/migration/V1..V9. Para regenerarlo:
+-- backend/src/main/resources/db/migration/V1..V10. Para regenerarlo:
 --
 --     bash bd/generate-schema.sh
 --
@@ -18,9 +18,9 @@
 -- IMPORTANTE si el backend va a apuntar a esta base: el esquema queda creado
 -- pero SIN la tabla de historial de Flyway, así que al arrancar fallaría con
 -- "Found non-empty schema without schema history table". Arrancar una vez con:
---   ./mvnw spring-boot:run -Dspring-boot.run.arguments="--spring.flyway.baseline-on-migrate=true --spring.flyway.baseline-version=9"
--- Flyway crea el historial con la versión 9 como línea base y no vuelve a
--- aplicar V1..V9. De la V10 en adelante se aplican con normalidad.
+--   ./mvnw spring-boot:run -Dspring-boot.run.arguments="--spring.flyway.baseline-on-migrate=true --spring.flyway.baseline-version=10"
+-- Flyway crea el historial con la versión 10 como línea base y no vuelve a
+-- aplicar V1..V10. De la V11 en adelante se aplican con normalidad.
 --
 -- Alternativa recomendada si solo se quiere la base funcionando: crear la base
 -- VACÍA en pgAdmin y dejar que el backend aplique las migraciones él mismo; en
@@ -713,4 +713,17 @@ CREATE TABLE evaluator_weight (
 );
 
 CREATE INDEX ix_evaluator_weight_type ON evaluator_weight (evaluator_type_id);
+
+-- #############################################################################
+-- V10__report_parameters.sql
+-- #############################################################################
+
+-- Parámetros globales para reportes académicos (Etapa 7 / RF 12, decisión 2026-10-29).
+-- report.passing-percentage: porcentaje del puntaje máximo del momento necesario para aprobar.
+-- report.grade-bands: niveles de desempeño y porcentaje mínimo de cada uno, separados por punto y coma.
+
+INSERT INTO global_parameter (param_key, param_value, description)
+VALUES
+    ('report.passing-percentage', '60', 'Porcentaje mínimo sobre el puntaje máximo del momento para aprobar (RF 12)'),
+    ('report.grade-bands', 'Bajo:0;Básico:60;Alto:76;Sobresaliente:90', 'Rangos de la distribución de calificaciones por porcentaje del puntaje máximo (RF 12)');
 

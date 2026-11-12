@@ -252,6 +252,8 @@ class ProjectGroup {
   +getGroupScoreFor(outcome: LearningOutcome) Optional~BigDecimal~
   +getIndividualGrade(s: Student) Optional~BigDecimal~
   +getIndividualScoreFor(outcome: LearningOutcome, s: Student) Optional~BigDecimal~
+  +hasSubmittedTeacherEvaluation() boolean
+  +reassignTo(t: Teacher) void
 }
 class GradeCalculator {
   <<utility>>
@@ -324,14 +326,24 @@ class GroupReport {
 }
 class MomentReport {
   -moment: Moment
+  -groups: List~ProjectGroup~
+  -gradeScale: GradeScale
   +generate() ReportData
 }
 class ComparativeReport {
   -momentA: Moment
+  -groupsA: List~ProjectGroup~
   -momentB: Moment
-  -periodA: AcademicPeriod
-  -periodB: AcademicPeriod
+  -groupsB: List~ProjectGroup~
+  -gradeScale: GradeScale
   +generate() ReportData
+}
+class GradeScale {
+  -passingPercentage: BigDecimal
+  -bands: List~GradeBand~
+  +of(passing: String, bands: String)$ GradeScale
+  +isPassing(grade: BigDecimal, maxScore: BigDecimal) boolean
+  +calculateDistribution(grades, maxScore) List
 }
 
 %% ================= Relationships =================
@@ -393,7 +405,9 @@ Report <|-- IndividualReport
 Report <|-- GroupReport
 Report <|-- MomentReport
 Report <|-- ComparativeReport
-Report ..> Evaluation : «use»
+Report ..> ProjectGroup : «use»
+MomentReport ..> GradeScale : «use»
+ComparativeReport ..> GradeScale : «use»
 ```
 
 ## Stage 1 changes (2026-09-24 decisions)
@@ -446,6 +460,13 @@ Report ..> Evaluation : «use»
 | Change | Reason |
 |---|---|
 | `Report.generate()` and its subclasses return `ReportData` instead of `byte[]`; new `MomentReport` subclass | In Moment 1 reports are shown on screen with charts and tables (exporting to PDF or Excel is deferred to Moment 2). Each subclass overrides `generate()` and returns its own `ReportData` record (covariant return type), keeping the polymorphic hierarchy for the rubric (RAP2) across the four reports: individual, group, consolidated per moment and comparative across periods. |
+
+## Stage 8 (what was built, 2026-11-11)
+
+| Change | Reason |
+|---|---|
+| The reports are no longer drawn as designed only; `MomentReport` and `ComparativeReport` keep their groups and a `GradeScale`; `ComparativeReport` takes the two moments instead of the two periods | It is the hierarchy built in #45: each report reads the grades of its groups (`Report ..> ProjectGroup` instead of `..> Evaluation`), and the passing score and the bands come from the global parameters through `GradeScale` (V10, decision of 2026-10-29). |
+| `ProjectGroup.hasSubmittedTeacherEvaluation()` and `reassignTo(Teacher)` | The faculty admin can pass a group to another teacher while the current one has not submitted their evaluation (decision of 2026-11-11). |
 
 ## Changes compared with the preliminary diagram (Phase 1)
 

@@ -434,6 +434,7 @@ window is open from its start date to its end date, both included.
 | Join, leave or switch groups (student) | The moment is in `CONFIGURATION` and today is within the group formation window |
 | Change the group dates, assign or remove evaluators (teacher) | Before the launch, or after it until the grading window closes |
 | Add a student without a group (teacher) | Any time until the grading window closes, even after the launch and above the maximum |
+| Reassign a group to another teacher (admin) | Until the grading window closes, while the current teacher has not submitted their evaluation |
 | Edit the project title (members or teacher) | Until the submission window ends |
 | Upload a submission | The moment is `LAUNCHED` and today is within the submission window |
 | Grade (draft, submit, correct, individual adjustments) | The moment is `LAUNCHED` and today is between the group's `evaluationDate` and the end of the grading window |
@@ -538,6 +539,7 @@ and of any moment where they already have a group (a teacher can add them out of
 | `GET /api/moments/{id}/students-without-group` | teacher and admin of the faculty | — | `200 [ { "id", "fullName", "studentCode", "currentSemester" } ]`: students of the program with their semester in range and no group in the moment |
 | `POST /api/groups/{id}/members` | the group's teacher | `{ "studentId" }` | `200 Group`. Any student of the moment's program who has no group in the moment, even outside the semester range, after the launch and above the maximum. `422` if they already have a group |
 | `DELETE /api/groups/{id}/members/{studentId}` | the group's teacher | — | `204`. While the group has no submitted evaluation; otherwise `422` |
+| `PUT /api/groups/{id}/teacher` | admin of the faculty, super_admin | `{ "teacherId" }` | `200 Group` with the new teacher. `422` if it is the same teacher, the teacher is of another faculty or inactive, the current teacher already submitted their evaluation, the new teacher already has a group with that name in the moment, or the grading window closed. The current teacher's draft evaluation is discarded |
 | `GET /api/students/me/groups` | student | — | `200 Group[]`: their groups, one per moment, newest first (history) |
 
 **External evaluators of a group** (Stage 4):

@@ -10,6 +10,9 @@ import type { UserRole, UserSummary } from '@/types/auth'
 vi.mock('@/services/api/systemStatusService', () => ({
   systemStatusService: { getStatus: vi.fn(() => new Promise(() => {})) },
 }))
+vi.mock('@/services/api/catalogService', () => ({
+  catalogService: { faculties: vi.fn(() => new Promise(() => {})) },
+}))
 
 function userWith(role: UserRole, overrides: Partial<UserSummary> = {}): UserSummary {
   return {
@@ -67,13 +70,13 @@ describe('AppLayout', () => {
     expect(screen.getByText('Docente')).toBeInTheDocument()
   })
 
-  it('opens a menu option without a page as coming soon, with its stage', async () => {
+  it('opens the page of a menu option and marks it as current', async () => {
     renderAt('/', userWith('SUPER_ADMIN'))
 
     await userEvent.click(screen.getByRole('link', { name: 'Administradores' }))
 
-    expect(screen.getByRole('heading', { name: 'Próximamente' })).toBeInTheDocument()
-    expect(screen.getByText('La gestión de las cuentas de administradores llega en la Etapa 2.')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Administradores' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Próximamente' })).not.toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Administradores' })).toHaveAttribute('aria-current', 'page')
   })
 

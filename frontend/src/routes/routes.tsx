@@ -5,6 +5,7 @@ import { AppLayout } from '@/components/layout/AppLayout'
 import { MainLayout } from '@/components/layout/MainLayout'
 import { ACCOUNT_PATH, menuPages } from '@/components/layout/roleMenus'
 import { AccountPage } from '@/pages/AccountPage'
+import { AdminsPage } from '@/pages/admins/AdminsPage'
 import { ChangePasswordPage } from '@/pages/auth/ChangePasswordPage'
 import { ForgotPasswordPage } from '@/pages/auth/ForgotPasswordPage'
 import { LoginPage } from '@/pages/auth/LoginPage'
@@ -41,6 +42,7 @@ const MENU_PAGES: Record<string, ReactNode> = {
   '/groups': <TeacherGroupsPage />,
   '/students': <StudentsPage />,
   '/teachers': <TeachersPage />,
+  '/admins': <AdminsPage />,
   '/moments': <MomentsPage />,
   '/faculties': <FacultiesPage />,
   '/periods': <PeriodsPage />,

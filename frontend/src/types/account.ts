@@ -24,6 +24,15 @@ export interface NewExternalEvaluatorRequest {
   graduationYear?: number
 }
 
+/** Datos de un administrador nuevo; la facultad la agrega el servicio (`NewAdminRequest`). */
+export interface NewAdminRequest {
+  firstNames: string
+  lastNames: string
+  documentType: DocumentType
+  documentNumber: string
+  email: string
+}
+
 /** Datos de un docente nuevo; la facultad la agrega el servicio (la del admin). */
 export interface NewTeacherRequest {
   firstNames: string

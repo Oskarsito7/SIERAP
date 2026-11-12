@@ -25,7 +25,6 @@ vi.mock('@/services/api/catalogService', () => ({ catalogService: { periods: vi.
 vi.mock('@/services/api/momentService', () => ({ momentService: { list: vi.fn() } }))
 vi.mock('@/services/api/groupService', () => ({ groupService: { list: vi.fn() } }))
 vi.mock('@/services/api/reportService', () => ({
-  REPORTS_API_READY: false,
   reportService: { moment: vi.fn(), group: vi.fn(), individual: vi.fn(), comparative: vi.fn() },
 }))
 
@@ -82,7 +81,7 @@ describe('ReportsPage', () => {
     expect(momentService.list).toHaveBeenCalledWith(1)
     expect(reports.moment).toHaveBeenCalledWith(1)
     expect(screen.getByRole('button', { name: 'Por momento' })).toHaveAttribute('aria-current', 'page')
-    expect(screen.getByRole('note')).toHaveTextContent('Datos de ejemplo')
+    expect(screen.queryByRole('note')).not.toBeInTheDocument()
     expect(screen.getByText('Notas definitivas')).toBeInTheDocument()
     expect(screen.getByText('20 de 24')).toBeInTheDocument()
     expect(screen.getByText('18 de 20 estudiantes calificados')).toBeInTheDocument()

@@ -96,7 +96,8 @@ ExternalEvaluator "*" -- "1" EvaluatorType : is of type
 ## 2. Inheritance hierarchies — Reports and exceptions
 
 Polymorphism in reporting and centralized error handling with `@RestControllerAdvice`.
-The reports are designed but not built yet (Stage 7).
+The reports are built (Stage 7, #45): each subclass overrides `generate()` and returns its own
+`ReportData` record.
 
 ```mermaid
 classDiagram
@@ -123,8 +124,8 @@ class MomentReport {
 class ComparativeReport {
   -momentA: Moment
   -momentB: Moment
-  -periodA: AcademicPeriod
-  -periodB: AcademicPeriod
+  -momentA: Moment
+  -momentB: Moment
   +generate() ReportData
 }
 IndividualReport --|> Report : per student and RAP

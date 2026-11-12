@@ -239,6 +239,16 @@ AULAWEB's main gap, and therefore what weighs the most in the presentation.
 - Presentation rehearsal: **each person must be able to explain the three verticals**.
 - Merge `release/*` → `main` + tag `v1.0.0-momento1`.
 
+**Status on 2026-11-11.** End-to-end pass done in a browser against PostgreSQL with
+`bd/02-seed-dev.sql`, one role at a time: registration with a code and the emailed
+link (RF 1), the student's groups, submissions and grades, including a closed period
+with comments (RF 2–4), the external evaluator grading with an individual adjustment
+(RF 5–6), the teacher's groups, members, dates, evaluators and students (RF 7–9), the
+admin's moments, launch checks and group reassignment (RF 10), the super admin's
+catalogs and admins (RF 11) and the four reports, including 2026-1 vs. 2026-2 (RF 12).
+The weighted grades on screen match ADR-018 by hand. Pending: the delivery document,
+the rehearsal and `main`.
+
 ---
 
 ## 3. Branching strategy

@@ -91,7 +91,7 @@ export function ReportTable({
               {row.cells.map((cell, index) => (
                 <td
                   key={columns[index].header}
-                  className={`py-2 pr-4 ${columns[index].numeric ? 'text-right tabular-nums' : ''}`}
+                  className={`py-2 pr-4 ${columns[index].numeric ? 'text-right whitespace-nowrap tabular-nums' : ''}`}
                 >
                   {cell}
                 </td>

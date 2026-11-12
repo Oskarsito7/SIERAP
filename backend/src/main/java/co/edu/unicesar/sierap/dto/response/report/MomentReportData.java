@@ -46,15 +46,47 @@ public record MomentReportData(
         List<OutcomeSummary> learningOutcomes,
         List<DistributionBucket> distribution) implements ReportData {
 
+    /**
+     * Periodo académico del reporte.
+     *
+     * @param id   identificador
+     * @param code código
+     */
     public record PeriodSummary(Long id, String code) {
     }
 
+    /**
+     * Programa académico del reporte.
+     *
+     * @param id   identificador
+     * @param code código
+     * @param name nombre
+     */
     public record ProgramSummary(Long id, String code, String name) {
     }
 
+    /**
+     * Momento evaluativo del reporte y su puntaje máximo.
+     *
+     * @param id           identificador
+     * @param momentNumber número del momento
+     * @param name         nombre
+     * @param subject      asignatura
+     * @param maxScore     puntaje máximo
+     */
     public record MomentSummary(Long id, int momentNumber, String name, String subject, BigDecimal maxScore) {
     }
 
+    /**
+     * Promedio del momento en un RAP, sobre las notas individuales.
+     *
+     * @param id           identificador
+     * @param code         código
+     * @param description  descripción del RAP
+     * @param averageScore puntaje promedio, o {@code null}
+     * @param maxScore     puntaje máximo
+     * @param percentage   porcentaje sobre el máximo (0 a 100), o {@code null}
+     */
     public record OutcomeSummary(
             Long id,
             String code,
@@ -64,6 +96,16 @@ public record MomentReportData(
             BigDecimal percentage) {
     }
 
+    /**
+     * Franja de la distribución de notas, tomada de los parámetros globales y escalada a la nota máxima del momento.
+     *
+     * @param range      texto del rango, p. ej. "3,00 - 3,79"
+     * @param label      nombre de la franja
+     * @param min        nota mínima de la franja
+     * @param max        nota máxima de la franja
+     * @param count      estudiantes en la franja
+     * @param percentage porcentaje sobre el máximo (0 a 100), o {@code null}
+     */
     public record DistributionBucket(
             String range,
             String label,
