@@ -309,6 +309,22 @@ class AuthIntegrationTest {
         login(teacher.getEmail(), "Clave-nueva-2").andExpect(status().isOk());
     }
 
+    /** Auditoría de seguridad: pedir la recuperación varias veces seguidas envía un solo correo. */
+    @Test
+    void askingForAResetLinkTwiceInARowSendsOnlyOneEmail() throws Exception {
+        User teacher = persistTeacher(engineering);
+        for (int i = 0; i < 3; i++) {
+            mockMvc.perform(post("/api/auth/password/forgot")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json("email", teacher.getEmail())))
+                    .andExpect(status().isNoContent());
+        }
+
+        // capturedLinkToken verifica que hubo exactamente un envío de recuperación.
+        String linkToken = capturedLinkToken(teacher.getEmail(), PasswordTokenPurpose.PASSWORD_RESET);
+        setPassword(linkToken, "Clave-nueva-2").andExpect(status().isNoContent());
+    }
+
     /** Auditoría de seguridad: una cuenta desactivada no renueva su sesión cambiando la contraseña. */
     @Test
     void aDeactivatedAccountCannotRenewItsSessionByChangingThePassword() throws Exception {

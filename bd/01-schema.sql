@@ -727,3 +727,15 @@ VALUES
     ('report.passing-percentage', '60', 'Porcentaje mínimo sobre el puntaje máximo del momento para aprobar (RF 12)'),
     ('report.grade-bands', 'Bajo:0;Básico:60;Alto:76;Sobresaliente:90', 'Rangos de la distribución de calificaciones por porcentaje del puntaje máximo (RF 12)');
 
+-- #############################################################################
+-- V11__submission_version_limit.sql
+-- #############################################################################
+
+-- Tope de versiones de entrega por grupo (auditoría de seguridad, run-1).
+-- Cada entrega se guarda como una versión nueva y nunca se sobrescribe (ADR-015); sin
+-- tope, un integrante podía llenar el volumen compartido subiendo versiones sin fin.
+-- El valor es configurable por el super_admin como los demás parámetros (ADR-010).
+
+INSERT INTO global_parameter (param_key, param_value, description)
+VALUES ('submission.max-versions', '20', 'Número máximo de versiones de entrega que puede subir un grupo en un momento (ADR-015)');
+

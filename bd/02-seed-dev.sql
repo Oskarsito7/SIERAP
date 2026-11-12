@@ -4,7 +4,7 @@
 -- SOLO PARA DESARROLLO Y SUSTENTACIÓN. Nunca ejecutar en producción: crea
 -- usuarios con una contraseña conocida y borra los usuarios existentes.
 --
--- Requisito: las migraciones V1..V10 ya aplicadas (por el backend al arrancar, o
+-- Requisito: las migraciones V1..V11 ya aplicadas (por el backend al arrancar, o
 -- ejecutando bd/01-schema.sql). Este archivo NO crea tablas, solo datos.
 --
 -- Qué deja en la base (el periodo 2026-2 visto a 2026-10-30, con la ventana de
@@ -664,7 +664,7 @@ COMMIT;
 SELECT 'faculty'                AS tabla, COUNT(*) AS filas, 1  AS esperadas FROM faculty
 UNION ALL SELECT 'program',                COUNT(*), 1  FROM program
 UNION ALL SELECT 'academic_period',        COUNT(*), 2  FROM academic_period
-UNION ALL SELECT 'global_parameter',       COUNT(*), 8  FROM global_parameter
+UNION ALL SELECT 'global_parameter',       COUNT(*), 9  FROM global_parameter
 UNION ALL SELECT 'moment',                 COUNT(*), 3  FROM moment
 UNION ALL SELECT 'evaluator_weight',       COUNT(*), 5  FROM evaluator_weight
 UNION ALL SELECT 'learning_outcome',       COUNT(*), 15 FROM learning_outcome

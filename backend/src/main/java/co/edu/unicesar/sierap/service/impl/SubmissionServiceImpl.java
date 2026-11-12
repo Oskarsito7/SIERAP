@@ -26,6 +26,7 @@ import co.edu.unicesar.sierap.exception.BusinessRuleException;
 import co.edu.unicesar.sierap.exception.ForbiddenAccessException;
 import co.edu.unicesar.sierap.exception.ResourceNotFoundException;
 import co.edu.unicesar.sierap.mapper.SubmissionMapper;
+import co.edu.unicesar.sierap.repository.GlobalParameterRepository;
 import co.edu.unicesar.sierap.repository.ProjectGroupRepository;
 import co.edu.unicesar.sierap.repository.SubmissionRepository;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
@@ -50,6 +51,9 @@ import org.springframework.web.multipart.MultipartFile;
 public class SubmissionServiceImpl implements SubmissionService {
 
     /** Tipo de contenido con el que se descarga cada extensión. */
+    /** Parámetro global con el máximo de versiones de entrega por grupo (V11). */
+    public static final String PARAM_MAX_VERSIONS = "submission.max-versions";
+
     private static final Map<String, String> CONTENT_TYPES = Map.of(
             ".zip", "application/zip",
             ".pdf", "application/pdf",
@@ -60,6 +64,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final SubmissionRepository submissionRepository;
     private final FileStorageService fileStorageService;
     private final AccessScope accessScope;
+    private final GlobalParameterRepository globalParameterRepository;
     private final Clock clock;
 
     /**
@@ -69,15 +74,18 @@ public class SubmissionServiceImpl implements SubmissionService {
      * @param submissionRepository   entregas
      * @param fileStorageService     archivos en disco
      * @param accessScope            carga del usuario autenticado
+     * @param globalParameterRepository parámetros globales (tope de versiones)
      * @param clock                  reloj de la aplicación
      */
     public SubmissionServiceImpl(ProjectGroupRepository projectGroupRepository,
                                  SubmissionRepository submissionRepository, FileStorageService fileStorageService,
-                                 AccessScope accessScope, Clock clock) {
+                                 AccessScope accessScope, GlobalParameterRepository globalParameterRepository,
+                                 Clock clock) {
         this.projectGroupRepository = projectGroupRepository;
         this.submissionRepository = submissionRepository;
         this.fileStorageService = fileStorageService;
         this.accessScope = accessScope;
+        this.globalParameterRepository = globalParameterRepository;
         this.clock = clock;
     }
 
@@ -100,6 +108,7 @@ public class SubmissionServiceImpl implements SubmissionService {
                 ? SubmissionFileValidator.validatePresentation(presentation)
                 : null;
 
+        requireVersionAvailable(group);
         int version = group.nextSubmissionVersion();
         String directory = "groups/" + group.getId() + "/v" + version;
         List<String> storedPaths = new ArrayList<>();
@@ -221,4 +230,31 @@ public class SubmissionServiceImpl implements SubmissionService {
             }
         });
     }
+
+    /**
+     * Rechaza la entrega si el grupo ya subió el máximo de versiones permitido por el
+     * parámetro global {@value #PARAM_MAX_VERSIONS}. Las versiones nunca se sobrescriben
+     * (ADR-015), así que sin tope un integrante podría llenar el almacenamiento.
+     */
+    private void requireVersionAvailable(ProjectGroup group) {
+        String value = globalParameterRepository.findByKey(PARAM_MAX_VERSIONS)
+                .orElseThrow(() -> new BusinessRuleException(
+                        "Falta configurar el parámetro global '" + PARAM_MAX_VERSIONS + "'"))
+                .getValue();
+        int maxVersions;
+        try {
+            maxVersions = Integer.parseInt(value.trim());
+        } catch (NumberFormatException exception) {
+            maxVersions = 0;
+        }
+        if (maxVersions < 1) {
+            throw new BusinessRuleException("El parámetro global '" + PARAM_MAX_VERSIONS
+                    + "' debe ser un número entero mayor que cero.");
+        }
+        if (group.getSubmissions().size() >= maxVersions) {
+            throw new BusinessRuleException("El grupo ya subió el máximo de " + maxVersions
+                    + " versiones de entrega permitido en este momento.");
+        }
+    }
+
 }

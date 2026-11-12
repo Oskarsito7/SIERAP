@@ -57,7 +57,7 @@
 | `POST /api/auth/logout` | anyone with the refresh cookie (works even if the access token expired) | — | `204`; closes that session and clears the cookie. Other sessions of the user stay open |
 | `GET /api/auth/me` | authenticated | — | `200 UserSummary` |
 | `POST /api/auth/password/change` | authenticated | `{ "currentPassword", "newPassword" }` | `200 TokenResponse` + new refresh cookie, with `mustChangePassword: false`; the user's other sessions are closed and every pending password link (setup or reset) stops working. `403` if the account was deactivated (no new session is issued). `422` "La contraseña actual no es correcta." |
-| `POST /api/auth/password/forgot` | anyone | `{ "email" }` | Always `204`; if the account exists and is active, an email with a link is sent |
+| `POST /api/auth/password/forgot` | anyone | `{ "email" }` | Always `204`; if the account exists and is active, an email with a link is sent, unless a reset link sent less than `sierap.auth.reset-link-cooldown-minutes` (5) ago is still pending. The email is sent after the transaction commits |
 | `POST /api/auth/password/set` | anyone with a link token | `{ "token", "newPassword" }` | `204`; sets the password of a new account or resets a forgotten one, closes every session of the user and invalidates the user's other pending links, of either kind. `422` if the token expired or was already used. The user then logs in normally |
 | `POST /api/auth/register` | anyone with a registration code | `{ "registrationCode", "firstNames", "lastNames", "documentType", "documentNumber", "email", "studentCode", "currentSemester" }` | `202`; creates the student in the program of the code and sends the link to set the password. The code is case-insensitive. `422` if the code does not exist, expired or was deactivated, if the email is not institutional (`@unicesar.edu.co`), or if the email, document or student code is already registered |
 
@@ -572,7 +572,7 @@ Creating an evaluator is the existing `POST /api/external-evaluators` (Stage 2).
 
 | Method and route | Who | Body | Answer |
 |---|---|---|---|
-| `POST /api/groups/{id}/submissions` | a member | `multipart/form-data`: `zip` (required, `.zip`, up to 100 MB) and `presentation` (optional, `.pdf`, `.docx` or `.pptx`, up to 30 MB) | `201 Submission`, a new version (never overwrites). `late` is `true` if today is after the group's `submissionDeadline` (or, if the teacher did not set one, after the end of the window). `400` wrong type, `413` too large, `422` window closed |
+| `POST /api/groups/{id}/submissions` | a member | `multipart/form-data`: `zip` (required, `.zip`, up to 100 MB) and `presentation` (optional, `.pdf`, `.docx` or `.pptx`, up to 30 MB) | `201 Submission`, a new version (never overwrites). `late` is `true` if today is after the group's `submissionDeadline` (or, if the teacher did not set one, after the end of the window). `400` wrong type, `413` too large, `422` window closed or the group already has `submission.max-versions` versions (global parameter, default 20, V11) |
 | `GET /api/groups/{id}/submissions` | members, the group's teacher, its assigned evaluators, admin of the faculty, super_admin | — | `200 { "versions": Submission[] (newest first), "currentPresentation": Submission \| null }`. `currentPresentation` is the newest version that has a presentation |
 | `GET /api/submissions/{id}/zip` | same | — | `200` the file (`Content-Disposition: attachment`) |
 | `GET /api/submissions/{id}/presentation` | same | — | `200` the file; `404` if that version has none |

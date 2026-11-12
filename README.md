@@ -228,7 +228,7 @@ taken by another PostgreSQL: `DB_PORT=5433 docker compose up -d` and
 
 | Variable | What it is |
 |---|---|
-| `SIERAP_JWT_SECRET` | Key that signs the access tokens: random, at least 32 characters, never committed. The API refuses to start without it. In `dev` there is a development default. |
+| `SIERAP_JWT_SECRET` | Key that signs the access tokens: random, at least 32 characters, never committed. The API refuses to start without it. In `dev` there is a development default, accepted only when the `dev` profile is activated explicitly (`./mvnw spring-boot:run` does it; from an IDE, set the active profile to `dev`): started with no profile, the API stops instead of signing tokens with that public key. |
 | `SIERAP_FRONTEND_URL` | Public URL of the frontend; the links sent by email point to it. |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` | UPC SMTP server (in development, Mailpit on `localhost:1025` without credentials). |
 | `MAIL_FROM` | Sender of the emails (default `SIERAP <no-reply@unicesar.edu.co>`). |
