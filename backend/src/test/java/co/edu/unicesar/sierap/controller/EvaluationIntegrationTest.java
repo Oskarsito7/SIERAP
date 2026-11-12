@@ -334,6 +334,35 @@ class EvaluationIntegrationTest {
                 .andExpect(jsonPath("$.message").value("El momento todavía no se ha lanzado: aún no se puede calificar."));
     }
 
+    /**
+     * Auditoría de seguridad: si el docente fijó la fecha de evaluación y después el
+     * admin movió la ventana de calificación más tarde, manda la ventana del momento.
+     */
+    @Test
+    void aGroupDateLeftBeforeAMovedWindowDoesNotOpenGradingEarly() throws Exception {
+        Moment moved = new Moment(launched.getPeriod(), 4, "Momento 4", "Asignatura 4", 1, 3, "Bajo", 2, 4);
+        setWindows(moved, LocalDate.of(2026, 8, 3), LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 11),
+                LocalDate.of(2026, 11, 11), LocalDate.of(2026, 11, 12), LocalDate.of(2026, 11, 20));
+        moved.addLearningOutcome(outcome("RAP1", "Problema", "1.00"));
+        moved.launch();
+        launched.getProgram().addMoment(moved);
+        // El programa ya está gestionado: al sincronizar, la cascada guarda esta misma instancia.
+        facultyRepository.flush();
+        EvaluationCriterion criterion = moved.getLearningOutcomes().get(0).getCriteria().get(0);
+        ProjectGroup stale = new ProjectGroup(moved, teacher, "Fecha vieja");
+        stale.addMember(ana);
+        // Fecha fijada cuando la ventana empezaba antes: hoy (10 de noviembre) ya pasó.
+        stale.setEvaluationDate(LocalDate.of(2026, 11, 8));
+        stale = projectGroupRepository.saveAndFlush(stale);
+
+        perform(put(evaluationPath(stale)), teacherToken, Map.of("levels", List.of(level(criterion, "Alto"))))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("La ventana de calificación abre el 2026-11-12."));
+        submitFor(stale)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("La ventana de calificación abre el 2026-11-12."));
+    }
+
     // ------------------------------------------------------------ lista de evaluaciones
 
     @Test

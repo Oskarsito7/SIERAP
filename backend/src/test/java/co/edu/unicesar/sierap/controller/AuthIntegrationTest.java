@@ -309,6 +309,70 @@ class AuthIntegrationTest {
         login(teacher.getEmail(), "Clave-nueva-2").andExpect(status().isOk());
     }
 
+    /** Auditoría de seguridad: una cuenta desactivada no renueva su sesión cambiando la contraseña. */
+    @Test
+    void aDeactivatedAccountCannotRenewItsSessionByChangingThePassword() throws Exception {
+        User teacher = persistTeacher(engineering);
+        String token = loginToken(teacher.getEmail());
+        teacher.setActive(false);
+        userRepository.save(teacher);
+
+        mockMvc.perform(post("/api/auth/password/change")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("currentPassword", PASSWORD, "newPassword", PASSWORD)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message")
+                        .value("La cuenta está desactivada. Comuníquese con quien la creó."))
+                .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
+        login(teacher.getEmail(), PASSWORD).andExpect(status().isForbidden());
+    }
+
+    /** Auditoría de seguridad: cambiar la contraseña invalida los enlaces pendientes. */
+    @Test
+    void changingThePasswordInvalidatesThePendingResetLink() throws Exception {
+        User teacher = persistTeacher(engineering);
+        mockMvc.perform(post("/api/auth/password/forgot")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("email", teacher.getEmail())))
+                .andExpect(status().isNoContent());
+        String resetLink = capturedLinkToken(teacher.getEmail(), PasswordTokenPurpose.PASSWORD_RESET);
+
+        mockMvc.perform(post("/api/auth/password/change")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(teacher.getEmail())))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("currentPassword", PASSWORD, "newPassword", "Clave-nueva-2")))
+                .andExpect(status().isOk());
+
+        setPassword(resetLink, "Clave-intrusa-3")
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("El enlace no es válido o ya venció. Solicite uno nuevo."));
+        login(teacher.getEmail(), "Clave-nueva-2").andExpect(status().isOk());
+    }
+
+    /** Auditoría de seguridad: usar un enlace invalida los demás enlaces pendientes, de cualquier tipo. */
+    @Test
+    void usingAResetLinkInvalidatesThePendingSetupLink() throws Exception {
+        User admin = persistAdmin(engineering);
+        String email = "docente" + SEQUENCE.incrementAndGet() + "@unicesar.edu.co";
+        mockMvc.perform(post("/api/teachers")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(admin.getEmail())))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(newUser(email, "facultyId", engineering.getId())))
+                .andExpect(status().isCreated());
+        String setupLink = capturedLinkToken(email, PasswordTokenPurpose.ACCOUNT_SETUP);
+        mockMvc.perform(post("/api/auth/password/forgot")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("email", email)))
+                .andExpect(status().isNoContent());
+        String resetLink = capturedLinkToken(email, PasswordTokenPurpose.PASSWORD_RESET);
+
+        setPassword(resetLink, PASSWORD).andExpect(status().isNoContent());
+
+        setPassword(setupLink, "Clave-intrusa-3").andExpect(status().isUnprocessableEntity());
+        login(email, PASSWORD).andExpect(status().isOk());
+    }
+
     @Test
     void weakPasswordIsRejectedWithTheFieldMessage() throws Exception {
         setPassword("cualquier-enlace", "corta")

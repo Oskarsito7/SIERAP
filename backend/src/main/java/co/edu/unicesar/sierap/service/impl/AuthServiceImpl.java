@@ -97,9 +97,7 @@ public class AuthServiceImpl implements AuthService {
                 .filter(User::hasPassword)
                 .filter(candidate -> passwordEncoder.matches(request.password(), candidate.getPasswordHash()))
                 .orElseThrow(() -> new AuthenticationFailedException(INVALID_CREDENTIALS));
-        if (!user.isActive()) {
-            throw new ForbiddenAccessException("La cuenta está desactivada. Comuníquese con quien la creó.");
-        }
+        requireActive(user);
         return startSession(user);
     }
 
@@ -151,10 +149,13 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthSession changePassword(Long userId, ChangePasswordRequest request) {
         User user = findUser(userId);
+        // Una cuenta desactivada no puede usar un token vigente para obtener sesiones nuevas.
+        requireActive(user);
         if (!user.hasPassword() || !passwordEncoder.matches(request.currentPassword(), user.getPasswordHash())) {
             throw new BusinessRuleException("La contraseña actual no es correcta.");
         }
         user.changePassword(passwordEncoder.encode(request.newPassword()));
+        passwordLinkService.invalidateAllLinks(user);
         refreshTokenRepository.deleteAllByUserId(user.getId());
         return startSession(user);
     }
@@ -170,6 +171,8 @@ public class AuthServiceImpl implements AuthService {
     public void setPassword(SetPasswordRequest request) {
         User user = passwordLinkService.consume(request.token());
         user.changePassword(passwordEncoder.encode(request.newPassword()));
+        // Ningún otro enlace pendiente (de cualquier tipo) puede volver a cambiar la contraseña.
+        passwordLinkService.invalidateAllLinks(user);
         refreshTokenRepository.deleteAllByUserId(user.getId());
     }
 
@@ -199,6 +202,8 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private AuthSession startSession(User user) {
+        // Última barrera: ninguna ruta emite credenciales para una cuenta desactivada.
+        requireActive(user);
         LocalDateTime now = LocalDateTime.now(clock);
         refreshTokenRepository.deleteExpiredByUserId(user.getId(), now);
         String refreshToken = OpaqueTokens.newToken();
@@ -207,6 +212,18 @@ public class AuthServiceImpl implements AuthService {
         TokenResponse token = new TokenResponse(jwtService.createAccessToken(user),
                 jwtService.getAccessTokenSeconds(), UserMapper.toSummary(user));
         return new AuthSession(token, refreshToken);
+    }
+
+    /**
+     * Rechaza la operación si la cuenta está desactivada.
+     *
+     * @param user usuario que pide una sesión o un cambio de credenciales
+     * @throws ForbiddenAccessException si la cuenta está desactivada
+     */
+    private static void requireActive(User user) {
+        if (!user.isActive()) {
+            throw new ForbiddenAccessException("La cuenta está desactivada. Comuníquese con quien la creó.");
+        }
     }
 
     private User findUser(Long userId) {

@@ -56,9 +56,9 @@
 | `POST /api/auth/refresh` | anyone with the refresh cookie | — | `200 TokenResponse` + rotated cookie. `401` if the cookie is missing, expired, already used or its session was closed |
 | `POST /api/auth/logout` | anyone with the refresh cookie (works even if the access token expired) | — | `204`; closes that session and clears the cookie. Other sessions of the user stay open |
 | `GET /api/auth/me` | authenticated | — | `200 UserSummary` |
-| `POST /api/auth/password/change` | authenticated | `{ "currentPassword", "newPassword" }` | `200 TokenResponse` + new refresh cookie, with `mustChangePassword: false`; the user's other sessions are closed. `422` "La contraseña actual no es correcta." |
+| `POST /api/auth/password/change` | authenticated | `{ "currentPassword", "newPassword" }` | `200 TokenResponse` + new refresh cookie, with `mustChangePassword: false`; the user's other sessions are closed and every pending password link (setup or reset) stops working. `403` if the account was deactivated (no new session is issued). `422` "La contraseña actual no es correcta." |
 | `POST /api/auth/password/forgot` | anyone | `{ "email" }` | Always `204`; if the account exists and is active, an email with a link is sent |
-| `POST /api/auth/password/set` | anyone with a link token | `{ "token", "newPassword" }` | `204`; sets the password of a new account or resets a forgotten one, and closes every session of the user. `422` if the token expired or was already used. The user then logs in normally |
+| `POST /api/auth/password/set` | anyone with a link token | `{ "token", "newPassword" }` | `204`; sets the password of a new account or resets a forgotten one, closes every session of the user and invalidates the user's other pending links, of either kind. `422` if the token expired or was already used. The user then logs in normally |
 | `POST /api/auth/register` | anyone with a registration code | `{ "registrationCode", "firstNames", "lastNames", "documentType", "documentNumber", "email", "studentCode", "currentSemester" }` | `202`; creates the student in the program of the code and sends the link to set the password. The code is case-insensitive. `422` if the code does not exist, expired or was deactivated, if the email is not institutional (`@unicesar.edu.co`), or if the email, document or student code is already registered |
 
 **Temporary password:** while `user.mustChangePassword` is `true`, only the
@@ -437,7 +437,7 @@ window is open from its start date to its end date, both included.
 | Reassign a group to another teacher (admin) | Until the grading window closes, while the current teacher has not submitted their evaluation |
 | Edit the project title (members or teacher) | Until the submission window ends |
 | Upload a submission | The moment is `LAUNCHED` and today is within the submission window |
-| Grade (draft, submit, correct, individual adjustments) | The moment is `LAUNCHED` and today is between the group's `evaluationDate` and the end of the grading window |
+| Grade (draft, submit, correct, individual adjustments) | The moment is `LAUNCHED` and today is between the group's `evaluationDate` (or the start of the grading window, if the date is not set or falls before it) and the end of the grading window |
 | Student sees their results | After the grading window ends |
 
 Outside those periods the API answers `422` with a message that says which window

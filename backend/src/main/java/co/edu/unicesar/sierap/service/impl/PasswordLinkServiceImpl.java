@@ -67,6 +67,11 @@ public class PasswordLinkServiceImpl implements PasswordLinkService {
         return passwordToken.getUser();
     }
 
+    @Override
+    public void invalidateAllLinks(User user) {
+        passwordTokenRepository.invalidateAllPending(user.getId(), LocalDateTime.now(clock));
+    }
+
     private void issue(User user, PasswordTokenPurpose purpose, int validHours) {
         LocalDateTime now = LocalDateTime.now(clock);
         passwordTokenRepository.invalidatePending(user.getId(), purpose, now);
