@@ -39,6 +39,7 @@ import co.edu.unicesar.sierap.entity.enums.DocumentType;
 import co.edu.unicesar.sierap.repository.AcademicPeriodRepository;
 import co.edu.unicesar.sierap.repository.EvaluatorTypeRepository;
 import co.edu.unicesar.sierap.repository.FacultyRepository;
+import co.edu.unicesar.sierap.repository.GlobalParameterRepository;
 import co.edu.unicesar.sierap.repository.ProjectGroupRepository;
 import co.edu.unicesar.sierap.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -111,6 +112,9 @@ class SubmissionIntegrationTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private GlobalParameterRepository globalParameterRepository;
 
     private Faculty faculty;
     private Program program;
@@ -220,6 +224,20 @@ class SubmissionIntegrationTest {
     }
 
     // ------------------------------------------------------------ archivos inválidos
+
+    /** Auditoría de seguridad: las versiones de un grupo tienen un tope configurable (V11). */
+    @Test
+    void aGroupCannotUploadMoreVersionsThanTheGlobalLimit() throws Exception {
+        globalParameterRepository.findByKey("submission.max-versions").orElseThrow().setValue("2");
+        globalParameterRepository.flush();
+
+        upload(memberToken, group, zip("v1.zip"), null).andExpect(status().isCreated());
+        upload(memberToken, group, zip("v2.zip"), null).andExpect(status().isCreated());
+        upload(memberToken, group, zip("v3.zip"), null)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message")
+                        .value("El grupo ya subió el máximo de 2 versiones de entrega permitido en este momento."));
+    }
 
     @Test
     void filesOfTheWrongTypeAreRejected() throws Exception {

@@ -155,10 +155,13 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public GroupResponse join(AuthenticatedUser actor, Long id) {
         Student student = requireStudent(accessScope.loadActor(actor));
-        // Se bloquea la fila del grupo para que dos inscripciones simultáneas no pasen
-        // a la vez la validación del cupo.
+        // Se bloquea la fila del grupo para que dos inscripciones simultáneas no pasen a la
+        // vez la validación del cupo, y después la del estudiante para que dos solicitudes
+        // suyas a grupos distintos no lo dejen en dos grupos del mismo momento. El orden
+        // grupo → estudiante es el mismo en addMember y al guardar evaluaciones.
         ProjectGroup group = projectGroupRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Grupo", id));
+        lockStudent(student.getId());
         Moment moment = group.getMoment();
         if (!canAccessMoment(student, moment)) {
             throw new ForbiddenAccessException("No puede inscribirse en los grupos de este momento.");
@@ -275,14 +278,15 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public GroupResponse addMember(AuthenticatedUser actor, Long id, AddMemberRequest request) {
         Teacher teacher = requireTeacher(accessScope.loadActor(actor));
-        // Se bloquea la fila del grupo para que dos cambios simultáneos no se pisen.
+        // Se bloquea el grupo y después el estudiante (mismo orden que join): dos cambios
+        // simultáneos al grupo no se pisan, y dos docentes que agregan al mismo estudiante
+        // a grupos distintos quedan en fila.
         ProjectGroup group = projectGroupRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Grupo", id));
         requireOwner(teacher, group);
         Moment moment = group.getMoment();
         requireGradingNotClosed(moment, today(), "agregar estudiantes");
-        Student student = studentRepository.findById(request.studentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Estudiante", request.studentId()));
+        Student student = lockStudent(request.studentId());
         if (!Objects.equals(student.getProgram().getId(), moment.getProgram().getId())) {
             throw new BusinessRuleException("El estudiante no es del programa del momento.");
         }
@@ -329,7 +333,7 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public void removeMember(AuthenticatedUser actor, Long id, Long studentId) {
         Teacher teacher = requireTeacher(accessScope.loadActor(actor));
-        ProjectGroup group = findOwnGroup(teacher, id);
+        ProjectGroup group = findOwnGroupForUpdate(teacher, id);
         Student student = group.getMembers().stream()
                 .filter(member -> Objects.equals(member.getId(), studentId))
                 .findFirst()
@@ -378,7 +382,7 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public void removeEvaluator(AuthenticatedUser actor, Long id, Long evaluatorId) {
         Teacher teacher = requireTeacher(accessScope.loadActor(actor));
-        ProjectGroup group = findOwnGroup(teacher, id);
+        ProjectGroup group = findOwnGroupForUpdate(teacher, id);
         requireGradingNotClosed(group.getMoment(), today(), "retirar evaluadores");
         ExternalEvaluator evaluator = group.getEvaluators().stream()
                 .filter(assigned -> Objects.equals(assigned.getId(), evaluatorId))
@@ -463,6 +467,25 @@ public class GroupServiceImpl implements GroupService {
         ProjectGroup group = findGroup(id);
         requireOwner(teacher, group);
         return group;
+    }
+
+    /**
+     * Como {@link #findOwnGroup}, pero bloquea la fila del grupo. Lo usan las
+     * operaciones que validan que no haya evaluaciones (enviadas o iniciadas) antes de
+     * retirar a alguien: guardar y enviar una evaluación toman el mismo bloqueo, así que
+     * la validación nunca ve un estado que otra transacción está por cambiar.
+     */
+    private ProjectGroup findOwnGroupForUpdate(Teacher teacher, Long id) {
+        ProjectGroup group = projectGroupRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Grupo", id));
+        requireOwner(teacher, group);
+        return group;
+    }
+
+    /** Carga al estudiante bloqueando su fila (ver {@link StudentRepository#findByIdForUpdate}). */
+    private Student lockStudent(Long studentId) {
+        return studentRepository.findByIdForUpdate(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Estudiante", studentId));
     }
 
     private void requireOwner(Teacher teacher, ProjectGroup group) {

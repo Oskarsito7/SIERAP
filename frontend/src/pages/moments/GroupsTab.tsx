@@ -14,6 +14,7 @@ import type { Group } from '@/types/group'
 import type { MomentDetail } from '@/types/moment'
 
 import { groupStatus } from '../groups/groupDisplay'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 /**
  * Grupos que los docentes habilitaron en el momento (wireframe AD-05), con sus
@@ -43,55 +44,53 @@ export function GroupsTab({ moment }: { moment: MomentDetail }) {
           </p>
         )}
         {groups.state.kind === 'success' && groups.state.data.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-muted-foreground border-b">
-                <tr>
-                  <th className="py-2 pr-4 font-medium">Grupo</th>
-                  <th className="py-2 pr-4 font-medium">Docente</th>
-                  <th className="py-2 pr-4 font-medium">Proyecto</th>
-                  <th className="py-2 pr-4 text-right font-medium">Integrantes</th>
-                  <th className="py-2 pr-4 font-medium">Estado</th>
-                  <th className="py-2 font-medium">
-                    <span className="sr-only">Acciones</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {groups.state.data.map((group) => {
-                  const status = groupStatus(group)
-                  return (
-                    <tr key={group.id} className="border-b last:border-0">
-                      <td className="py-3 pr-4 font-medium">{group.name}</td>
-                      <td className="py-3 pr-4">{group.teacher.fullName}</td>
-                      <td className="py-3 pr-4">
-                        {group.projectTitle ?? <span className="text-muted-foreground">Sin título</span>}
-                      </td>
-                      <td className="py-3 pr-4 text-right whitespace-nowrap">
-                        {group.memberCount} / {group.maxMembers}
-                      </td>
-                      <td className="py-3 pr-4">
-                        <Badge variant={status.variant}>
-                          {status.label}
-                          {status.label === 'Bajo el mínimo' ? ` (${group.minMembers})` : ''}
-                        </Badge>
-                      </td>
-                      <td className="py-3 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          aria-label={`Reasignar ${group.name}`}
-                          onClick={() => setReassigning(group)}
-                        >
-                          Reasignar
-                        </Button>
-                      </td>
-                    </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable>
+            <thead className="text-muted-foreground border-b">
+              <tr>
+                <th className="py-2 pr-4 font-medium">Grupo</th>
+                <th className="py-2 pr-4 font-medium">Docente</th>
+                <th className="py-2 pr-4 font-medium">Proyecto</th>
+                <th className="py-2 pr-4 text-right font-medium">Integrantes</th>
+                <th className="py-2 pr-4 font-medium">Estado</th>
+                <th className="py-2 font-medium">
+                  <span className="sr-only">Acciones</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {groups.state.data.map((group) => {
+                const status = groupStatus(group)
+                return (
+                  <tr key={group.id} className="border-b last:border-0">
+                    <td className="py-3 pr-4 font-medium">{group.name}</td>
+                    <td className="py-3 pr-4">{group.teacher.fullName}</td>
+                    <td className="py-3 pr-4">
+                      {group.projectTitle ?? <span className="text-muted-foreground">Sin título</span>}
+                    </td>
+                    <td className="py-3 pr-4 text-right whitespace-nowrap">
+                      {group.memberCount} / {group.maxMembers}
+                    </td>
+                    <td className="py-3 pr-4">
+                      <Badge variant={status.variant}>
+                        {status.label}
+                        {status.label === 'Bajo el mínimo' ? ` (${group.minMembers})` : ''}
+                      </Badge>
+                    </td>
+                    <td className="py-3 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Reasignar ${group.name}`}
+                        onClick={() => setReassigning(group)}
+                      >
+                        Reasignar
+                      </Button>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </ResponsiveTable>
         )}
         {reassigning && (
           <ReassignPanel

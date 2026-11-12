@@ -44,6 +44,10 @@ src/
   same JSON field names.
 - Language (ADR-014): identifiers in English; texts on screen and code comments in
   Spanish.
+- Phones: every data table uses `ResponsiveTable` (`components/ui/responsive-table`)
+  instead of a bare `<table>`. Below 640 px each row turns into a card with the column
+  titles above the values; columns whose title is only for screen readers (actions)
+  show no label. Check new pages at 360 px wide: the page must never scroll sideways.
 
 ## Adding shadcn/ui components
 

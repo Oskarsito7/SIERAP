@@ -19,6 +19,7 @@ import { studentService } from '@/services/api/studentService'
 import type { NewStudentRequest, Student } from '@/types/account'
 import type { DocumentType, UserSummary } from '@/types/auth'
 import type { Program } from '@/types/catalog'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 /**
  * "Mis estudiantes" del docente (wireframe DO-08): los estudiantes de cada programa de
@@ -202,62 +203,60 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
             </p>
           )}
           {visible.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-muted-foreground border-b">
-                  <tr>
-                    <th className="py-2 pr-4 font-medium">Nombre</th>
-                    <th className="py-2 pr-4 font-medium">Código</th>
-                    <th className="py-2 pr-4 text-right font-medium">Semestre</th>
-                    <th className="py-2 pr-4 font-medium">Correo</th>
-                    <th className="py-2 pr-4 font-medium">Cómo llegó</th>
-                    <th className="py-2 pr-4 font-medium">Estado</th>
-                    <th className="py-2 font-medium">
-                      <span className="sr-only">Acciones</span>
-                    </th>
+            <ResponsiveTable>
+              <thead className="text-muted-foreground border-b">
+                <tr>
+                  <th className="py-2 pr-4 font-medium">Nombre</th>
+                  <th className="py-2 pr-4 font-medium">Código</th>
+                  <th className="py-2 pr-4 text-right font-medium">Semestre</th>
+                  <th className="py-2 pr-4 font-medium">Correo</th>
+                  <th className="py-2 pr-4 font-medium">Cómo llegó</th>
+                  <th className="py-2 pr-4 font-medium">Estado</th>
+                  <th className="py-2 font-medium">
+                    <span className="sr-only">Acciones</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((student) => (
+                  <tr key={student.id} className="border-b last:border-0">
+                    <td className="py-3 pr-4">{student.fullName}</td>
+                    <td className="py-3 pr-4 tabular-nums">{student.studentCode}</td>
+                    <td className="py-3 pr-4 text-right tabular-nums">{student.currentSemester}</td>
+                    <td className="py-3 pr-4 break-all">{student.email}</td>
+                    <td className="py-3 pr-4">{arrival(student, user?.id)}</td>
+                    <td className="py-3 pr-4">
+                      <Badge variant={student.active ? 'default' : 'secondary'}>
+                        {student.active ? 'Activo' : 'Desactivado'}
+                      </Badge>
+                    </td>
+                    <td className="py-3 text-right whitespace-nowrap">
+                      {student.manageable && (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={!student.active}
+                            onClick={() => void resendLink(student)}
+                            aria-label={`Reenviar enlace a ${student.fullName}`}
+                          >
+                            Reenviar enlace
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => void toggleActive(student)}
+                            aria-label={`${student.active ? 'Desactivar' : 'Reactivar'} a ${student.fullName}`}
+                          >
+                            {student.active ? 'Desactivar' : 'Reactivar'}
+                          </Button>
+                        </>
+                      )}
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {visible.map((student) => (
-                    <tr key={student.id} className="border-b last:border-0">
-                      <td className="py-3 pr-4">{student.fullName}</td>
-                      <td className="py-3 pr-4 tabular-nums">{student.studentCode}</td>
-                      <td className="py-3 pr-4 text-right tabular-nums">{student.currentSemester}</td>
-                      <td className="py-3 pr-4 break-all">{student.email}</td>
-                      <td className="py-3 pr-4">{arrival(student, user?.id)}</td>
-                      <td className="py-3 pr-4">
-                        <Badge variant={student.active ? 'default' : 'secondary'}>
-                          {student.active ? 'Activo' : 'Desactivado'}
-                        </Badge>
-                      </td>
-                      <td className="py-3 text-right whitespace-nowrap">
-                        {student.manageable && (
-                          <>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              disabled={!student.active}
-                              onClick={() => void resendLink(student)}
-                              aria-label={`Reenviar enlace a ${student.fullName}`}
-                            >
-                              Reenviar enlace
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => void toggleActive(student)}
-                              aria-label={`${student.active ? 'Desactivar' : 'Reactivar'} a ${student.fullName}`}
-                            >
-                              {student.active ? 'Desactivar' : 'Reactivar'}
-                            </Button>
-                          </>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </ResponsiveTable>
           )}
         </CardContent>
       </Card>

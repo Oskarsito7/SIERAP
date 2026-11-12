@@ -1,8 +1,9 @@
 # Entity-relationship diagram (database)
 
 Physical model of the SIERAP PostgreSQL database: the 26 tables created by the Flyway
-migrations in `backend/src/main/resources/db/migration/` (V1 to V10; V10 only adds the
-report parameters to `global_parameter`), with their columns,
+migrations in `backend/src/main/resources/db/migration/` (V1 to V11; V10 and V11 only add
+global parameters to `global_parameter`: the report thresholds and the submission
+version limit), with their columns,
 types, keys and relationships. GitHub renders this diagram directly from the Mermaid
 code. Flyway's own `flyway_schema_history` table is left out.
 

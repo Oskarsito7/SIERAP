@@ -16,6 +16,7 @@ import type { AcademicPeriod, Program } from '@/types/catalog'
 
 import { momentPhase } from './momentPhase'
 import { MomentStatusBadge } from './MomentStatusBadge'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 /**
  * Momentos de los programas de la facultad del admin en un periodo (wireframe AD-01),
@@ -173,59 +174,57 @@ function PeriodMoments({
             </p>
           )}
           {visible.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-muted-foreground border-b">
-                  <tr>
-                    <th className="py-2 pr-4 font-medium">Programa</th>
-                    <th className="py-2 pr-4 font-medium">Momento</th>
-                    <th className="py-2 pr-4 font-medium">Semestres</th>
-                    <th className="py-2 pr-4 font-medium">Estado</th>
-                    <th className="py-2 pr-4 font-medium">Fase de hoy</th>
-                    <th className="py-2 pr-4 text-right font-medium">Grupos</th>
-                    <th className="py-2 font-medium">
-                      <span className="sr-only">Acciones</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visible.map((moment) => {
-                    const phase = momentPhase(moment, today)
-                    const action = moment.status === 'CONFIGURATION' ? 'Configurar' : 'Ver'
-                    return (
-                      <tr key={moment.id} className="border-b last:border-0">
-                        <td className="py-3 pr-4">{moment.programName}</td>
-                        <td className="py-3 pr-4">
-                          <span className="font-medium">{moment.name}</span>
-                          <span className="text-muted-foreground block text-xs">{moment.subject}</span>
-                        </td>
-                        <td className="py-3 pr-4 whitespace-nowrap">
-                          {moment.semesterFrom} a {moment.semesterTo}
-                        </td>
-                        <td className="py-3 pr-4">
-                          <MomentStatusBadge status={moment.status} />
-                        </td>
-                        <td className="py-3 pr-4">
-                          {phase.label}
-                          {phase.detail && <span className="text-muted-foreground block text-xs">{phase.detail}</span>}
-                        </td>
-                        <td className="py-3 pr-4 text-right">{moment.groupCount}</td>
-                        <td className="py-3 text-right">
-                          <Button variant="outline" size="sm" asChild>
-                            <Link
-                              to={`/moments/${moment.id}`}
-                              aria-label={`${action} ${moment.name} de ${moment.programName}`}
-                            >
-                              {action}
-                            </Link>
-                          </Button>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveTable>
+              <thead className="text-muted-foreground border-b">
+                <tr>
+                  <th className="py-2 pr-4 font-medium">Programa</th>
+                  <th className="py-2 pr-4 font-medium">Momento</th>
+                  <th className="py-2 pr-4 font-medium">Semestres</th>
+                  <th className="py-2 pr-4 font-medium">Estado</th>
+                  <th className="py-2 pr-4 font-medium">Fase de hoy</th>
+                  <th className="py-2 pr-4 text-right font-medium">Grupos</th>
+                  <th className="py-2 font-medium">
+                    <span className="sr-only">Acciones</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((moment) => {
+                  const phase = momentPhase(moment, today)
+                  const action = moment.status === 'CONFIGURATION' ? 'Configurar' : 'Ver'
+                  return (
+                    <tr key={moment.id} className="border-b last:border-0">
+                      <td className="py-3 pr-4">{moment.programName}</td>
+                      <td className="py-3 pr-4">
+                        <span className="font-medium">{moment.name}</span>
+                        <span className="text-muted-foreground block text-xs">{moment.subject}</span>
+                      </td>
+                      <td className="py-3 pr-4 whitespace-nowrap">
+                        {moment.semesterFrom} a {moment.semesterTo}
+                      </td>
+                      <td className="py-3 pr-4">
+                        <MomentStatusBadge status={moment.status} />
+                      </td>
+                      <td className="py-3 pr-4">
+                        {phase.label}
+                        {phase.detail && <span className="text-muted-foreground block text-xs">{phase.detail}</span>}
+                      </td>
+                      <td className="py-3 pr-4 text-right">{moment.groupCount}</td>
+                      <td className="py-3 text-right">
+                        <Button variant="outline" size="sm" asChild>
+                          <Link
+                            to={`/moments/${moment.id}`}
+                            aria-label={`${action} ${moment.name} de ${moment.programName}`}
+                          >
+                            {action}
+                          </Link>
+                        </Button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </ResponsiveTable>
           )}
         </CardContent>
       </Card>

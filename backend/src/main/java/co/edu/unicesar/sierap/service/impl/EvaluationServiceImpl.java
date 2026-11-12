@@ -93,7 +93,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     @Override
     public EvaluationFormResponse save(AuthenticatedUser actor, Long groupId, SaveEvaluationRequest request) {
         User evaluator = accessScope.loadActor(actor);
-        ProjectGroup group = findGroup(groupId);
+        ProjectGroup group = findGroupForUpdate(groupId);
         requireEvaluator(evaluator, group);
         requireGradingOpen(group);
 
@@ -130,7 +130,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     @Override
     public EvaluationFormResponse submit(AuthenticatedUser actor, Long groupId) {
         User evaluator = accessScope.loadActor(actor);
-        ProjectGroup group = findGroup(groupId);
+        ProjectGroup group = findGroupForUpdate(groupId);
         requireEvaluator(evaluator, group);
         requireGradingOpen(group);
         Evaluation evaluation = evaluationRepository
@@ -201,8 +201,8 @@ public class EvaluationServiceImpl implements EvaluationService {
     /**
      * Por qué hoy no se puede calificar el grupo, o {@code null} si se puede: el
      * momento debe estar lanzado y hoy debe estar entre la fecha de evaluación del
-     * grupo (o el inicio de la ventana, si el docente no la fijó) y el fin de la
-     * ventana de calificación (docs/07).
+     * grupo (o el inicio de la ventana, si el docente no la fijó o quedó antes de
+     * ella) y el fin de la ventana de calificación (docs/07).
      */
     private static String gradingClosedReason(ProjectGroup group, LocalDate today) {
         Moment moment = group.getMoment();
@@ -210,12 +210,17 @@ public class EvaluationServiceImpl implements EvaluationService {
             return "El momento todavía no se ha lanzado: aún no se puede calificar.";
         }
         LocalDate end = moment.getGradingEnd();
-        LocalDate start = group.getEvaluationDate() != null ? group.getEvaluationDate() : moment.getGradingStart();
-        if (start == null || end == null) {
+        LocalDate windowStart = moment.getGradingStart();
+        if (windowStart == null || end == null) {
             return "El momento no tiene definida la ventana de calificación.";
         }
+        // La fecha del grupo solo puede retrasar el inicio, nunca adelantarlo: si el admin
+        // movió la ventana después de que el docente fijó la fecha, manda la ventana.
+        LocalDate groupDate = group.getEvaluationDate();
+        boolean groupDateRules = groupDate != null && groupDate.isAfter(windowStart);
+        LocalDate start = groupDateRules ? groupDate : windowStart;
         if (today.isBefore(start)) {
-            return group.getEvaluationDate() != null
+            return groupDateRules
                     ? "La evaluación de este grupo es el " + start + ": antes no se puede calificar."
                     : "La ventana de calificación abre el " + start + ".";
         }
@@ -286,6 +291,17 @@ public class EvaluationServiceImpl implements EvaluationService {
 
     private ProjectGroup findGroup(Long id) {
         return projectGroupRepository.findById(id).orElseThrow(() -> new ResourceNotFoundException("Grupo", id));
+    }
+
+    /**
+     * Carga el grupo bloqueando su fila hasta el fin de la transacción. Guardar y
+     * enviar una evaluación se serializan así con la reasignación del docente y con
+     * quitar miembros o evaluadores, que toman el mismo bloqueo: sus validaciones
+     * siempre ven el estado ya confirmado de la otra operación.
+     */
+    private ProjectGroup findGroupForUpdate(Long id) {
+        return projectGroupRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Grupo", id));
     }
 
     private LocalDate today() {

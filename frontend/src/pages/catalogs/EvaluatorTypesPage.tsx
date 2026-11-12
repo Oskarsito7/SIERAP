@@ -11,6 +11,7 @@ import { catalogService } from '@/services/api/catalogService'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
 import type { EvaluatorType } from '@/types/account'
 import type { EvaluatorTypeRequest } from '@/types/catalog'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 /**
  * Catálogo de tipos de evaluador externo (wireframe SA-04, super_admin, ADR-011). Un tipo
@@ -75,76 +76,74 @@ export function EvaluatorTypesPage() {
               <p className="text-muted-foreground text-sm">Todavía no hay tipos de evaluador.</p>
             )}
             {types.state.kind === 'success' && types.state.data.length > 0 && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-sm">
-                  <thead className="text-muted-foreground border-b">
-                    <tr>
-                      <th className="py-2 pr-4 font-medium">Tipo</th>
-                      <th className="py-2 pr-4 font-medium">Descripción</th>
-                      <th className="py-2 pr-4 text-right font-medium">Evaluadores</th>
-                      <th className="py-2 pr-4 font-medium">Activo</th>
-                      <th className="py-2 font-medium">
-                        <span className="sr-only">Acciones</span>
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {types.state.data.map((type) =>
-                      editing === type.id ? (
-                        <tr key={type.id} className="border-b">
-                          <td colSpan={5} className="py-3">
-                            <TypeForm
-                              title={`Editar ${type.name}`}
-                              initial={type}
-                              submitLabel="Guardar"
-                              onCancel={() => setEditing(null)}
-                              onSave={async (request) => {
-                                const changes = { ...request, active: type.active }
-                                replace(await catalogService.updateEvaluatorType(type.id, changes))
-                                setEditing(null)
-                              }}
-                            />
-                          </td>
-                        </tr>
-                      ) : (
-                        <tr key={type.id} className="border-b last:border-0">
-                          <td className="py-3 pr-4 font-semibold">{type.name}</td>
-                          <td className="text-muted-foreground py-3 pr-4">{type.description}</td>
-                          <td className="py-3 pr-4 text-right">{type.evaluatorCount}</td>
-                          <td className="py-3 pr-4">
-                            <input
-                              type="checkbox"
-                              role="switch"
-                              aria-label={`${type.name} activo`}
-                              checked={type.active}
-                              onChange={() => void toggle(type)}
-                              className="accent-primary size-4"
-                            />
-                          </td>
-                          <td className="py-3 text-right whitespace-nowrap">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditing(type.id)}
-                              aria-label={`Editar ${type.name}`}
-                            >
-                              Editar
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => void remove(type)}
-                              aria-label={`Eliminar ${type.name}`}
-                            >
-                              Eliminar
-                            </Button>
-                          </td>
-                        </tr>
-                      ),
-                    )}
-                  </tbody>
-                </table>
-              </div>
+              <ResponsiveTable>
+                <thead className="text-muted-foreground border-b">
+                  <tr>
+                    <th className="py-2 pr-4 font-medium">Tipo</th>
+                    <th className="py-2 pr-4 font-medium">Descripción</th>
+                    <th className="py-2 pr-4 text-right font-medium">Evaluadores</th>
+                    <th className="py-2 pr-4 font-medium">Activo</th>
+                    <th className="py-2 font-medium">
+                      <span className="sr-only">Acciones</span>
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {types.state.data.map((type) =>
+                    editing === type.id ? (
+                      <tr key={type.id} className="border-b">
+                        <td colSpan={5} className="py-3">
+                          <TypeForm
+                            title={`Editar ${type.name}`}
+                            initial={type}
+                            submitLabel="Guardar"
+                            onCancel={() => setEditing(null)}
+                            onSave={async (request) => {
+                              const changes = { ...request, active: type.active }
+                              replace(await catalogService.updateEvaluatorType(type.id, changes))
+                              setEditing(null)
+                            }}
+                          />
+                        </td>
+                      </tr>
+                    ) : (
+                      <tr key={type.id} className="border-b last:border-0">
+                        <td className="py-3 pr-4 font-semibold">{type.name}</td>
+                        <td className="text-muted-foreground py-3 pr-4">{type.description}</td>
+                        <td className="py-3 pr-4 text-right">{type.evaluatorCount}</td>
+                        <td className="py-3 pr-4">
+                          <input
+                            type="checkbox"
+                            role="switch"
+                            aria-label={`${type.name} activo`}
+                            checked={type.active}
+                            onChange={() => void toggle(type)}
+                            className="accent-primary size-4"
+                          />
+                        </td>
+                        <td className="py-3 text-right whitespace-nowrap">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setEditing(type.id)}
+                            aria-label={`Editar ${type.name}`}
+                          >
+                            Editar
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => void remove(type)}
+                            aria-label={`Eliminar ${type.name}`}
+                          >
+                            Eliminar
+                          </Button>
+                        </td>
+                      </tr>
+                    ),
+                  )}
+                </tbody>
+              </ResponsiveTable>
             )}
           </CardContent>
         </Card>

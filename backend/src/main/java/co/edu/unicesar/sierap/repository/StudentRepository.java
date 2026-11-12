@@ -4,7 +4,9 @@ import java.util.List;
 import java.util.Optional;
 
 import co.edu.unicesar.sierap.entity.Student;
+import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -20,6 +22,19 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
      * @return el estudiante, si existe
      */
     Optional<Student> findByStudentCode(String studentCode);
+
+    /**
+     * Busca un estudiante bloqueando su fila hasta el fin de la transacción. Serializa
+     * los cambios de grupo de un mismo estudiante (inscribirse, ser agregado), para que
+     * dos solicitudes simultáneas a grupos distintos no lo dejen en dos grupos del
+     * mismo momento.
+     *
+     * @param id id del estudiante
+     * @return el estudiante, si existe
+     */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select s from Student s where s.id = :id")
+    Optional<Student> findByIdForUpdate(@Param("id") Long id);
 
     /**
      * Lista los estudiantes de un programa.

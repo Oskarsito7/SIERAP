@@ -12,6 +12,7 @@ import { registrationCodeService } from '@/services/api/registrationCodeService'
 import type { RegistrationCode } from '@/types/registrationCode'
 
 import { NewCodeForm } from './NewCodeForm'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 type LoadState =
   | { kind: 'loading' }
@@ -189,64 +190,62 @@ export function RegistrationCodesPage() {
           )}
 
           {load.kind === 'success' && visible.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-muted-foreground border-b">
-                  <tr>
-                    <th className="py-2 pr-4 font-medium">Código</th>
-                    {!isTeacher && <th className="py-2 pr-4 font-medium">Docente</th>}
-                    <th className="py-2 pr-4 font-medium">Programa</th>
-                    <th className="py-2 pr-4 font-medium">Vence</th>
-                    <th className="py-2 pr-4 font-medium">Registrados</th>
-                    <th className="py-2 pr-4 font-medium">Estado</th>
-                    <th className="py-2 font-medium">
-                      <span className="sr-only">Acciones</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visible.map((code) => {
-                    const status = statusOf(code)
-                    return (
-                      <tr key={code.id} className="border-b last:border-0">
-                        <td className="py-3 pr-4 font-mono font-semibold tracking-wider">{code.code}</td>
-                        {!isTeacher && <td className="py-3 pr-4">{code.teacherName}</td>}
-                        <td className="py-3 pr-4">{code.programName}</td>
-                        <td className="py-3 pr-4">{formatDate(code.expiresOn)}</td>
-                        <td className="py-3 pr-4">{code.registeredCount}</td>
-                        <td className="py-3 pr-4">
-                          <Badge variant={status === 'Activo' ? 'default' : 'secondary'}>{status}</Badge>
-                        </td>
-                        <td className="py-3">
-                          {status === 'Activo' && (
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => void copy(code)}
-                                aria-label={`Copiar el código ${code.code}`}
-                              >
-                                {copiedId === code.id ? <Check aria-hidden /> : <Copy aria-hidden />}
-                                {copiedId === code.id ? 'Copiado' : 'Copiar'}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                disabled={deactivatingId === code.id}
-                                onClick={() => void deactivate(code)}
-                                aria-label={`Desactivar el código ${code.code}`}
-                              >
-                                Desactivar
-                              </Button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveTable>
+              <thead className="text-muted-foreground border-b">
+                <tr>
+                  <th className="py-2 pr-4 font-medium">Código</th>
+                  {!isTeacher && <th className="py-2 pr-4 font-medium">Docente</th>}
+                  <th className="py-2 pr-4 font-medium">Programa</th>
+                  <th className="py-2 pr-4 font-medium">Vence</th>
+                  <th className="py-2 pr-4 font-medium">Registrados</th>
+                  <th className="py-2 pr-4 font-medium">Estado</th>
+                  <th className="py-2 font-medium">
+                    <span className="sr-only">Acciones</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((code) => {
+                  const status = statusOf(code)
+                  return (
+                    <tr key={code.id} className="border-b last:border-0">
+                      <td className="py-3 pr-4 font-mono font-semibold tracking-wider">{code.code}</td>
+                      {!isTeacher && <td className="py-3 pr-4">{code.teacherName}</td>}
+                      <td className="py-3 pr-4">{code.programName}</td>
+                      <td className="py-3 pr-4">{formatDate(code.expiresOn)}</td>
+                      <td className="py-3 pr-4">{code.registeredCount}</td>
+                      <td className="py-3 pr-4">
+                        <Badge variant={status === 'Activo' ? 'default' : 'secondary'}>{status}</Badge>
+                      </td>
+                      <td className="py-3">
+                        {status === 'Activo' && (
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => void copy(code)}
+                              aria-label={`Copiar el código ${code.code}`}
+                            >
+                              {copiedId === code.id ? <Check aria-hidden /> : <Copy aria-hidden />}
+                              {copiedId === code.id ? 'Copiado' : 'Copiar'}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={deactivatingId === code.id}
+                              onClick={() => void deactivate(code)}
+                              aria-label={`Desactivar el código ${code.code}`}
+                            >
+                              Desactivar
+                            </Button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </ResponsiveTable>
           )}
         </CardContent>
       </Card>

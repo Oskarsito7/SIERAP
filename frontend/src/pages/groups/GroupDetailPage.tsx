@@ -21,6 +21,7 @@ import type { MomentSummary } from '@/types/moment'
 
 import { formatWindow, groupStatus } from './groupDisplay'
 import { GroupResultsTab } from './GroupResultsTab'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 interface GroupWithMoment {
   group: Group
@@ -97,7 +98,7 @@ export function GroupDetailPage({ tab = 'summary' }: { tab?: GroupTab }) {
         </CardContent>
       </Card>
 
-      <nav aria-label="Secciones del grupo" className="flex gap-1 border-b">
+      <nav aria-label="Secciones del grupo" className="flex flex-wrap gap-1 border-b">
         {TABS.map((item) => (
           <NavLink
             key={item.tab}
@@ -259,40 +260,38 @@ function MembersSection({ group, disabled, onChange }: { group: Group; disabled:
         {group.members.length === 0 ? (
           <p className="text-muted-foreground text-sm">El grupo todavía no tiene integrantes.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-muted-foreground border-b">
-                <tr>
-                  <th className="py-2 pr-4 font-medium">Nombre</th>
-                  <th className="py-2 pr-4 font-medium">Código</th>
-                  <th className="py-2 pr-4 font-medium">Correo</th>
-                  <th className="py-2 font-medium">
-                    <span className="sr-only">Acciones</span>
-                  </th>
+          <ResponsiveTable>
+            <thead className="text-muted-foreground border-b">
+              <tr>
+                <th className="py-2 pr-4 font-medium">Nombre</th>
+                <th className="py-2 pr-4 font-medium">Código</th>
+                <th className="py-2 pr-4 font-medium">Correo</th>
+                <th className="py-2 font-medium">
+                  <span className="sr-only">Acciones</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {group.members.map((member) => (
+                <tr key={member.id} className="border-b last:border-0">
+                  <td className="py-3 pr-4">{member.fullName}</td>
+                  <td className="py-3 pr-4">{member.studentCode}</td>
+                  <td className="py-3 pr-4 break-all">{member.email}</td>
+                  <td className="py-3 text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={disabled}
+                      onClick={() => void remove(member.id, member.fullName)}
+                      aria-label={`Quitar a ${member.fullName}`}
+                    >
+                      Quitar
+                    </Button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {group.members.map((member) => (
-                  <tr key={member.id} className="border-b last:border-0">
-                    <td className="py-3 pr-4">{member.fullName}</td>
-                    <td className="py-3 pr-4">{member.studentCode}</td>
-                    <td className="py-3 pr-4 break-all">{member.email}</td>
-                    <td className="py-3 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={disabled}
-                        onClick={() => void remove(member.id, member.fullName)}
-                        aria-label={`Quitar a ${member.fullName}`}
-                      >
-                        Quitar
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </ResponsiveTable>
         )}
       </CardContent>
     </Card>

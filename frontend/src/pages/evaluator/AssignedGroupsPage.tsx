@@ -11,6 +11,7 @@ import { evaluationService } from '@/services/api/evaluationService'
 import { groupService } from '@/services/api/groupService'
 import type { EvaluationSummary } from '@/types/evaluation'
 import type { Group } from '@/types/group'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 interface AssignedGroup {
   group: Group
@@ -47,8 +48,8 @@ export function AssignedGroupsPage() {
       )}
       {data.state.kind === 'success' && data.state.data.length > 0 && (
         <Card>
-          <CardContent className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
+          <CardContent>
+            <ResponsiveTable>
               <thead className="text-muted-foreground border-b">
                 <tr>
                   <th className="py-2 pr-4 font-medium">Grupo</th>
@@ -107,7 +108,7 @@ export function AssignedGroupsPage() {
                   )
                 })}
               </tbody>
-            </table>
+            </ResponsiveTable>
           </CardContent>
         </Card>
       )}

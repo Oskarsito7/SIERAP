@@ -9,7 +9,7 @@ La fuente de verdad del esquema siguen siendo las migraciones de Flyway en
 
 | Archivo | Qué es |
 |---|---|
-| `01-schema.sql` | Todas las migraciones (V1..V10) concatenadas en orden. **Generado**, no editar a mano. |
+| `01-schema.sql` | Todas las migraciones (V1..V11) concatenadas en orden. **Generado**, no editar a mano. |
 | `generate-schema.sh` | Regenera `01-schema.sql` desde las migraciones: `bash bd/generate-schema.sh`. |
 | `02-seed-dev.sql` | Datos de demostración: usuarios, grupos, entregas, evaluaciones y notas. Solo desarrollo. |
 | `03-documento-ieee.md` | Documento en formato IEEE sobre el diseño de la base de datos: modelo, integridad, tipos de datos, índices y validación. |
@@ -60,7 +60,7 @@ Desde ahí hay dos caminos:
 **B.1.a — Dejar que el backend cree el esquema (más limpio)**
 
 1. No ejecutar `01-schema.sql`.
-2. Arrancar el backend: Flyway encuentra la base vacía y aplica V1..V10.
+2. Arrancar el backend: Flyway encuentra la base vacía y aplica V1..V11.
 3. Ejecutar `bd/02-seed-dev.sql` en el Query Tool sobre `sierap`.
 
 **B.1.b — Crear el esquema a mano desde pgAdmin**
@@ -71,11 +71,11 @@ Desde ahí hay dos caminos:
    línea base de Flyway (el esquema ya existe, pero sin la tabla de historial):
 
    ```bash
-   cd backend && ./mvnw spring-boot:run -Dspring-boot.run.arguments="--spring.flyway.baseline-on-migrate=true --spring.flyway.baseline-version=10"
+   cd backend && ./mvnw spring-boot:run -Dspring-boot.run.arguments="--spring.flyway.baseline-on-migrate=true --spring.flyway.baseline-version=11"
    ```
 
    Flyway crea `flyway_schema_history` con la versión 10 como línea base y no
-   vuelve a aplicar V1..V10. De la V11 en adelante se aplican con normalidad y ya
+   vuelve a aplicar V1..V11. De la V12 en adelante se aplican con normalidad y ya
    no hace falta volver a pasar esos argumentos.
 
 ### B.2 · Copiar lo que ya está en el contenedor

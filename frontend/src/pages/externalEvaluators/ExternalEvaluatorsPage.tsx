@@ -13,6 +13,7 @@ import { accountService } from '@/services/api/accountService'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
 import type { NewExternalEvaluatorRequest } from '@/types/account'
 import type { DocumentType, UserSummary } from '@/types/auth'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 /**
  * Evaluadores externos que creó el docente (wireframe DO-09): la lista, el reenvío del
@@ -96,44 +97,42 @@ export function ExternalEvaluatorsPage() {
             </p>
           )}
           {visible.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-muted-foreground border-b">
-                  <tr>
-                    <th className="py-2 pr-4 font-medium">Nombre</th>
-                    <th className="py-2 pr-4 font-medium">Correo</th>
-                    <th className="py-2 pr-4 font-medium">Estado</th>
-                    <th className="py-2 font-medium">
-                      <span className="sr-only">Acciones</span>
-                    </th>
+            <ResponsiveTable>
+              <thead className="text-muted-foreground border-b">
+                <tr>
+                  <th className="py-2 pr-4 font-medium">Nombre</th>
+                  <th className="py-2 pr-4 font-medium">Correo</th>
+                  <th className="py-2 pr-4 font-medium">Estado</th>
+                  <th className="py-2 font-medium">
+                    <span className="sr-only">Acciones</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((evaluator) => (
+                  <tr key={evaluator.id} className="border-b last:border-0">
+                    <td className="py-3 pr-4">{evaluator.fullName}</td>
+                    <td className="py-3 pr-4 break-all">{evaluator.email}</td>
+                    <td className="py-3 pr-4">
+                      <Badge variant={evaluator.active ? 'default' : 'secondary'}>
+                        {evaluator.active ? 'Activo' : 'Desactivado'}
+                      </Badge>
+                    </td>
+                    <td className="py-3 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        disabled={!evaluator.active}
+                        onClick={() => void resendLink(evaluator)}
+                        aria-label={`Reenviar enlace a ${evaluator.fullName}`}
+                      >
+                        Reenviar enlace
+                      </Button>
+                    </td>
                   </tr>
-                </thead>
-                <tbody>
-                  {visible.map((evaluator) => (
-                    <tr key={evaluator.id} className="border-b last:border-0">
-                      <td className="py-3 pr-4">{evaluator.fullName}</td>
-                      <td className="py-3 pr-4 break-all">{evaluator.email}</td>
-                      <td className="py-3 pr-4">
-                        <Badge variant={evaluator.active ? 'default' : 'secondary'}>
-                          {evaluator.active ? 'Activo' : 'Desactivado'}
-                        </Badge>
-                      </td>
-                      <td className="py-3 text-right">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={!evaluator.active}
-                          onClick={() => void resendLink(evaluator)}
-                          aria-label={`Reenviar enlace a ${evaluator.fullName}`}
-                        >
-                          Reenviar enlace
-                        </Button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                ))}
+              </tbody>
+            </ResponsiveTable>
           )}
         </CardContent>
       </Card>

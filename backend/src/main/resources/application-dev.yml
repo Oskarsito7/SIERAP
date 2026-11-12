@@ -20,9 +20,12 @@ logging:
     co.edu.unicesar.sierap: DEBUG
 
 sierap:
+  # Clave pública de desarrollo. DevelopmentSecretGuard impide arrancar con ella si el
+  # perfil dev no se activó explícitamente (spring-boot:run lo activa solo).
+  development-jwt-secret: clave-de-desarrollo-sierap-no-usar-en-produccion-0123456789
   auth:
     # Solo para desarrollo local. En producción llega por SIERAP_JWT_SECRET.
-    jwt-secret: ${SIERAP_JWT_SECRET:clave-de-desarrollo-sierap-no-usar-en-produccion-0123456789}
+    jwt-secret: ${SIERAP_JWT_SECRET:${sierap.development-jwt-secret}}
     # En local el frontend y la API van por http://localhost.
     refresh-cookie-secure: false
   # En local las entregas quedan en la carpeta personal del usuario.

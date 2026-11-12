@@ -11,6 +11,7 @@ import { useLoad } from '@/lib/useLoad'
 import { catalogService } from '@/services/api/catalogService'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
 import type { CatalogEntryRequest, Faculty, Program } from '@/types/catalog'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 /**
  * Facultades y programas (wireframe SA-01, super_admin): la lista de facultades y, de
@@ -205,69 +206,67 @@ function FacultyDetail({
           <p className="text-muted-foreground text-sm">Esta facultad todavía no tiene programas.</p>
         )}
         {programs.state.kind === 'success' && programs.state.data.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-muted-foreground border-b">
-                <tr>
-                  <th className="py-2 pr-4 font-medium">Código</th>
-                  <th className="py-2 pr-4 font-medium">Programa</th>
-                  <th className="py-2 pr-4 text-right font-medium">Momentos del periodo</th>
-                  <th className="py-2 pr-4 text-right font-medium">Estudiantes</th>
-                  <th className="py-2 font-medium">
-                    <span className="sr-only">Acciones</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {programs.state.data.map((program) =>
-                  editingProgram === program.id ? (
-                    <tr key={program.id} className="border-b">
-                      <td colSpan={5} className="py-3">
-                        <EntryForm
-                          title={`Editar ${program.name}`}
-                          initial={{ code: program.code, name: program.name }}
-                          submitLabel="Guardar"
-                          onCancel={() => setEditingProgram(null)}
-                          onSave={async (request) => {
-                            const updated = await catalogService.updateProgram(program.id, request)
-                            programs.setData((current) =>
-                              sortByName(current.map((item) => (item.id === updated.id ? updated : item))),
-                            )
-                            setEditingProgram(null)
-                          }}
-                        />
-                      </td>
-                    </tr>
-                  ) : (
-                    <tr key={program.id} className="border-b last:border-0">
-                      <td className="py-3 pr-4">{program.code}</td>
-                      <td className="py-3 pr-4">{program.name}</td>
-                      <td className="py-3 pr-4 text-right">{program.currentPeriodMomentCount}</td>
-                      <td className="py-3 pr-4 text-right">{program.studentCount}</td>
-                      <td className="py-3 text-right whitespace-nowrap">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => setEditingProgram(program.id)}
-                          aria-label={`Editar ${program.name}`}
-                        >
-                          Editar
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => void removeProgram(program)}
-                          aria-label={`Eliminar ${program.name}`}
-                        >
-                          Eliminar
-                        </Button>
-                      </td>
-                    </tr>
-                  ),
-                )}
-              </tbody>
-            </table>
-          </div>
+          <ResponsiveTable>
+            <thead className="text-muted-foreground border-b">
+              <tr>
+                <th className="py-2 pr-4 font-medium">Código</th>
+                <th className="py-2 pr-4 font-medium">Programa</th>
+                <th className="py-2 pr-4 text-right font-medium">Momentos del periodo</th>
+                <th className="py-2 pr-4 text-right font-medium">Estudiantes</th>
+                <th className="py-2 font-medium">
+                  <span className="sr-only">Acciones</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {programs.state.data.map((program) =>
+                editingProgram === program.id ? (
+                  <tr key={program.id} className="border-b">
+                    <td colSpan={5} className="py-3">
+                      <EntryForm
+                        title={`Editar ${program.name}`}
+                        initial={{ code: program.code, name: program.name }}
+                        submitLabel="Guardar"
+                        onCancel={() => setEditingProgram(null)}
+                        onSave={async (request) => {
+                          const updated = await catalogService.updateProgram(program.id, request)
+                          programs.setData((current) =>
+                            sortByName(current.map((item) => (item.id === updated.id ? updated : item))),
+                          )
+                          setEditingProgram(null)
+                        }}
+                      />
+                    </td>
+                  </tr>
+                ) : (
+                  <tr key={program.id} className="border-b last:border-0">
+                    <td className="py-3 pr-4">{program.code}</td>
+                    <td className="py-3 pr-4">{program.name}</td>
+                    <td className="py-3 pr-4 text-right">{program.currentPeriodMomentCount}</td>
+                    <td className="py-3 pr-4 text-right">{program.studentCount}</td>
+                    <td className="py-3 text-right whitespace-nowrap">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setEditingProgram(program.id)}
+                        aria-label={`Editar ${program.name}`}
+                      >
+                        Editar
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => void removeProgram(program)}
+                        aria-label={`Eliminar ${program.name}`}
+                      >
+                        Eliminar
+                      </Button>
+                    </td>
+                  </tr>
+                ),
+              )}
+            </tbody>
+          </ResponsiveTable>
         )}
       </CardContent>
     </Card>

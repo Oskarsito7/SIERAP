@@ -9,6 +9,7 @@ import { useLoad } from '@/lib/useLoad'
 import { catalogService } from '@/services/api/catalogService'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
 import type { GlobalParameter } from '@/types/catalog'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 /**
  * Parámetros globales (wireframe SA-03, super_admin). Guardar con una clave nueva crea
@@ -62,56 +63,54 @@ export function ParametersPage() {
             </p>
           )}
           {parameters.state.kind === 'success' && parameters.state.data.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-muted-foreground border-b">
-                  <tr>
-                    <th className="py-2 pr-4 font-medium">Parámetro</th>
-                    <th className="py-2 pr-4 font-medium">Valor</th>
-                    <th className="py-2 pr-4 font-medium">Descripción</th>
-                    <th className="py-2 font-medium">
-                      <span className="sr-only">Acciones</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {parameters.state.data.map((parameter) =>
-                    editing === parameter.key ? (
-                      <tr key={parameter.key} className="border-b">
-                        <td colSpan={4} className="py-3">
-                          <ParameterForm
-                            title={`Editar ${parameter.key}`}
-                            initial={parameter}
-                            submitLabel="Guardar"
-                            onCancel={() => setEditing(null)}
-                            onSave={async (key, value, description) => {
-                              upsert(await catalogService.saveParameter(key, value, description))
-                              setEditing(null)
-                            }}
-                          />
-                        </td>
-                      </tr>
-                    ) : (
-                      <tr key={parameter.key} className="border-b last:border-0">
-                        <td className="py-3 pr-4 font-semibold">{parameter.key}</td>
-                        <td className="py-3 pr-4 break-all">{parameter.value}</td>
-                        <td className="text-muted-foreground py-3 pr-4">{parameter.description}</td>
-                        <td className="py-3 text-right">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditing(parameter.key)}
-                            aria-label={`Editar ${parameter.key}`}
-                          >
-                            Editar
-                          </Button>
-                        </td>
-                      </tr>
-                    ),
-                  )}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveTable>
+              <thead className="text-muted-foreground border-b">
+                <tr>
+                  <th className="py-2 pr-4 font-medium">Parámetro</th>
+                  <th className="py-2 pr-4 font-medium">Valor</th>
+                  <th className="py-2 pr-4 font-medium">Descripción</th>
+                  <th className="py-2 font-medium">
+                    <span className="sr-only">Acciones</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {parameters.state.data.map((parameter) =>
+                  editing === parameter.key ? (
+                    <tr key={parameter.key} className="border-b">
+                      <td colSpan={4} className="py-3">
+                        <ParameterForm
+                          title={`Editar ${parameter.key}`}
+                          initial={parameter}
+                          submitLabel="Guardar"
+                          onCancel={() => setEditing(null)}
+                          onSave={async (key, value, description) => {
+                            upsert(await catalogService.saveParameter(key, value, description))
+                            setEditing(null)
+                          }}
+                        />
+                      </td>
+                    </tr>
+                  ) : (
+                    <tr key={parameter.key} className="border-b last:border-0">
+                      <td className="py-3 pr-4 font-semibold">{parameter.key}</td>
+                      <td className="py-3 pr-4 break-all">{parameter.value}</td>
+                      <td className="text-muted-foreground py-3 pr-4">{parameter.description}</td>
+                      <td className="py-3 text-right">
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setEditing(parameter.key)}
+                          aria-label={`Editar ${parameter.key}`}
+                        >
+                          Editar
+                        </Button>
+                      </td>
+                    </tr>
+                  ),
+                )}
+              </tbody>
+            </ResponsiveTable>
           )}
         </CardContent>
       </Card>
