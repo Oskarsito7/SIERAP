@@ -85,11 +85,11 @@ export function SetPasswordPage() {
           </form>
         )}
         <div className="flex flex-col gap-1 text-sm">
-          <Link to="/login" className="text-primary underline-offset-4 hover:underline">
+          <Link to="/login" className="text-link hover:text-link-hover underline-offset-4 hover:underline">
             Ir a iniciar sesión
           </Link>
           {!done && (
-            <Link to="/forgot-password" className="text-primary underline-offset-4 hover:underline">
+            <Link to="/forgot-password" className="text-link hover:text-link-hover underline-offset-4 hover:underline">
               Pedir un enlace nuevo
             </Link>
           )}

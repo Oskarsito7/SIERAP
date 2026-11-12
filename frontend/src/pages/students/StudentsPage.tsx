@@ -118,7 +118,7 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
           <h1 className="text-2xl font-bold tracking-tight">Mis estudiantes</h1>
           <p className="text-muted-foreground max-w-2xl text-sm">
             Crea a tus estudiantes o compárteles un{' '}
-            <Link to="/registration-codes" className="text-foreground underline underline-offset-4">
+            <Link to="/registration-codes" className="text-link hover:text-link-hover underline underline-offset-4">
               código de registro
             </Link>
             . Cada estudiante nuevo recibe un correo para crear su contraseña.

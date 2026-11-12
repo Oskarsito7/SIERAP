@@ -105,7 +105,7 @@ export function GroupDetailPage({ tab = 'summary' }: { tab?: GroupTab }) {
             end
             className={({ isActive }) =>
               `-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
-                isActive ? 'border-primary text-foreground' : 'text-muted-foreground border-transparent'
+                isActive ? 'border-primary text-upc-green-800 font-semibold' : 'text-muted-foreground border-transparent'
               }`
             }
           >
@@ -631,7 +631,7 @@ function AssignEvaluatorPanel({ group, onAssigned }: { group: Group; onAssigned:
       <FormError message={error} />
       <p className="text-muted-foreground text-xs">
         ¿No aparece?{' '}
-        <Link to="/external-evaluators" className="underline">
+        <Link to="/external-evaluators" className="text-link hover:text-link-hover underline">
           Créalo en Evaluadores externos
         </Link>{' '}
         y vuelve a buscarlo.

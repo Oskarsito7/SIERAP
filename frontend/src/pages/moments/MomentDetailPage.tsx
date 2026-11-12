@@ -114,7 +114,7 @@ export function MomentDetailPage({ tab = 'data' }: { tab?: MomentTab }) {
             end
             className={({ isActive }) =>
               `-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
-                isActive ? 'border-primary text-foreground' : 'text-muted-foreground border-transparent'
+                isActive ? 'border-primary text-upc-green-800 font-semibold' : 'text-muted-foreground border-transparent'
               }`
             }
           >

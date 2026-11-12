@@ -62,7 +62,7 @@ export function ForgotPasswordPage() {
             </Button>
           </form>
         )}
-        <Link to="/login" className="text-primary text-sm underline-offset-4 hover:underline">
+        <Link to="/login" className="text-link hover:text-link-hover text-sm underline-offset-4 hover:underline">
           Volver a iniciar sesión
         </Link>
       </CardContent>

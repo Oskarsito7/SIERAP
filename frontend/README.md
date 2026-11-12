@@ -3,6 +3,12 @@
 SIERAP web client: **React + TypeScript** with **Vite**, **Tailwind CSS v4** and
 **shadcn/ui** components (see ADR-006 in `docs/05-decisiones-tecnicas.md`).
 
+The screens follow the institutional identity of the Universidad Popular del Cesar
+(ADR-019): the UPC palette and the shadcn/ui tokens are in `src/index.css`, the logos in
+`src/assets/brand/` (use the `UpcLogo` component) and the Open Sans and Montserrat fonts
+are served by the app through `@fontsource`. Do not hard-code colors in the pages: use the
+tokens (`bg-primary`, `text-muted-foreground`…) or the `upc-*` colors.
+
 ## Commands
 
 ```bash
