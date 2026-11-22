@@ -9,6 +9,7 @@ import { momentService } from '@/services/api/momentService'
 import { submissionService } from '@/services/api/submissionService'
 import type { ApiError } from '@/types/api'
 import type { MomentDetail } from '@/types/moment'
+import { answerConfirm } from '@/test/confirm'
 
 import { GroupDetailPage } from './GroupDetailPage'
 import { groupFixture, momentFixture } from './testData'
@@ -140,10 +141,10 @@ describe('GroupDetailPage', () => {
     service.get.mockResolvedValueOnce(groupFixture({ memberCount: 2, members }))
     service.get.mockResolvedValueOnce(groupFixture({ memberCount: 1, members: [members[1]] }))
     service.removeMember.mockResolvedValue()
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderPage()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Quitar a Juan Rojas' }))
+    await answerConfirm('Quitar')
 
     expect(service.removeMember).toHaveBeenCalledWith(7, 40)
     expect(await screen.findByText('Integrantes (1 de 5)')).toBeInTheDocument()
@@ -216,10 +217,10 @@ describe('GroupDetailPage', () => {
   it('deletes an empty group before the launch and goes back to the list', async () => {
     service.get.mockResolvedValue(groupFixture())
     service.remove.mockResolvedValue()
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderPage()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Eliminar grupo' }))
+    await answerConfirm('Eliminar')
 
     expect(service.remove).toHaveBeenCalledWith(7)
     expect(await screen.findByText('Lista de grupos')).toBeInTheDocument()

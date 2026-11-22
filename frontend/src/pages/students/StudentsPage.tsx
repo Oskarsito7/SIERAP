@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DOCUMENT_TYPES } from '@/lib/documentTypes'
 import { useLoad } from '@/lib/useLoad'
+import { useConfirm } from '@/lib/useConfirm'
 import { accountService } from '@/services/api/accountService'
 import { catalogService } from '@/services/api/catalogService'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
@@ -98,9 +99,17 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
     }
   }
 
+  const [confirm, confirmDialog] = useConfirm()
+
   const toggleActive = async (student: Student) => {
-    const question = `¿Desactivar la cuenta de ${student.fullName}? No podrá iniciar sesión.`
-    if (student.active && !window.confirm(question)) return
+    if (student.active) {
+      const confirmed = await confirm({
+        title: `¿Desactivar la cuenta de ${student.fullName}?`,
+        description: 'No podrá iniciar sesión hasta que se vuelva a activar.',
+        confirmLabel: 'Desactivar',
+      })
+      if (!confirmed) return
+    }
     setNotice(null)
     setError(null)
     try {
@@ -114,6 +123,7 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
 
   return (
     <div className="flex flex-col gap-6">
+      {confirmDialog}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold tracking-tight">Mis estudiantes</h1>

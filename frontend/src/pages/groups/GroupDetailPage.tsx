@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { todayIso } from '@/lib/dates'
 import { useLoad } from '@/lib/useLoad'
+import { useConfirm } from '@/lib/useConfirm'
 import { groupService } from '@/services/api/groupService'
 import { getErrorMessage } from '@/services/api/httpClient'
 import { momentService } from '@/services/api/momentService'
@@ -220,8 +221,15 @@ function MembersSection({ group, disabled, onChange }: { group: Group; disabled:
   const [error, setError] = useState<string | null>(null)
   const [adding, setAdding] = useState(false)
 
+  const [confirm, confirmDialog] = useConfirm()
+
   const remove = async (studentId: number, name: string) => {
-    if (!window.confirm(`¿Quitar a ${name} del grupo?`)) return
+    const confirmed = await confirm({
+      title: `¿Quitar a ${name} del grupo?`,
+      description: 'Dejará de ser integrante de este grupo.',
+      confirmLabel: 'Quitar',
+    })
+    if (!confirmed) return
     setError(null)
     try {
       await groupService.removeMember(group.id, studentId)
@@ -233,6 +241,7 @@ function MembersSection({ group, disabled, onChange }: { group: Group; disabled:
 
   return (
     <Card>
+      {confirmDialog}
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle>
@@ -488,8 +497,15 @@ function EvaluatorsSection({
   const [error, setError] = useState<string | null>(null)
   const [assigning, setAssigning] = useState(false)
 
+  const [confirm, confirmDialog] = useConfirm()
+
   const remove = async (evaluatorId: number, name: string) => {
-    if (!window.confirm(`¿Quitar a ${name} de los evaluadores del grupo?`)) return
+    const confirmed = await confirm({
+      title: `¿Quitar a ${name} de los evaluadores del grupo?`,
+      description: 'Ya no podrá ver ni calificar este grupo.',
+      confirmLabel: 'Quitar',
+    })
+    if (!confirmed) return
     setError(null)
     try {
       await groupService.removeEvaluator(group.id, evaluatorId)
@@ -501,6 +517,7 @@ function EvaluatorsSection({
 
   return (
     <Card>
+      {confirmDialog}
       <CardHeader>
         <div className="flex flex-wrap items-center justify-between gap-2">
           <CardTitle>Evaluadores externos</CardTitle>
@@ -645,8 +662,15 @@ function DeleteSection({ group }: { group: Group }) {
   const navigate = useNavigate()
   const [error, setError] = useState<string | null>(null)
 
+  const [confirm, confirmDialog] = useConfirm()
+
   const remove = async () => {
-    if (!window.confirm(`¿Eliminar el ${group.name}? Esta acción no se puede deshacer.`)) return
+    const confirmed = await confirm({
+      title: `¿Eliminar el ${group.name}?`,
+      description: 'Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+    })
+    if (!confirmed) return
     setError(null)
     try {
       await groupService.remove(group.id)
@@ -658,6 +682,7 @@ function DeleteSection({ group }: { group: Group }) {
 
   return (
     <Card className="border-destructive/40">
+      {confirmDialog}
       <CardHeader>
         <CardTitle>Eliminar grupo</CardTitle>
         <CardDescription>Solo se puede antes de lanzar el momento y mientras no tenga integrantes.</CardDescription>

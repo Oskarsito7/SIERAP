@@ -8,6 +8,7 @@ import { catalogService } from '@/services/api/catalogService'
 import { teacherService } from '@/services/api/teacherService'
 import type { ApiError } from '@/types/api'
 import type { UserSummary } from '@/types/auth'
+import { answerConfirm } from '@/test/confirm'
 
 import { TeachersPage } from './TeachersPage'
 
@@ -94,12 +95,12 @@ describe('TeachersPage', () => {
   })
 
   it('deactivates a teacher after confirming and can reactivate them', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     service.setActive.mockResolvedValueOnce(teacher({ active: false }))
     service.setActive.mockResolvedValueOnce(teacher({ active: true }))
     render(<TeachersPage />)
 
     await userEvent.click(await screen.findByRole('button', { name: 'Desactivar a Marta Díaz' }))
+    await answerConfirm('Desactivar')
     expect(service.setActive).toHaveBeenCalledWith(1, false)
     const marta = screen.getByRole('row', { name: /Marta Díaz/ })
     expect(within(marta).getByText('Desactivado')).toBeInTheDocument()

@@ -13,6 +13,7 @@ import { studentService } from '@/services/api/studentService'
 import type { Student } from '@/types/account'
 import type { UserSummary } from '@/types/auth'
 import type { Program } from '@/types/catalog'
+import { answerConfirm } from '@/test/confirm'
 
 import { StudentsPage } from './StudentsPage'
 
@@ -243,11 +244,11 @@ describe('StudentsPage', () => {
   })
 
   it('deactivates a student after confirming', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     service.setActive.mockResolvedValue({ ...camila, active: false })
     renderPage()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Desactivar a Camila Torres' }))
+    await answerConfirm('Desactivar')
 
     expect(service.setActive).toHaveBeenCalledWith(1, false)
     const row = screen.getByRole('row', { name: /Camila Torres/ })
