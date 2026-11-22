@@ -6,8 +6,10 @@ import co.edu.unicesar.sierap.dto.request.NewAdminRequest;
 import co.edu.unicesar.sierap.dto.request.NewExternalEvaluatorRequest;
 import co.edu.unicesar.sierap.dto.request.NewStudentRequest;
 import co.edu.unicesar.sierap.dto.request.NewTeacherRequest;
+import co.edu.unicesar.sierap.dto.request.SetSemesterRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateUserRequest;
 import co.edu.unicesar.sierap.dto.response.StudentResponse;
+import co.edu.unicesar.sierap.dto.response.UpdatedCountResponse;
 import co.edu.unicesar.sierap.dto.response.UserSummaryResponse;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
 
@@ -106,12 +108,23 @@ public interface AccountService {
     void resendPasswordLink(AuthenticatedUser actor, Long userId);
 
     /**
-     * Activa o desactiva una cuenta. Desactivarla cierra sus sesiones.
+     * Edita los datos de una cuenta (todos los campos son opcionales) o la activa o
+     * desactiva. Desactivarla, o cambiarle el correo, cierra sus sesiones.
      *
      * @param actor   usuario que lo pide
      * @param userId  cuenta destino
-     * @param request nuevo estado
+     * @param request cambios; debe traer al menos un campo
      * @return usuario actualizado
      */
     UserSummaryResponse updateUser(AuthenticatedUser actor, Long userId, UpdateUserRequest request);
+
+    /**
+     * Fija el mismo semestre a varios estudiantes. Es todo o nada: si alguno no existe,
+     * no es estudiante o está fuera del alcance del usuario, no se actualiza ninguno.
+     *
+     * @param actor   usuario que lo pide
+     * @param request estudiantes y semestre
+     * @return cantidad de estudiantes actualizados
+     */
+    UpdatedCountResponse setSemester(AuthenticatedUser actor, SetSemesterRequest request);
 }

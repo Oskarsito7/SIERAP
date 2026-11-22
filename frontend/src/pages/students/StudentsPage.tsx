@@ -1,9 +1,10 @@
 import { useState, type FormEvent } from 'react'
-import { UserPlus } from 'lucide-react'
+import { FileUp, UserPlus } from 'lucide-react'
 import { Link } from 'react-router'
 
 import { useAuth } from '@/auth/authContext'
 import { LoadStatus } from '@/components/LoadStatus'
+import { EditUserForm } from '@/components/forms/EditUserForm'
 import { FormError, FormField } from '@/components/forms/FormField'
 import { SelectField } from '@/components/forms/SelectField'
 import { Badge } from '@/components/ui/badge'
@@ -22,13 +23,19 @@ import type { DocumentType, UserSummary } from '@/types/auth'
 import type { Program } from '@/types/catalog'
 import { ResponsiveTable } from '@/components/ui/responsive-table'
 
+import { StudentImportPanel } from './StudentImportPanel'
+
 /**
  * "Mis estudiantes" del docente (wireframe DO-08): los estudiantes de cada programa de
  * su facultad con su código, su semestre y cómo llegaron, la creación de uno nuevo, el
  * reenvío del enlace para crear la contraseña y la desactivación de la cuenta. El docente
  * solo gestiona a los que creó o se registraron con un código suyo: con los demás no se
  * muestran esas acciones (`manageable`). El filtro "Sin grupo" ayuda a agregar a un
- * grupo a quienes no se inscribieron (DO-02). La carga masiva queda para el Momento 2.
+ * grupo a quienes no se inscribieron (DO-02).
+ *
+ * Además: editar los datos de un estudiante (incluidos código y semestre), fijar el
+ * mismo semestre a varios estudiantes seleccionados y cargar estudiantes desde un CSV
+ * con vista previa.
  */
 export function StudentsPage() {
   const programs = useLoad(() => catalogService.programs(), [])
@@ -63,8 +70,15 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
     () => studentService.list(programId, withoutGroupIn ?? undefined),
     [programId, withoutGroupIn],
   )
+  const [confirm, confirmDialog] = useConfirm()
   const [search, setSearch] = useState('')
   const [creating, setCreating] = useState(false)
+  const [importing, setImporting] = useState(false)
+  const [editing, setEditing] = useState<Student | null>(null)
+  // Estudiantes marcados para fijarles el semestre en lote y el semestre escrito.
+  const [selected, setSelected] = useState<Set<number>>(new Set())
+  const [bulkSemester, setBulkSemester] = useState('')
+  const [settingSemester, setSettingSemester] = useState(false)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -83,9 +97,61 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
   const replace = (updated: Student) =>
     students.setData((current) => current.map((student) => (student.id === updated.id ? updated : student)))
 
+  const manageableVisible = visible.filter((student) => student.manageable)
+  const selectedVisible = manageableVisible.filter((student) => selected.has(student.id))
+  const allSelected = manageableVisible.length > 0 && selectedVisible.length === manageableVisible.length
+
   const changeProgram = (id: number) => {
     setProgramId(id)
     setWithoutGroupIn(null)
+    setSelected(new Set())
+  }
+
+  const toggleSelected = (id: number) =>
+    setSelected((current) => {
+      const next = new Set(current)
+      if (!next.delete(id)) next.add(id)
+      return next
+    })
+
+  const toggleAllVisible = () =>
+    setSelected((current) => {
+      const next = new Set(current)
+      manageableVisible.forEach((student) => (allSelected ? next.delete(student.id) : next.add(student.id)))
+      return next
+    })
+
+  const setSemesterInBulk = async () => {
+    setNotice(null)
+    setError(null)
+    const semester = Number(bulkSemester)
+    if (!/^\d+$/.test(bulkSemester.trim()) || semester < 1) {
+      setError('El semestre debe ser un número entero de 1 o mayor.')
+      return
+    }
+    const count = selectedVisible.length
+    const confirmed = await confirm({
+      title: `¿Fijar el semestre ${semester} a ${count === 1 ? '1 estudiante' : `${count} estudiantes`}?`,
+      description: 'Se reemplazará el semestre actual de los estudiantes seleccionados.',
+      confirmLabel: 'Fijar semestre',
+      destructive: false,
+    })
+    if (!confirmed) return
+    setSettingSemester(true)
+    try {
+      const updated = await studentService.setSemester({
+        studentIds: selectedVisible.map((student) => student.id),
+        currentSemester: semester,
+      })
+      setSelected(new Set())
+      setBulkSemester('')
+      setNotice(`Se actualizó el semestre de ${updated === 1 ? '1 estudiante' : `${updated} estudiantes`}.`)
+      students.reload()
+    } catch (semesterError) {
+      setError(getErrorMessage(semesterError))
+    } finally {
+      setSettingSemester(false)
+    }
   }
 
   const resendLink = async (student: Student) => {
@@ -98,8 +164,6 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
       setError(getErrorMessage(resendError))
     }
   }
-
-  const [confirm, confirmDialog] = useConfirm()
 
   const toggleActive = async (student: Student) => {
     if (student.active) {
@@ -135,11 +199,59 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
             . Cada estudiante nuevo recibe un correo para crear su contraseña.
           </p>
         </div>
-        <Button onClick={() => setCreating((open) => !open)}>
-          <UserPlus aria-hidden />
-          Nuevo estudiante
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            onClick={() => {
+              setEditing(null)
+              setCreating(false)
+              setImporting((open) => !open)
+            }}
+          >
+            <FileUp aria-hidden />
+            Cargar estudiantes (CSV)
+          </Button>
+          <Button
+            onClick={() => {
+              setEditing(null)
+              setImporting(false)
+              setCreating((open) => !open)
+            }}
+          >
+            <UserPlus aria-hidden />
+            Nuevo estudiante
+          </Button>
+        </div>
       </div>
+
+      {importing && (
+        <StudentImportPanel
+          programs={programs}
+          initialProgramId={programId}
+          onClose={() => setImporting(false)}
+          onImported={(created, importedIn) => {
+            if (created > 0 && importedIn === programId) students.reload()
+          }}
+        />
+      )}
+
+      {editing && (
+        <EditUserForm
+          key={editing.id}
+          user={editing}
+          student={{ studentCode: editing.studentCode, currentSemester: editing.currentSemester }}
+          onCancel={() => setEditing(null)}
+          onSaved={(updated, emailChanged) => {
+            setEditing(null)
+            setError(null)
+            setNotice(
+              `Se actualizaron los datos de ${updated.fullName}.` +
+                (emailChanged ? ' Se cerraron sus sesiones: deberá iniciar sesión con el correo nuevo.' : ''),
+            )
+            students.reload()
+          }}
+        />
+      )}
 
       {creating && (
         <NewStudentForm
@@ -202,6 +314,36 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
               onChange={(event) => setSearch(event.target.value)}
             />
           </div>
+          {manageableVisible.length > 0 && (
+            <div
+              role="group"
+              aria-label="Fijar semestre a varios estudiantes"
+              className="bg-muted/50 flex flex-wrap items-end gap-3 rounded-md border px-3 py-3"
+            >
+              <div className="w-48">
+                <FormField
+                  label="Semestre para los seleccionados"
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={bulkSemester}
+                  onChange={(event) => setBulkSemester(event.target.value)}
+                />
+              </div>
+              <Button
+                type="button"
+                disabled={selectedVisible.length === 0 || bulkSemester.trim() === '' || settingSemester}
+                onClick={() => void setSemesterInBulk()}
+              >
+                {settingSemester ? 'Guardando…' : 'Fijar semestre'}
+              </Button>
+              <p className="text-muted-foreground pb-2 text-sm">
+                {selectedVisible.length === 1
+                  ? '1 estudiante seleccionado'
+                  : `${selectedVisible.length} estudiantes seleccionados`}
+              </p>
+            </div>
+          )}
           <LoadStatus state={students.state} onRetry={students.reload} label="Cargando los estudiantes…" />
           {students.state.kind === 'success' && visible.length === 0 && (
             <p className="text-muted-foreground text-sm">
@@ -216,6 +358,15 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
             <ResponsiveTable>
               <thead className="text-muted-foreground border-b">
                 <tr>
+                  <th className="py-2 pr-4 font-medium">
+                    <input
+                      type="checkbox"
+                      aria-label="Seleccionar todos los visibles"
+                      checked={allSelected}
+                      disabled={manageableVisible.length === 0}
+                      onChange={toggleAllVisible}
+                    />
+                  </th>
                   <th className="py-2 pr-4 font-medium">Nombre</th>
                   <th className="py-2 pr-4 font-medium">Código</th>
                   <th className="py-2 pr-4 text-right font-medium">Semestre</th>
@@ -230,6 +381,16 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
               <tbody>
                 {visible.map((student) => (
                   <tr key={student.id} className="border-b last:border-0">
+                    <td className="py-3 pr-4">
+                      {student.manageable && (
+                        <input
+                          type="checkbox"
+                          aria-label={`Seleccionar a ${student.fullName}`}
+                          checked={selected.has(student.id)}
+                          onChange={() => toggleSelected(student.id)}
+                        />
+                      )}
+                    </td>
                     <td className="py-3 pr-4">{student.fullName}</td>
                     <td className="py-3 pr-4 tabular-nums">{student.studentCode}</td>
                     <td className="py-3 pr-4 text-right tabular-nums">{student.currentSemester}</td>
@@ -243,6 +404,18 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
                     <td className="py-3 text-right whitespace-nowrap">
                       {student.manageable && (
                         <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setCreating(false)
+                              setImporting(false)
+                              setEditing(student)
+                            }}
+                            aria-label={`Editar a ${student.fullName}`}
+                          >
+                            Editar
+                          </Button>
                           <Button
                             variant="ghost"
                             size="sm"

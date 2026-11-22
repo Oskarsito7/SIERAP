@@ -53,6 +53,15 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
     boolean existsByStudentCode(String studentCode);
 
     /**
+     * Indica si otro estudiante (distinto del indicado) ya tiene ese código estudiantil.
+     *
+     * @param studentCode código estudiantil
+     * @param id          estudiante que se excluye de la búsqueda
+     * @return {@code true} si otro estudiante tiene el código
+     */
+    boolean existsByStudentCodeAndIdNot(String studentCode, Long id);
+
+    /**
      * Cuenta los estudiantes que se registraron con un código.
      *
      * @param registrationCodeId identificador del código de registro

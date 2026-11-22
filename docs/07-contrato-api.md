@@ -37,7 +37,9 @@
   "email": "marta@unicesar.edu.co",
   "role": "TEACHER",               // SUPER_ADMIN | ADMIN | TEACHER | STUDENT | EXTERNAL_EVALUATOR
   "active": true,
-  "mustChangePassword": false
+  "mustChangePassword": false,
+  "documentType": "CC",            // CC | TI | CE | PASSPORT; the edit form shows them
+  "documentNumber": "1065432100"   // both null unless the viewer is that user or manages the account
 }
 
 // TokenResponse
@@ -110,16 +112,20 @@ the link sent by email.
 | `GET /api/admins?facultyId=` | super_admin | — | `200 UserSummary[]` (SA-05) |
 | `POST /api/teachers` | super_admin, admin of the faculty | `facultyId` | `201 UserSummary` |
 | `POST /api/students` | super_admin, admin or teacher of the faculty | `programId`, `studentCode`, `currentSemester` | `201 Student` |
-| `POST /api/students/bulk` | same as above | `multipart/form-data`: `file`, `programId` | `200 { "created": n, "errors": [ { "row", "message" } ] }`. **Not implemented:** moves to Moment 2 (`docs/04`, 2026-10-29) |
+| `POST /api/students/bulk/preview` | same as above | `multipart/form-data`: `file` (CSV, see below), `programId` | `200 { "rows": [ { "row", "firstNames", "lastNames", "documentType", "documentNumber", "email", "studentCode", "currentSemester", "errors": string[] } ], "valid": n, "invalid": m }`. Writes nothing. `row` is the line number in the file (the header is line 1); `errors` lists every problem of the row in Spanish (empty if the row is valid) |
+| `POST /api/students/bulk` | same as above | `multipart/form-data`: `file`, `programId` | `200 { "created": n, "errors": [ { "row", "message" } ] }`. Validates the file again and creates **only the valid rows**, the same way as `POST /api/students` (each one receives the email to set a password; `createdBy` is the user); `errors` has the rows that were not created |
+| `PATCH /api/students/semester` | super_admin, admin, teacher | `{ "studentIds": [1, 2], "currentSemester": 3 }` (1 to 500 distinct ids; semester ≥ 1) | `200 { "updated": n }`. All or nothing: `404` if an id does not exist, `422` if one is not a student, `403` if one is out of scope; then nothing changes |
 | `POST /api/external-evaluators` | super_admin, admin, teacher | `evaluatorTypeId`; optional `organization`, `position`, `graduationYear`, `graduationProgramId` | `201 UserSummary` |
 | `GET /api/teachers?facultyId=` | super_admin, admin of the faculty | — | `200 UserSummary[]` |
 | `GET /api/students?programId=` | super_admin, admin or teacher of the faculty | — | `200 Student[]` ordered by last and first names (DO-08). Optional `withoutGroupInMoment={momentId}`: only the active students of the program with their semester in the range of that moment and no group in it, the same rule as `students-without-group`; `404` if the moment does not exist, `422` if it belongs to another program |
 | `GET /api/external-evaluators` | super_admin (all), admin and teacher (the ones they created) | — | `200 UserSummary[]` |
 | `POST /api/users/{id}/password-link` | whoever manages that user (see below) | — | `204`; sends a new link: to create the password if the account has none yet, otherwise to reset it |
-| `PATCH /api/users/{id}` | whoever manages that user (see below) | `{ "active": false }` | `200 UserSummary`; deactivating also closes their sessions. `422` when deactivating your own account |
+| `PATCH /api/users/{id}` | whoever manages that user (see below) | every field is optional: `active`, `firstNames`, `lastNames`, `documentType`, `documentNumber`, `email` and, only for students, `studentCode`, `currentSemester` (≥ 1). Same format rules as on creation | `200 UserSummary`. `422` if the body has no field ("No hay cambios para guardar."), if the email, document or student code belongs to another account (same messages as on creation), if student fields are sent for a non-student or when deactivating your own account. Deactivating, or changing the email, also closes the user's sessions |
 | `GET /api/evaluator-types` | authenticated | — | `200 [ { "id", "name", "description", "active" } ]` |
 
-**Who manages a user** (password link and activation): the super_admin, anyone; an
+**CSV of the bulk upload** (`/api/students/bulk` and `/bulk/preview`): UTF-8 (a BOM is accepted), separator `,` or `;` (detected in the header), fields may be wrapped in double quotes (`""` for a literal quote). The header is required, in any order and case: `nombres,apellidos,tipo_documento,numero_documento,correo,codigo_estudiantil,semestre`. Empty rows are ignored. `tipo_documento` is `CC`, `TI` or `CE`. Whole-file errors answer `422`: not a `.csv`, more than 1 MB, no students, missing columns (the message names them) or more than 500 rows. Per-row errors (all of them, in Spanish): invalid fields, unknown document type, semester that is not an integer ≥ 1, email/document/code already in the database or repeated inside the file.
+
+**Who manages a user** (password link, activation and editing): the super_admin, anyone; an
 admin, the teachers and students of their faculty and the external evaluators created
 by them or by users of their faculty; a teacher, the students and external evaluators
 they created, which includes those who registered with one of their codes. Out of scope

@@ -15,6 +15,9 @@ export interface UserSummary {
   active: boolean
   /** Si es `true`, la única pantalla permitida es "Cambiar contraseña". */
   mustChangePassword: boolean
+  /** Documento de identidad; lo traen las listas de cuentas para el formulario de edición. */
+  documentType?: DocumentType
+  documentNumber?: string
 }
 
 /** Sesión emitida por login, refresh y cambio de contraseña (espejo de `TokenResponse`). */

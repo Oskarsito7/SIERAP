@@ -1,4 +1,10 @@
-import type { NewStudentRequest, Student } from '@/types/account'
+import type {
+  NewStudentRequest,
+  SetSemesterRequest,
+  Student,
+  StudentImportPreview,
+  StudentImportResult,
+} from '@/types/account'
 import type { UserSummary } from '@/types/auth'
 
 import { httpClient } from './httpClient'
@@ -26,4 +32,33 @@ export const studentService = {
     const { data } = await httpClient.patch<UserSummary>(`/users/${userId}`, { active })
     return data
   },
+
+  /** Fija el mismo semestre a varios estudiantes (todo o nada); devuelve cuántos se actualizaron. */
+  async setSemester(request: SetSemesterRequest): Promise<number> {
+    const { data } = await httpClient.patch<{ updated: number }>('/students/semester', request)
+    return data.updated
+  },
+
+  /** Valida el CSV de estudiantes fila por fila sin crear nada. */
+  async previewImport(programId: number, file: File): Promise<StudentImportPreview> {
+    const { data } = await httpClient.post<StudentImportPreview>('/students/bulk/preview', csvForm(programId, file), {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data
+  },
+
+  /** Crea los estudiantes de las filas válidas del CSV; cada uno recibe un correo para crear su contraseña. */
+  async importStudents(programId: number, file: File): Promise<StudentImportResult> {
+    const { data } = await httpClient.post<StudentImportResult>('/students/bulk', csvForm(programId, file), {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    })
+    return data
+  },
+}
+
+function csvForm(programId: number, file: File): FormData {
+  const form = new FormData()
+  form.append('programId', String(programId))
+  form.append('file', file)
+  return form
 }
