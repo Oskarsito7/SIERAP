@@ -4,8 +4,10 @@ import java.util.List;
 
 import co.edu.unicesar.sierap.dto.request.NewRegistrationCodeRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateRegistrationCodeRequest;
+import co.edu.unicesar.sierap.dto.response.PagedResult;
 import co.edu.unicesar.sierap.dto.response.RegistrationCodeResponse;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Códigos de registro de los docentes (ADR-017).
@@ -29,6 +31,15 @@ public interface RegistrationCodeService {
      * @return códigos de registro
      */
     List<RegistrationCodeResponse> list(AuthenticatedUser actor);
+
+    /**
+     * Igual que {@link #list(AuthenticatedUser)} pero con paginación opcional (ADR-024).
+     *
+     * @param actor    usuario que consulta
+     * @param pageable página pedida, o {@code Pageable.unpaged()} para traer todos
+     * @return códigos del más reciente al más antiguo, y el total sin paginar
+     */
+    PagedResult<RegistrationCodeResponse> list(AuthenticatedUser actor, Pageable pageable);
 
     /**
      * Desactiva un código (no se puede reactivar).

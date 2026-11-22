@@ -8,10 +8,12 @@ import co.edu.unicesar.sierap.dto.request.NewStudentRequest;
 import co.edu.unicesar.sierap.dto.request.NewTeacherRequest;
 import co.edu.unicesar.sierap.dto.request.SetSemesterRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateUserRequest;
+import co.edu.unicesar.sierap.dto.response.PagedResult;
 import co.edu.unicesar.sierap.dto.response.StudentResponse;
 import co.edu.unicesar.sierap.dto.response.UpdatedCountResponse;
 import co.edu.unicesar.sierap.dto.response.UserSummaryResponse;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
+import org.springframework.data.domain.Pageable;
 
 /**
  * Creación y gestión de cuentas (Etapa 2, ADR-017).
@@ -99,6 +101,30 @@ public interface AccountService {
      * @return estudiantes ordenados por apellidos y nombres
      */
     List<StudentResponse> listStudents(AuthenticatedUser actor, Long programId, Long withoutGroupInMoment);
+
+    /**
+     * Lista, con paginación opcional, los estudiantes de un programa dentro del alcance del
+     * usuario, con búsqueda opcional (ADR-024).
+     *
+     * @param actor     usuario que consulta
+     * @param programId programa
+     * @param query     texto a buscar en nombres, apellidos, código y correo, sin distinguir
+     *                  mayúsculas ni tildes; {@code null} o vacío para no filtrar
+     * @param pageable  página pedida, o {@code Pageable.unpaged()} para traer todos
+     * @return estudiantes ordenados por apellidos y nombres, y el total sin paginar
+     */
+    PagedResult<StudentResponse> searchStudents(AuthenticatedUser actor, Long programId, String query,
+                                                Pageable pageable);
+
+    /**
+     * Lista, con paginación opcional, los evaluadores externos dentro del alcance del
+     * usuario (ADR-024).
+     *
+     * @param actor    usuario que consulta
+     * @param pageable página pedida, o {@code Pageable.unpaged()} para traer todos
+     * @return evaluadores externos ordenados por apellidos, y el total sin paginar
+     */
+    PagedResult<UserSummaryResponse> listExternalEvaluators(AuthenticatedUser actor, Pageable pageable);
 
     /**
      * Lista los evaluadores externos: todos para el super_admin; los que creó el

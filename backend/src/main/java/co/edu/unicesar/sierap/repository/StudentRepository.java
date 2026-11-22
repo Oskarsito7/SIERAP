@@ -5,6 +5,8 @@ import java.util.Optional;
 
 import co.edu.unicesar.sierap.entity.Student;
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -43,6 +45,37 @@ public interface StudentRepository extends JpaRepository<Student, Long> {
      * @return estudiantes del programa, ordenados por apellidos y nombres
      */
     List<Student> findByProgramIdOrderByLastNamesAscFirstNamesAsc(Long programId);
+
+    /**
+     * Lista una página de los estudiantes de un programa (ADR-024). El orden lo trae el
+     * {@code Pageable}; con {@code Pageable.unpaged(sort)} devuelve todos.
+     *
+     * @param programId identificador del programa
+     * @param pageable  página y orden pedidos
+     * @return página de estudiantes del programa
+     */
+    Page<Student> findByProgramId(Long programId, Pageable pageable);
+
+    /**
+     * Busca, entre los estudiantes de un programa, los que contengan el texto en nombres,
+     * apellidos, código estudiantil o correo, sin distinguir mayúsculas ni tildes
+     * ({@code translate(lower(...))} contra el patrón ya normalizado, ADR-024).
+     *
+     * @param programId identificador del programa
+     * @param pattern   patrón de {@code LIKE} ya normalizado y con {@code !} como escape
+     * @param pageable  página y orden pedidos
+     * @return página de estudiantes que coinciden
+     */
+    @Query("""
+            select s from Student s
+            where s.program.id = :programId
+              and (cast(function('translate', lower(s.firstNames), 'áéíóúüñ', 'aeiouun') as String) like :pattern escape '!'
+                or cast(function('translate', lower(s.lastNames), 'áéíóúüñ', 'aeiouun') as String) like :pattern escape '!'
+                or cast(function('translate', lower(s.studentCode), 'áéíóúüñ', 'aeiouun') as String) like :pattern escape '!'
+                or cast(function('translate', lower(s.email), 'áéíóúüñ', 'aeiouun') as String) like :pattern escape '!')
+            """)
+    Page<Student> searchByProgram(@Param("programId") Long programId, @Param("pattern") String pattern,
+                                  Pageable pageable);
 
     /**
      * Indica si ya existe un estudiante con ese código estudiantil.

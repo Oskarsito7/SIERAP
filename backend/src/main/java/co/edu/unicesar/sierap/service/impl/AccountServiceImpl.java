@@ -14,6 +14,7 @@ import co.edu.unicesar.sierap.dto.request.NewStudentRequest;
 import co.edu.unicesar.sierap.dto.request.NewTeacherRequest;
 import co.edu.unicesar.sierap.dto.request.SetSemesterRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateUserRequest;
+import co.edu.unicesar.sierap.dto.response.PagedResult;
 import co.edu.unicesar.sierap.dto.response.StudentResponse;
 import co.edu.unicesar.sierap.dto.response.UpdatedCountResponse;
 import co.edu.unicesar.sierap.dto.response.UserSummaryResponse;
@@ -47,6 +48,8 @@ import co.edu.unicesar.sierap.security.AuthenticatedUser;
 import co.edu.unicesar.sierap.service.AccountService;
 import co.edu.unicesar.sierap.service.AuditService;
 import co.edu.unicesar.sierap.service.PasswordLinkService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -62,6 +65,12 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 @Transactional
 public class AccountServiceImpl implements AccountService {
+
+    /** Orden de la lista de estudiantes: apellidos y nombres (el id desempata para paginar estable). */
+    private static final Sort STUDENT_ORDER = Sort.by("lastNames", "firstNames", "id");
+
+    /** Orden de la lista de evaluadores externos: apellidos (el id desempata). */
+    private static final Sort EVALUATOR_ORDER = Sort.by("lastNames", "id");
 
     private final UserRepository userRepository;
     private final AdminRepository adminRepository;
@@ -214,7 +223,7 @@ public class AccountServiceImpl implements AccountService {
         Program program = findProgram(programId);
         accessScope.requireFaculty(viewer, program.getFaculty().getId());
         List<Student> students = withoutGroupInMoment == null
-                ? studentRepository.findByProgramIdOrderByLastNamesAscFirstNamesAsc(programId)
+                ? studentRepository.findByProgramId(programId, Pageable.unpaged(STUDENT_ORDER)).getContent()
                 : withoutGroupIn(program, withoutGroupInMoment);
         return students.stream()
                 .map(student -> UserMapper.toStudent(student, accessScope.canManage(viewer, student)))
@@ -223,12 +232,34 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<UserSummaryResponse> listExternalEvaluators(AuthenticatedUser actor) {
+    public PagedResult<StudentResponse> searchStudents(AuthenticatedUser actor, Long programId, String query,
+                                                       Pageable pageable) {
         User viewer = accessScope.loadActor(actor);
-        List<ExternalEvaluator> evaluators = viewer instanceof SuperAdmin
-                ? externalEvaluatorRepository.findAll(Sort.by("lastNames"))
-                : externalEvaluatorRepository.findByCreatedByIdOrderByLastNamesAsc(viewer.getId());
-        return evaluators.stream().map(UserMapper::toSummaryWithDocument).toList();
+        Program program = findProgram(programId);
+        accessScope.requireFaculty(viewer, program.getFaculty().getId());
+        Pageable sorted = Paging.sorted(pageable, STUDENT_ORDER);
+        Page<Student> page = query == null || query.isBlank()
+                ? studentRepository.findByProgramId(programId, sorted)
+                : studentRepository.searchByProgram(programId, Paging.likePattern(query), sorted);
+        return Paging.toResult(page,
+                student -> UserMapper.toStudent(student, accessScope.canManage(viewer, student)));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UserSummaryResponse> listExternalEvaluators(AuthenticatedUser actor) {
+        return listExternalEvaluators(actor, Pageable.unpaged()).items();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PagedResult<UserSummaryResponse> listExternalEvaluators(AuthenticatedUser actor, Pageable pageable) {
+        User viewer = accessScope.loadActor(actor);
+        Pageable sorted = Paging.sorted(pageable, EVALUATOR_ORDER);
+        Page<ExternalEvaluator> page = viewer instanceof SuperAdmin
+                ? externalEvaluatorRepository.findAll(sorted)
+                : externalEvaluatorRepository.findByCreatedById(viewer.getId(), sorted);
+        return Paging.toResult(page, UserMapper::toSummaryWithDocument);
     }
 
     @Override
