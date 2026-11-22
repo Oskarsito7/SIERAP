@@ -4,6 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -42,6 +47,7 @@ import co.edu.unicesar.sierap.repository.EvaluatorTypeRepository;
 import co.edu.unicesar.sierap.repository.FacultyRepository;
 import co.edu.unicesar.sierap.repository.ProjectGroupRepository;
 import co.edu.unicesar.sierap.repository.UserRepository;
+import co.edu.unicesar.sierap.service.NotificationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
@@ -55,6 +61,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.convention.TestBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder;
@@ -86,6 +93,10 @@ class GroupIntegrationTest {
 
     @TestBean
     private Clock clock;
+
+    /** Los avisos por correo se simulan: la prueba se revierte, así que no hay commit que los dispare. */
+    @MockitoBean
+    private NotificationService notificationService;
 
     @Autowired
     private MockMvc mockMvc;
@@ -316,6 +327,20 @@ class GroupIntegrationTest {
     }
 
     @Test
+    void addingAMemberAsksForTheNotificationOnlyWhenItSucceeds() throws Exception {
+        long id = createGroup(teacherToken, configuring, "Grupo 1");
+        Student student = student(program, 2);
+        Student otherProgramStudent = student(otherProgram, 3);
+
+        addMember(id, otherProgramStudent).andExpect(status().isUnprocessableEntity());
+        verifyNoInteractions(notificationService);
+
+        addMember(id, student).andExpect(status().isOk());
+        verify(notificationService).notifyMemberAdded(
+                argThat(added -> added.getId().equals(student.getId())), any(ProjectGroup.class));
+    }
+
+    @Test
     void aGroupWithMembersCannotBeDeleted() throws Exception {
         long id = createGroup(teacherToken, configuring, "Grupo 1");
         addMember(id, student(program, 2)).andExpect(status().isOk());
@@ -515,6 +540,18 @@ class GroupIntegrationTest {
         mockMvc.perform(get("/api/external-evaluators/lookup").param("q", evaluator.getDocumentNumber())
                         .header(HttpHeaders.AUTHORIZATION, bearer(teacherToken)))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void assigningAnEvaluatorAsksForTheNotificationOnlyOnce() throws Exception {
+        long id = createGroup(teacherToken, configuring, "Grupo 1");
+        ExternalEvaluator evaluator = externalEvaluator();
+
+        assignEvaluator(id, evaluator).andExpect(status().isOk());
+        assignEvaluator(id, evaluator).andExpect(status().isUnprocessableEntity());
+
+        verify(notificationService, times(1)).notifyEvaluatorAssigned(
+                argThat(assigned -> assigned.getId().equals(evaluator.getId())), any(ProjectGroup.class));
     }
 
     @Test
