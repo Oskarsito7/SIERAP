@@ -8,9 +8,10 @@ import co.edu.unicesar.sierap.dto.response.report.ReportData;
 /**
  * Reporte académico generado a partir de las calificaciones y evaluaciones del sistema (Etapa 7).
  *
- * <p>Clase base abstracta de la jerarquía polimórfica de reportes. En el Momento 1 los reportes
- * se renderizan en pantalla con gráficas y tablas, por lo que {@link #generate()} devuelve una
- * estructura de datos estructurada {@link ReportData} en lugar de un binario {@code byte[]}.</p>
+ * <p>Clase base abstracta de la jerarquía polimórfica de reportes. {@link #generate()} devuelve una
+ * estructura de datos {@link ReportData} en lugar de un binario {@code byte[]}: la pantalla la
+ * dibuja con gráficas y tablas, y desde el Momento 2 la exportación a Excel y PDF
+ * ({@code ReportExportService}, ADR-020) la convierte en archivo como un paso aparte.</p>
  */
 public abstract class Report {
 

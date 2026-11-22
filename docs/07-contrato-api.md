@@ -917,6 +917,10 @@ wireframe `AD-08`).
 | `GET /api/reports/groups/{groupId}` | `super_admin`, `admin` of the faculty, the `teacher` who enabled the group | `200 GroupReportData` (sorted by member `fullName` and RAP `id`). `404` if the group does not exist |
 | `GET /api/reports/moments/{momentId}` | `super_admin`, `admin` and `teacher` of the faculty | `200 MomentReportData`. `404` if the moment does not exist |
 | `GET /api/reports/comparative?programId=&momentNumber=&periodAId=&periodBId=` | `super_admin`, `admin` and `teacher` of the faculty | `200 ComparativeReportData`. `422` "Debe elegir dos periodos académicos distintos para comparar." if `periodAId = periodBId`. `404` if the program or a period does not exist, or if the program has no moment with `momentNumber` in one of the two periods |
+| `GET /api/reports/moments/{momentId}/xlsx` | as `GET /api/reports/moments/{momentId}` | `200` grade sheet (`.xlsx`, `Content-Disposition: attachment`) with the sheets *Resumen*, *Estudiantes* and *Grupos* (ADR-020). The summary covers the whole moment; the student and group rows only include the groups the user can see (all for `super_admin` and the faculty `admin`, their own for a `teacher`). Same `403`/`404` as the JSON report |
+| `GET /api/reports/moments/{momentId}/pdf` | as `GET /api/reports/moments/{momentId}` | `200 application/pdf`: moment report with the UPC letterhead, indicators, RAP achievement, distribution and groups (same group scope as the grade sheet). "VISTA PREVIA" watermark while grading is open |
+| `GET /api/reports/groups/{groupId}/pdf` | as `GET /api/reports/groups/{groupId}` | `200 application/pdf`: group evaluation record (members with their grade, passed/failed and RAP scores, teacher signature line) |
+| `GET /api/reports/individual/pdf?momentId=&studentId=` | as `GET /api/reports/individual` | `200 application/pdf`: individual RAP bulletin. A student only downloads their own, after the grading window ends (same `403`/`422` as the JSON report) |
 
 **Rounding rule:** as decided for Stage 6 (`docs/04`, 2026-10-16), intermediate sums and
 averages keep 16 significant digits (`Decimal128`) and every decimal returned in a report

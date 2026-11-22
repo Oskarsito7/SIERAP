@@ -8,9 +8,11 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.io.ByteArrayInputStream;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.LocalDate;
@@ -45,6 +47,8 @@ import co.edu.unicesar.sierap.repository.ProjectGroupRepository;
 import co.edu.unicesar.sierap.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -574,6 +578,99 @@ class ReportIntegrationTest {
                             .param("periodBId", period2.getId().toString())
                             .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(facultyAdmin))))
                     .andExpect(status().isNotFound());
+        }
+    }
+
+    // =========================================================================
+    // 5. EXPORTACIÓN (ADR-020): sábana Excel e informe, acta y boletín en PDF
+    // =========================================================================
+    @Nested
+    @DisplayName("Exportación de reportes")
+    class ExportTests {
+
+        private static final String XLSX = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+
+        @Test
+        @DisplayName("El admin descarga la sábana del momento con una fila por estudiante")
+        void adminDownloadsTheMomentWorkbook() throws Exception {
+            byte[] content = mockMvc.perform(get("/api/reports/moments/" + closedMomentPeriod2.getId() + "/xlsx")
+                            .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(facultyAdmin))))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string(HttpHeaders.CONTENT_TYPE, XLSX))
+                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                            containsString("sabana-notas-" + program.getCode().toLowerCase() + "-2026-2-momento-1.xlsx")))
+                    .andReturn().getResponse().getContentAsByteArray();
+
+            try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(content))) {
+                Sheet students = workbook.getSheet("Estudiantes");
+                assertThat(students.getLastRowNum()).isEqualTo(2);
+                assertThat(students.getRow(1).getCell(2).getStringCellValue()).isEqualTo("Grupo 1");
+            }
+        }
+
+        @Test
+        @DisplayName("Un docente de la facultad sin grupos en el momento descarga la sábana sin filas de estudiantes")
+        void teacherOnlyGetsTheirOwnGroups() throws Exception {
+            Teacher facultyTeacherWithoutGroup = persist(new Teacher("Lucas", "López", DocumentType.CC, document(),
+                    email("lucas"), passwordEncoder.encode(PASSWORD), now(), faculty));
+            byte[] content = mockMvc.perform(get("/api/reports/moments/" + closedMomentPeriod2.getId() + "/xlsx")
+                            .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(facultyTeacherWithoutGroup))))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsByteArray();
+
+            try (XSSFWorkbook workbook = new XSSFWorkbook(new ByteArrayInputStream(content))) {
+                assertThat(workbook.getSheet("Estudiantes").getLastRowNum()).isZero();
+            }
+        }
+
+        @Test
+        @DisplayName("Los PDF del momento y del grupo respetan el alcance del reporte")
+        void momentAndGroupPdfs() throws Exception {
+            mockMvc.perform(get("/api/reports/moments/" + closedMomentPeriod2.getId() + "/pdf")
+                            .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(superAdmin))))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string(HttpHeaders.CONTENT_TYPE, "application/pdf"));
+            mockMvc.perform(get("/api/reports/groups/" + gradedGroup.getId() + "/pdf")
+                            .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(teacher))))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, containsString("acta-grupo-1-")));
+
+            mockMvc.perform(get("/api/reports/moments/" + closedMomentPeriod2.getId() + "/pdf")
+                            .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(otherAdmin))))
+                    .andExpect(status().isForbidden());
+            mockMvc.perform(get("/api/reports/groups/" + gradedGroup.getId() + "/pdf")
+                            .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(otherTeacher))))
+                    .andExpect(status().isForbidden());
+            mockMvc.perform(get("/api/reports/moments/" + closedMomentPeriod2.getId() + "/xlsx")
+                            .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(ana))))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("El estudiante descarga su boletín solo cuando cerró la calificación")
+        void studentBulletin() throws Exception {
+            String token = loginToken(ana);
+            byte[] pdf = mockMvc.perform(get("/api/reports/individual/pdf")
+                            .param("momentId", closedMomentPeriod2.getId().toString())
+                            .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION,
+                            containsString("boletin-" + ana.getStudentCode().toLowerCase())))
+                    .andReturn().getResponse().getContentAsByteArray();
+            assertThat(new String(pdf, 0, 5)).isEqualTo("%PDF-");
+
+            ProjectGroup inProgress = new ProjectGroup(openMomentPeriod2, teacher, "Grupo abierto");
+            inProgress.addMember(ana);
+            projectGroupRepository.saveAndFlush(inProgress);
+            mockMvc.perform(get("/api/reports/individual/pdf")
+                            .param("momentId", openMomentPeriod2.getId().toString())
+                            .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                    .andExpect(status().isUnprocessableEntity());
+            mockMvc.perform(get("/api/reports/individual/pdf")
+                            .param("momentId", closedMomentPeriod2.getId().toString())
+                            .param("studentId", beto.getId().toString())
+                            .header(HttpHeaders.AUTHORIZATION, bearer(token)))
+                    .andExpect(status().isForbidden());
         }
     }
 
