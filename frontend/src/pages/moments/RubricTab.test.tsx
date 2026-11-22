@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { rubricService } from '@/services/api/rubricService'
 import type { ApiError } from '@/types/api'
 import type { LearningOutcome } from '@/types/moment'
+import { answerConfirm } from '@/test/confirm'
 
 import { RubricTab } from './RubricTab'
 import { momentDetailFixture } from './testData'
@@ -104,7 +105,6 @@ describe('RubricTab', () => {
       message: 'El momento ya fue lanzado: su configuración no se puede modificar.' }
     service.deleteCriterion.mockRejectedValue(
       new AxiosError('', 'ERR_BAD_REQUEST', undefined, null, { status: 422, data } as AxiosResponse))
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderTab()
 
     await userEvent.click(screen.getByRole('button', { name: 'Editar Alto' }))
@@ -117,6 +117,7 @@ describe('RubricTab', () => {
       { name: 'Alto', description: 'Causas y consecuencias', score: 0.5 })
 
     await userEvent.click(screen.getByRole('button', { name: 'Quitar criterio' }))
+    await answerConfirm('Eliminar')
     expect(service.deleteCriterion).toHaveBeenCalledWith(20)
     expect(await screen.findByRole('alert')).toHaveTextContent('El momento ya fue lanzado')
   })

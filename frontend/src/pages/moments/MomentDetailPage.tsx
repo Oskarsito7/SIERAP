@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { todayIso } from '@/lib/dates'
 import { useLoad } from '@/lib/useLoad'
+import { useConfirm } from '@/lib/useConfirm'
 import { catalogService } from '@/services/api/catalogService'
 import { getErrorMessage } from '@/services/api/httpClient'
 import { momentService } from '@/services/api/momentService'
@@ -217,9 +218,15 @@ function DeleteSection({ moment, onDeleted }: { moment: MomentDetail; onDeleted:
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
+  const [confirm, confirmDialog] = useConfirm()
+
   const remove = async () => {
-    const question = `¿Eliminar ${moment.name} de ${moment.programName} con sus RAP, criterios, niveles y pesos?`
-    if (!window.confirm(question)) return
+    const confirmed = await confirm({
+      title: `¿Eliminar ${moment.name} de ${moment.programName}?`,
+      description: 'También se eliminan sus RAP, criterios, niveles y pesos. Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+    })
+    if (!confirmed) return
     setError(null)
     setBusy(true)
     try {
@@ -233,6 +240,7 @@ function DeleteSection({ moment, onDeleted }: { moment: MomentDetail; onDeleted:
 
   return (
     <Card className="border-destructive/40">
+      {confirmDialog}
       <CardContent className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm">

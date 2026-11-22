@@ -13,6 +13,7 @@ import type { ApiError } from '@/types/api'
 import type { UserRole, UserSummary } from '@/types/auth'
 import type { Program } from '@/types/catalog'
 import type { RegistrationCode } from '@/types/registrationCode'
+import { answerConfirm } from '@/test/confirm'
 
 import { RegistrationCodesPage } from './RegistrationCodesPage'
 
@@ -186,10 +187,10 @@ describe('RegistrationCodesPage', () => {
   it('deactivates a code after confirming', async () => {
     list.mockResolvedValue(codes.slice(0, 1))
     deactivate.mockResolvedValue(code({ id: 1, active: false }))
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderAs('TEACHER')
 
     await userEvent.click(await screen.findByRole('button', { name: 'Desactivar el código K7MQ4TZP' }))
+    await answerConfirm('Desactivar')
 
     expect(deactivate).toHaveBeenCalledWith(1)
     expect(await within(rowOf('K7MQ4TZP')).findByText('Desactivado')).toBeInTheDocument()
@@ -197,10 +198,10 @@ describe('RegistrationCodesPage', () => {
 
   it('does nothing if the deactivation is not confirmed', async () => {
     list.mockResolvedValue(codes.slice(0, 1))
-    vi.spyOn(window, 'confirm').mockReturnValue(false)
     renderAs('TEACHER')
 
     await userEvent.click(await screen.findByRole('button', { name: 'Desactivar el código K7MQ4TZP' }))
+    await answerConfirm('Cancelar')
 
     expect(deactivate).not.toHaveBeenCalled()
   })
@@ -216,10 +217,10 @@ describe('RegistrationCodesPage', () => {
       fieldErrors: {},
     }
     deactivate.mockRejectedValue(new AxiosError('403', 'ERR_BAD_REQUEST', undefined, null, { status: 403, data } as AxiosResponse))
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderAs('TEACHER')
 
     await userEvent.click(await screen.findByRole('button', { name: 'Desactivar el código K7MQ4TZP' }))
+    await answerConfirm('Desactivar')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('No puede gestionar este código.')
   })

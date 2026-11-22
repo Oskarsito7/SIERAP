@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate, todayIso } from '@/lib/dates'
+import { useConfirm } from '@/lib/useConfirm'
 import { getErrorMessage } from '@/services/api/httpClient'
 import { registrationCodeService } from '@/services/api/registrationCodeService'
 import type { RegistrationCode } from '@/types/registrationCode'
@@ -88,10 +89,14 @@ export function RegistrationCodesPage() {
     }
   }
 
+  const [confirm, confirmDialog] = useConfirm()
+
   const deactivate = async (code: RegistrationCode) => {
-    const confirmed = window.confirm(
-      `¿Desactivar el código ${code.code}? Dejará de servir de inmediato y no se podrá volver a activar.`,
-    )
+    const confirmed = await confirm({
+      title: `¿Desactivar el código ${code.code}?`,
+      description: 'Dejará de servir de inmediato y no se podrá volver a activar.',
+      confirmLabel: 'Desactivar',
+    })
     if (!confirmed) return
     setActionError(null)
     setDeactivatingId(code.id)
@@ -111,6 +116,7 @@ export function RegistrationCodesPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      {confirmDialog}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold tracking-tight">Códigos de registro</h1>

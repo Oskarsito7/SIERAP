@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { catalogService } from '@/services/api/catalogService'
+import { answerConfirm } from '@/test/confirm'
 
 import { programFixture } from '../moments/testData'
 import { FacultiesPage } from './FacultiesPage'
@@ -87,10 +88,10 @@ describe('FacultiesPage', () => {
   it('explains why a program cannot be deleted', async () => {
     service.faculties.mockResolvedValue([engineering])
     service.deleteProgram.mockRejectedValue(apiError(409, 'Tiene momentos con grupos o calificaciones.'))
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderPage()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Eliminar Ingeniería de Sistemas' }))
+    await answerConfirm('Eliminar')
 
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'No se puede eliminar Ingeniería de Sistemas: Tiene momentos con grupos o calificaciones.')

@@ -1,3 +1,4 @@
+import { useRef } from 'react'
 import { AlertDialog } from 'radix-ui'
 
 import { buttonVariants } from '@/components/ui/button'
@@ -7,6 +8,7 @@ import { cn } from '@/lib/utils'
  * Diálogo de confirmación accesible (Radix `AlertDialog`): atrapa el foco, se cierra con
  * Escape (que equivale a cancelar) y anuncia el título y la descripción al lector de
  * pantalla. Reemplaza a `window.confirm`, cuyo texto y botones no se pueden adaptar.
+ * Para preguntar desde una función `async`, ver `useConfirm`.
  */
 export function ConfirmDialog({
   open,
@@ -28,8 +30,18 @@ export function ConfirmDialog({
   onConfirm: () => void
   onCancel: () => void
 }) {
+  // Al confirmar, Radix también cierra el diálogo (`onOpenChange(false)`): sin esta
+  // marca ese cierre se tomaría además como una cancelación.
+  const confirmed = useRef(false)
+
   return (
-    <AlertDialog.Root open={open} onOpenChange={(next) => !next && onCancel()}>
+    <AlertDialog.Root
+      open={open}
+      onOpenChange={(next) => {
+        if (!next && !confirmed.current) onCancel()
+        confirmed.current = false
+      }}
+    >
       <AlertDialog.Portal>
         <AlertDialog.Overlay className="fixed inset-0 z-50 bg-black/40" />
         <AlertDialog.Content className="bg-card fixed top-1/2 left-1/2 z-50 flex w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2 flex-col gap-4 rounded-lg border p-6 shadow-lg">
@@ -39,7 +51,10 @@ export function ConfirmDialog({
             <AlertDialog.Cancel className={buttonVariants({ variant: 'outline' })}>{cancelLabel}</AlertDialog.Cancel>
             <AlertDialog.Action
               className={cn(buttonVariants({ variant: destructive ? 'destructive' : 'default' }))}
-              onClick={onConfirm}
+              onClick={() => {
+                confirmed.current = true
+                onConfirm()
+              }}
             >
               {confirmLabel}
             </AlertDialog.Action>

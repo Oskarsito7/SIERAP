@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { accountService } from '@/services/api/accountService'
 import { catalogService } from '@/services/api/catalogService'
+import { answerConfirm } from '@/test/confirm'
 
 import { EvaluatorTypesPage } from './EvaluatorTypesPage'
 import { apiError } from './testHelpers'
@@ -57,10 +58,10 @@ describe('EvaluatorTypesPage', () => {
 
   it('explains why a type in use cannot be deleted', async () => {
     service.deleteEvaluatorType.mockRejectedValue(apiError(409, 'Hay evaluadores de este tipo; desactívelo.'))
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     render(<EvaluatorTypesPage />)
 
     await userEvent.click(await screen.findByRole('button', { name: 'Eliminar Egresado' }))
+    await answerConfirm('Eliminar')
 
     expect(await screen.findByRole('alert')).toHaveTextContent('No se puede eliminar Egresado: Hay evaluadores')
   })
