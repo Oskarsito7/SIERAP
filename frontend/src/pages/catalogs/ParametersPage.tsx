@@ -3,8 +3,10 @@ import { Plus } from 'lucide-react'
 
 import { LoadStatus } from '@/components/LoadStatus'
 import { FormError, FormField } from '@/components/forms/FormField'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
+import { SYSTEM_PARAMETERS } from '@/lib/systemParameters'
 import { useLoad } from '@/lib/useLoad'
 import { catalogService } from '@/services/api/catalogService'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
@@ -13,9 +15,9 @@ import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 /**
  * Parámetros globales (wireframe SA-03, super_admin). Guardar con una clave nueva crea
- * el parámetro; con una existente cambia su valor y su descripción. Por ahora ninguna
- * regla del sistema los lee (`docs/07`): cada parámetro que una regla empiece a usar
- * llega con su propio contrato.
+ * el parámetro; con una existente cambia su valor y su descripción. Los que lee el motor
+ * del sistema (`SYSTEM_PARAMETERS`: aprobación y niveles de los reportes, tope de
+ * versiones de entrega) se marcan, explican su formato y se validan antes de guardar.
  */
 export function ParametersPage() {
   const parameters = useLoad(() => catalogService.parameters(), [])
@@ -33,7 +35,8 @@ export function ParametersPage() {
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold tracking-tight">Parámetros globales</h1>
           <p className="text-muted-foreground max-w-2xl text-sm">
-            Valores generales del sistema que no dependen de una facultad ni de un periodo.
+            Valores generales del sistema que no dependen de una facultad ni de un periodo. Los marcados como
+            «En uso por el sistema» cambian de inmediato los reportes o la carga de entregas.
           </p>
         </div>
         <Button onClick={() => setCreating((open) => !open)}>
@@ -59,7 +62,7 @@ export function ParametersPage() {
           <LoadStatus state={parameters.state} onRetry={parameters.reload} label="Cargando los parámetros…" />
           {parameters.state.kind === 'success' && parameters.state.data.length === 0 && (
             <p className="text-muted-foreground text-sm">
-              Todavía no hay parámetros globales: por ahora ninguna regla del sistema los usa.
+              Todavía no hay parámetros globales.
             </p>
           )}
           {parameters.state.kind === 'success' && parameters.state.data.length > 0 && (
@@ -93,9 +96,14 @@ export function ParametersPage() {
                     </tr>
                   ) : (
                     <tr key={parameter.key} className="border-b last:border-0">
-                      <td className="py-3 pr-4 font-semibold">{parameter.key}</td>
+                      <td className="py-3 pr-4">
+                        <span className="block font-semibold">{parameter.key}</span>
+                        {SYSTEM_PARAMETERS[parameter.key] && <Badge className="mt-1">En uso por el sistema</Badge>}
+                      </td>
                       <td className="py-3 pr-4 break-all">{parameter.value}</td>
-                      <td className="text-muted-foreground py-3 pr-4">{parameter.description}</td>
+                      <td className="text-muted-foreground py-3 pr-4">
+                        {parameter.description ?? SYSTEM_PARAMETERS[parameter.key]?.usage}
+                      </td>
                       <td className="py-3 text-right">
                         <Button
                           variant="ghost"
@@ -138,6 +146,7 @@ function ParameterForm({
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
+  const system = SYSTEM_PARAMETERS[key.trim()]
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -145,6 +154,10 @@ function ParameterForm({
     const errors: Record<string, string> = {}
     if (!key.trim()) errors.key = 'La clave es obligatoria'
     if (!value.trim()) errors.value = 'El valor es obligatorio'
+    else if (system) {
+      const valueError = system.validate(value)
+      if (valueError) errors.value = valueError
+    }
     setFieldErrors(errors)
     if (Object.keys(errors).length > 0) return
 
@@ -189,6 +202,12 @@ function ParameterForm({
           onChange={(event) => setDescription(event.target.value)}
         />
       </div>
+      {system && (
+        <p className="text-muted-foreground text-xs">
+          <span className="text-foreground font-medium">En uso por el sistema.</span> {system.usage} Formato:{' '}
+          {system.format}
+        </p>
+      )}
       <FormError message={error} />
       <div className="flex gap-3">
         <Button type="submit" size="sm" disabled={saving}>
