@@ -3,7 +3,9 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { saveFile } from '@/lib/files'
 import { momentService } from '@/services/api/momentService'
+import { reportService } from '@/services/api/reportService'
 import { resultsService } from '@/services/api/resultsService'
 import type { StudentResult } from '@/types/results'
 
@@ -12,6 +14,8 @@ import { MyGradesPage } from './MyGradesPage'
 
 vi.mock('@/services/api/resultsService', () => ({ resultsService: { mine: vi.fn() } }))
 vi.mock('@/services/api/momentService', () => ({ momentService: { list: vi.fn() } }))
+vi.mock('@/services/api/reportService', () => ({ reportService: { individualPdf: vi.fn() } }))
+vi.mock('@/lib/files', () => ({ saveFile: vi.fn() }))
 
 function resultFixture(overrides: Partial<StudentResult> = {}): StudentResult {
   return {
@@ -95,5 +99,25 @@ describe('MyGradesPage', () => {
     renderPage()
 
     expect(await screen.findByText('Todavía no tienes notas')).toBeInTheDocument()
+  })
+
+  it('downloads the bulletin of the moment once the grades are available', async () => {
+    vi.mocked(resultsService.mine).mockResolvedValue([resultFixture()])
+    const blob = new Blob(['%PDF'])
+    vi.mocked(reportService.individualPdf).mockResolvedValue({ blob, fileName: 'boletin-2026001.pdf' })
+    renderPage()
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Descargar mi boletín en PDF' }))
+
+    expect(reportService.individualPdf).toHaveBeenCalledWith(1)
+    expect(saveFile).toHaveBeenCalledWith(blob, 'boletin-2026001.pdf')
+  })
+
+  it('does not offer the bulletin while the grades are not ready', async () => {
+    vi.mocked(resultsService.mine).mockResolvedValue([resultFixture({ available: false, finalGrade: null })])
+    renderPage()
+
+    expect(await screen.findByText(/aún no están listas/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /boletín/ })).not.toBeInTheDocument()
   })
 })

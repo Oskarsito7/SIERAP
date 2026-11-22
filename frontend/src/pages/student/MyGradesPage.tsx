@@ -1,12 +1,14 @@
 import { Link, useSearchParams } from 'react-router'
 
 import { LoadStatus } from '@/components/LoadStatus'
+import { DownloadButton } from '@/components/DownloadButton'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate } from '@/lib/dates'
 import { formatScore } from '@/lib/scores'
 import { useLoad } from '@/lib/useLoad'
 import { momentService } from '@/services/api/momentService'
+import { reportService } from '@/services/api/reportService'
 import { resultsService } from '@/services/api/resultsService'
 import type { MomentSummary } from '@/types/moment'
 import type { StudentOutcomeScore, StudentResult } from '@/types/results'
@@ -131,6 +133,9 @@ function ResultView({ result }: { result: StudentResult }) {
               Tu nota es distinta a la del grupo porque un evaluador ajustó tu calificación en algún criterio.
             </p>
           )}
+          <DownloadButton download={() => reportService.individualPdf(result.momentId)}>
+            Descargar mi boletín en PDF
+          </DownloadButton>
         </CardContent>
       </Card>
 

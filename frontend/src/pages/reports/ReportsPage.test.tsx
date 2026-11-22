@@ -4,6 +4,7 @@ import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AuthContext } from '@/auth/authContext'
+import { saveFile } from '@/lib/files'
 import { apiError } from '@/pages/catalogs/testHelpers'
 import { groupFixture, momentFixture } from '@/pages/groups/testData'
 import { periodFixture, programFixture } from '@/pages/moments/testData'
@@ -24,8 +25,18 @@ import {
 vi.mock('@/services/api/catalogService', () => ({ catalogService: { periods: vi.fn(), programs: vi.fn() } }))
 vi.mock('@/services/api/momentService', () => ({ momentService: { list: vi.fn() } }))
 vi.mock('@/services/api/groupService', () => ({ groupService: { list: vi.fn() } }))
+vi.mock('@/lib/files', () => ({ saveFile: vi.fn() }))
 vi.mock('@/services/api/reportService', () => ({
-  reportService: { moment: vi.fn(), group: vi.fn(), individual: vi.fn(), comparative: vi.fn() },
+  reportService: {
+    moment: vi.fn(),
+    group: vi.fn(),
+    individual: vi.fn(),
+    comparative: vi.fn(),
+    momentWorkbook: vi.fn(),
+    momentPdf: vi.fn(),
+    groupPdf: vi.fn(),
+    individualPdf: vi.fn(),
+  },
 }))
 
 const reports = vi.mocked(reportService)
@@ -235,5 +246,23 @@ describe('ReportsPage', () => {
     expect(print).toHaveBeenCalledTimes(1)
     expect(screen.getByRole('navigation', { name: 'Tipos de reporte' })).toHaveClass('print:hidden')
     print.mockRestore()
+  })
+
+  it('downloads the grade sheet and the report of the moment, and the record of a group', async () => {
+    const file = { blob: new Blob(['x']), fileName: 'sabana-notas.xlsx' }
+    reports.momentWorkbook.mockResolvedValue(file)
+    reports.momentPdf.mockResolvedValue({ ...file, fileName: 'informe.pdf' })
+    reports.groupPdf.mockResolvedValue({ ...file, fileName: 'acta.pdf' })
+    renderAt('moment')
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Sábana en Excel' }))
+    expect(reports.momentWorkbook).toHaveBeenCalledWith(1)
+    expect(saveFile).toHaveBeenCalledWith(file.blob, 'sabana-notas.xlsx')
+    await userEvent.click(screen.getByRole('button', { name: 'Informe en PDF' }))
+    expect(reports.momentPdf).toHaveBeenCalledWith(1)
+
+    await userEvent.click(screen.getByRole('button', { name: 'Grupal' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Acta en PDF' }))
+    expect(reports.groupPdf).toHaveBeenCalledWith(groupReportFixture().group.id)
   })
 })

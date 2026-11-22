@@ -1,5 +1,6 @@
 import { PercentBars } from '@/components/charts/PercentBars'
 import { StatTile } from '@/components/charts/StatTile'
+import { DownloadButton } from '@/components/DownloadButton'
 import { LoadStatus } from '@/components/LoadStatus'
 import { formatScore } from '@/lib/scores'
 import { useLoad } from '@/lib/useLoad'
@@ -23,7 +24,13 @@ export function MomentReportView({ momentId }: { momentId: number }) {
 function MomentReport({ report }: { report: MomentReportData }) {
   return (
     <div className="flex flex-col gap-6">
-      <ReportMeta {...report} />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <ReportMeta {...report} />
+        <div className="flex flex-wrap gap-2 print:hidden">
+          <DownloadButton download={() => reportService.momentWorkbook(report.moment.id)}>Sábana en Excel</DownloadButton>
+          <DownloadButton download={() => reportService.momentPdf(report.moment.id)}>Informe en PDF</DownloadButton>
+        </div>
+      </div>
       {report.gradedStudents === 0 ? (
         <p className="text-muted-foreground text-sm">
           Todavía no hay estudiantes calificados en este momento ({report.totalStudents} en {report.totalGroups}{' '}

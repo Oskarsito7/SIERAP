@@ -1,5 +1,6 @@
 import { PercentBars } from '@/components/charts/PercentBars'
 import { StatTile } from '@/components/charts/StatTile'
+import { DownloadButton } from '@/components/DownloadButton'
 import { LoadStatus } from '@/components/LoadStatus'
 import { formatScore } from '@/lib/scores'
 import { useLoad } from '@/lib/useLoad'
@@ -24,7 +25,14 @@ function IndividualReport({ report }: { report: IndividualReportData }) {
   const max = formatScore(report.moment.maxScore)
   return (
     <div className="flex flex-col gap-6">
-      <ReportMeta {...report} />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <ReportMeta {...report} />
+        <div className="print:hidden">
+          <DownloadButton download={() => reportService.individualPdf(report.moment.id, report.student.id)}>
+            Boletín en PDF
+          </DownloadButton>
+        </div>
+      </div>
       <p className="text-sm">
         <span className="font-semibold">{report.student.fullName}</span>
         <span className="text-muted-foreground">
