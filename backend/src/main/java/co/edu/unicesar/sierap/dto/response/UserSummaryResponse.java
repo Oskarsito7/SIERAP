@@ -1,5 +1,6 @@
 package co.edu.unicesar.sierap.dto.response;
 
+import co.edu.unicesar.sierap.entity.enums.DocumentType;
 import co.edu.unicesar.sierap.entity.enums.UserRole;
 
 /**
@@ -13,6 +14,8 @@ import co.edu.unicesar.sierap.entity.enums.UserRole;
  * @param role               rol
  * @param active             {@code true} si la cuenta puede iniciar sesión
  * @param mustChangePassword {@code true} si debe cambiar su contraseña temporal
+ * @param documentType       tipo de documento de identidad (lo usa el formulario de edición)
+ * @param documentNumber     número de documento de identidad
  */
 public record UserSummaryResponse(
         Long id,
@@ -22,5 +25,7 @@ public record UserSummaryResponse(
         String email,
         UserRole role,
         boolean active,
-        boolean mustChangePassword) {
+        boolean mustChangePassword,
+        DocumentType documentType,
+        String documentNumber) {
 }

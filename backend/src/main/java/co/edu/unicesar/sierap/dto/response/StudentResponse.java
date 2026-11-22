@@ -1,5 +1,6 @@
 package co.edu.unicesar.sierap.dto.response;
 
+import co.edu.unicesar.sierap.entity.enums.DocumentType;
 import co.edu.unicesar.sierap.entity.enums.UserRole;
 
 /**
@@ -18,6 +19,8 @@ import co.edu.unicesar.sierap.entity.enums.UserRole;
  * @param role               rol (siempre {@code STUDENT})
  * @param active             {@code true} si la cuenta puede iniciar sesión
  * @param mustChangePassword {@code true} si debe cambiar su contraseña temporal
+ * @param documentType       tipo de documento de identidad
+ * @param documentNumber     número de documento de identidad
  * @param studentCode        código estudiantil
  * @param currentSemester    semestre que cursa
  * @param registrationCode   código de registro con el que se registró, o {@code null} si
@@ -36,6 +39,8 @@ public record StudentResponse(
         UserRole role,
         boolean active,
         boolean mustChangePassword,
+        DocumentType documentType,
+        String documentNumber,
         String studentCode,
         int currentSemester,
         String registrationCode,

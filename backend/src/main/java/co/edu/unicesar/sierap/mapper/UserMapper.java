@@ -23,7 +23,7 @@ public final class UserMapper {
     public static UserSummaryResponse toSummary(User user) {
         return new UserSummaryResponse(user.getId(), user.getFirstNames(), user.getLastNames(),
                 user.getFullName(), user.getEmail(), user.getRole(), user.isActive(),
-                user.isMustChangePassword());
+                user.isMustChangePassword(), user.getDocumentType(), user.getDocumentNumber());
     }
 
     /**
@@ -38,7 +38,8 @@ public final class UserMapper {
         User creator = student.getCreatedBy();
         return new StudentResponse(student.getId(), student.getFirstNames(), student.getLastNames(),
                 student.getFullName(), student.getEmail(), student.getRole(), student.isActive(),
-                student.isMustChangePassword(), student.getStudentCode(), student.getCurrentSemester(),
+                student.isMustChangePassword(), student.getDocumentType(), student.getDocumentNumber(),
+                student.getStudentCode(), student.getCurrentSemester(),
                 code == null ? null : code.getCode(),
                 creator == null ? null : new StudentResponse.CreatorRef(creator.getId(), creator.getFullName()),
                 manageable);

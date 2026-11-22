@@ -37,7 +37,9 @@
   "email": "marta@unicesar.edu.co",
   "role": "TEACHER",               // SUPER_ADMIN | ADMIN | TEACHER | STUDENT | EXTERNAL_EVALUATOR
   "active": true,
-  "mustChangePassword": false
+  "mustChangePassword": false,
+  "documentType": "CC",            // CC | TI | CE | PASSPORT; the edit form shows them
+  "documentNumber": "1065432100"
 }
 
 // TokenResponse
