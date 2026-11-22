@@ -718,6 +718,45 @@ later iteration.
 
 ---
 
+## ADR-021 — Production hardening: rate limiting, security headers, CORS and health probes
+
+**Date:** 2026-11-22.
+**Status:** Accepted (approved by the project lead).
+
+**Context:** before going to production the API needs protection against brute force
+on the public authentication routes, standard browser security headers, an explicit
+cross-origin policy per environment, and health endpoints for the deployment platform.
+
+**Decision:**
+- **Rate limiting** with our own in-memory filter (`RateLimitFilter`, before
+  `JwtAuthFilter`): fixed window per (route, IP) on `POST /api/auth/login`,
+  `/register`, `/password/forgot` and `/password/set`. Defaults in
+  `sierap.security.rate-limit`: 10, 5, 5 and 10 per 60 s, with an `enabled` switch
+  (off only in the `test` profile). Exceeding it answers `429` with the uniform
+  `ErrorResponse` and a `Retry-After` header. The IP is `getRemoteAddr()`; behind a
+  proxy `server.forward-headers-strategy: native` is set in the `prod` profile.
+- **Headers:** Spring's defaults (nosniff, `X-Frame-Options: DENY`, cache-control) plus
+  `Referrer-Policy: no-referrer`, a restrictive `Permissions-Policy` (camera,
+  microphone and geolocation disabled) and HSTS (Spring sends it only over HTTPS). No
+  CSP on the API, which serves only JSON.
+- **CORS:** `sierap.security.allowed-origins` (env `SIERAP_ALLOWED_ORIGINS`,
+  comma-separated). Empty (default) means no CORS, as in dev with the Vite proxy. With
+  values: those origins, methods GET/POST/PUT/PATCH/DELETE/OPTIONS, credentials (the
+  refresh cookie) and exposed headers `Content-Disposition` and `X-Total-Count`.
+- **Actuator:** only `health`, with probes (`/actuator/health/liveness` and
+  `/readiness`) and no details. Only `GET /actuator/health/**` is public; any other
+  `/actuator/**` is denied.
+
+**Alternatives considered:** Bucket4j or Resilience4j (a new dependency for four
+routes); a rate limit at the reverse proxy only (not testable here and not available in
+every deployment); exposing more Actuator endpoints (information leak).
+
+**Consequences:** new dependency `spring-boot-starter-actuator`. The counters live in
+memory, so they reset on restart and each replica counts on its own; if the API is
+scaled out, move them to a shared store. Integration tests run with the limit disabled.
+
+---
+
 ## Template for new entries
 
 ```
