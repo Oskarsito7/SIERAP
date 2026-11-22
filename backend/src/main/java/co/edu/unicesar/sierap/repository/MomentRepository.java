@@ -1,9 +1,11 @@
 package co.edu.unicesar.sierap.repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
 import co.edu.unicesar.sierap.entity.Moment;
+import co.edu.unicesar.sierap.entity.enums.MomentStatus;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
@@ -146,4 +148,13 @@ public interface MomentRepository extends JpaRepository<Moment, Long> {
      * @return {@code true} si al menos un peso de momento referencia este tipo
      */
     boolean existsByEvaluatorWeightsEvaluatorTypeId(Long evaluatorTypeId);
+
+    /**
+     * Momentos en el estado dado cuya ventana de calificación termina en la fecha indicada.
+     *
+     * @param status     estado del momento
+     * @param gradingEnd fecha de fin de calificación
+     * @return momentos encontrados
+     */
+    List<Moment> findByStatusAndGradingEnd(MomentStatus status, LocalDate gradingEnd);
 }

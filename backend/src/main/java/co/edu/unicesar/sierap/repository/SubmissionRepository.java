@@ -27,4 +27,12 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
      * @return la entrega más reciente, si el grupo ya entregó
      */
     Optional<Submission> findFirstByProjectGroupIdOrderByVersionNumberDesc(Long projectGroupId);
+
+    /**
+     * Indica si el grupo ya subió alguna entrega.
+     *
+     * @param projectGroupId id del grupo
+     * @return {@code true} si tiene al menos una versión
+     */
+    boolean existsByProjectGroupId(Long projectGroupId);
 }
