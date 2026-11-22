@@ -6,11 +6,13 @@ import { FormError } from '@/components/forms/FormField'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { cn } from '@/lib/utils'
 import { formatDateTime } from '@/lib/dates'
 import { formatScore } from '@/lib/scores'
 import { downloadSubmissionFile } from '@/lib/submissionDownload'
 import { useLoad } from '@/lib/useLoad'
+import { useUnsavedChanges } from '@/lib/useUnsavedChanges'
 import { evaluationService } from '@/services/api/evaluationService'
 import { getErrorMessage } from '@/services/api/httpClient'
 import { submissionService } from '@/services/api/submissionService'
@@ -29,7 +31,8 @@ type Adjustments = Record<number, Levels>
  * y desde la lista de integrantes se ajustan los criterios en que un estudiante se
  * destacó o se quedó atrás (ADR-018). Se guarda como borrador, se envía cuando está
  * completa y se puede corregir mientras la calificación esté abierta; la API vuelve a
- * validar todo y responde 422 con el motivo.
+ * validar todo y responde 422 con el motivo. Si hay cambios sin guardar, avisa antes de
+ * cerrar la pestaña o de ir a otra página.
  */
 export function EvaluationEditor({ groupId }: { groupId: number }) {
   const form = useLoad(() => evaluationService.form(groupId), [groupId])
@@ -82,6 +85,8 @@ function EditorBody({
     comment !== (form.comment ?? '')
   const submitted = form.status === 'SUBMITTED'
   const disabled = !form.canEdit || busy
+  // Mientras se guarda no se pregunta: al terminar, el formulario se reinicia con lo guardado.
+  const blocker = useUnsavedChanges(dirty && form.canEdit && !busy)
 
   const request = (): SaveEvaluationRequest => ({
     levels: Object.entries(levels).map(([criterionId, levelId]) => ({ criterionId: Number(criterionId), levelId })),
@@ -145,6 +150,16 @@ function EditorBody({
 
   return (
     <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <ConfirmDialog
+        open={blocker.state === 'blocked'}
+        title="¿Salir sin guardar?"
+        description="Tienes cambios en esta evaluación que todavía no guardaste. Si sales ahora, se perderán."
+        confirmLabel="Salir sin guardar"
+        cancelLabel="Seguir calificando"
+        destructive
+        onConfirm={() => blocker.proceed?.()}
+        onCancel={() => blocker.reset?.()}
+      />
       <div className="flex flex-col gap-6">
         <SubmissionBanner form={form} history={history} />
         {!form.canEdit && (
