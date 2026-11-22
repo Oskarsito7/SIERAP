@@ -20,4 +20,16 @@ public interface EmailService {
      * @param validHours horas de vigencia del enlace, para mencionarlo en el correo
      */
     void sendPasswordLink(User user, PasswordTokenPurpose purpose, String link, int validHours);
+
+    /**
+     * Envía un correo de texto plano.
+     *
+     * <p>Misma política que {@link #sendPasswordLink}: si el servidor de correo falla, el
+     * error se registra en el log y no se lanza, para no deshacer la operación que lo pidió.</p>
+     *
+     * @param to      correo del destinatario
+     * @param subject asunto
+     * @param body    cuerpo en texto plano
+     */
+    void send(String to, String subject, String body);
 }

@@ -49,6 +49,21 @@ public class SmtpEmailService implements EmailService {
         }
     }
 
+    @Override
+    public void send(String to, String subject, String body) {
+        SimpleMailMessage message = new SimpleMailMessage();
+        message.setFrom(properties.mailFrom());
+        message.setTo(to);
+        message.setSubject(subject);
+        message.setText(body);
+        try {
+            mailSender.send(message);
+        } catch (MailException exception) {
+            // No se deshace la operación que pidió el correo.
+            LOGGER.error("Could not send the email '{}' to {}: {}", subject, to, exception.getMessage());
+        }
+    }
+
     private static String subjectFor(PasswordTokenPurpose purpose) {
         return switch (purpose) {
             case ACCOUNT_SETUP -> "SIERAP: crea tu contraseña";

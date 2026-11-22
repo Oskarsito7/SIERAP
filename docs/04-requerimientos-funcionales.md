@@ -201,6 +201,7 @@ Defined by the project lead on 2026-09-24.
 | Students list (DO-08) | `GET /api/students` returns each student's code, semester and how they arrived (registration code or creator), plus whether the viewer can manage them, so the screen hides the actions it cannot use. The "Without a group" filter is in Moment 1, with the same rule as the list used to add members to a group. *(2026-10-29)* |
 | Reassigning a group | The faculty admin (or the super_admin) can pass a group to another active teacher of the faculty until the grading window closes. It is not allowed once the current teacher submitted their evaluation; a draft of theirs is discarded and the new teacher grades from scratch. Members, submissions and external evaluators stay in the group. *(2026-11-11)* |
 | Student criterion detail | In My grades the student sees their consolidated score per criterion (the one that counts in their grade); never the levels each evaluator picked. *(2026-11-22)* |
+| Event notifications | Email to the external evaluator when assigned, to the group members when a version is uploaded (receipt) and to a student added by the teacher; sent after commit, failures are logged; date-based reminders and grade publication are left for wave 3 (need a scheduler). *(2026-11-22)* |
 
 ## Still to be defined with the team
 

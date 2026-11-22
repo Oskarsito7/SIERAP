@@ -31,6 +31,7 @@ import co.edu.unicesar.sierap.repository.ProjectGroupRepository;
 import co.edu.unicesar.sierap.repository.SubmissionRepository;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
 import co.edu.unicesar.sierap.service.FileStorageService;
+import co.edu.unicesar.sierap.service.NotificationService;
 import co.edu.unicesar.sierap.service.SubmissionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -65,6 +66,7 @@ public class SubmissionServiceImpl implements SubmissionService {
     private final FileStorageService fileStorageService;
     private final AccessScope accessScope;
     private final GlobalParameterRepository globalParameterRepository;
+    private final NotificationService notificationService;
     private final Clock clock;
 
     /**
@@ -75,17 +77,19 @@ public class SubmissionServiceImpl implements SubmissionService {
      * @param fileStorageService     archivos en disco
      * @param accessScope            carga del usuario autenticado
      * @param globalParameterRepository parámetros globales (tope de versiones)
+     * @param notificationService    avisos por correo
      * @param clock                  reloj de la aplicación
      */
     public SubmissionServiceImpl(ProjectGroupRepository projectGroupRepository,
                                  SubmissionRepository submissionRepository, FileStorageService fileStorageService,
                                  AccessScope accessScope, GlobalParameterRepository globalParameterRepository,
-                                 Clock clock) {
+                                 NotificationService notificationService, Clock clock) {
         this.projectGroupRepository = projectGroupRepository;
         this.submissionRepository = submissionRepository;
         this.fileStorageService = fileStorageService;
         this.accessScope = accessScope;
         this.globalParameterRepository = globalParameterRepository;
+        this.notificationService = notificationService;
         this.clock = clock;
     }
 
@@ -124,6 +128,7 @@ public class SubmissionServiceImpl implements SubmissionService {
         }
         group.addSubmission(submission);
         submissionRepository.save(submission);
+        notificationService.notifySubmissionUploaded(group, submission, student);
         return SubmissionMapper.toResponse(submission, group.getSubmissionToGrade());
     }
 
