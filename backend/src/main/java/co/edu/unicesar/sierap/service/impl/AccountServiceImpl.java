@@ -125,7 +125,7 @@ public class AccountServiceImpl implements AccountService {
         accountValidator.requireNewUser(request.email(), request.documentNumber());
         Admin admin = new Admin(request.firstNames().trim(), request.lastNames().trim(), request.documentType(),
                 request.documentNumber().trim(), request.email(), null, now(), faculty);
-        return UserMapper.toSummary(register(admin, creator));
+        return UserMapper.toSummaryWithDocument(register(admin, creator));
     }
 
     @Override
@@ -136,7 +136,7 @@ public class AccountServiceImpl implements AccountService {
         accountValidator.requireNewUser(request.email(), request.documentNumber());
         Teacher teacher = new Teacher(request.firstNames().trim(), request.lastNames().trim(),
                 request.documentType(), request.documentNumber().trim(), request.email(), null, now(), faculty);
-        return UserMapper.toSummary(register(teacher, creator));
+        return UserMapper.toSummaryWithDocument(register(teacher, creator));
     }
 
     @Override
@@ -170,21 +170,21 @@ public class AccountServiceImpl implements AccountService {
         if (request.graduationProgramId() != null) {
             evaluator.setGraduationProgram(findProgram(request.graduationProgramId()));
         }
-        return UserMapper.toSummary(register(evaluator, creator));
+        return UserMapper.toSummaryWithDocument(register(evaluator, creator));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<UserSummaryResponse> listAdmins(Long facultyId) {
         findFaculty(facultyId);
-        return adminRepository.findByFacultyId(facultyId).stream().map(UserMapper::toSummary).toList();
+        return adminRepository.findByFacultyId(facultyId).stream().map(UserMapper::toSummaryWithDocument).toList();
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<UserSummaryResponse> listTeachers(AuthenticatedUser actor, Long facultyId) {
         accessScope.requireFaculty(accessScope.loadActor(actor), findFaculty(facultyId).getId());
-        return teacherRepository.findByFacultyId(facultyId).stream().map(UserMapper::toSummary).toList();
+        return teacherRepository.findByFacultyId(facultyId).stream().map(UserMapper::toSummaryWithDocument).toList();
     }
 
     @Override
@@ -208,7 +208,7 @@ public class AccountServiceImpl implements AccountService {
         List<ExternalEvaluator> evaluators = viewer instanceof SuperAdmin
                 ? externalEvaluatorRepository.findAll(Sort.by("lastNames"))
                 : externalEvaluatorRepository.findByCreatedByIdOrderByLastNamesAsc(viewer.getId());
-        return evaluators.stream().map(UserMapper::toSummary).toList();
+        return evaluators.stream().map(UserMapper::toSummaryWithDocument).toList();
     }
 
     @Override
@@ -270,7 +270,7 @@ public class AccountServiceImpl implements AccountService {
         if (emailChanged || Boolean.FALSE.equals(request.active())) {
             refreshTokenRepository.deleteAllByUserId(target.getId());
         }
-        return UserMapper.toSummary(target);
+        return UserMapper.toSummaryWithDocument(target);
     }
 
     @Override

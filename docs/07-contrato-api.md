@@ -39,7 +39,7 @@
   "active": true,
   "mustChangePassword": false,
   "documentType": "CC",            // CC | TI | CE | PASSPORT; the edit form shows them
-  "documentNumber": "1065432100"
+  "documentNumber": "1065432100"   // both null unless the viewer is that user or manages the account
 }
 
 // TokenResponse

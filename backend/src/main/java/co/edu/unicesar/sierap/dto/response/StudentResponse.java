@@ -19,8 +19,8 @@ import co.edu.unicesar.sierap.entity.enums.UserRole;
  * @param role               rol (siempre {@code STUDENT})
  * @param active             {@code true} si la cuenta puede iniciar sesión
  * @param mustChangePassword {@code true} si debe cambiar su contraseña temporal
- * @param documentType       tipo de documento de identidad
- * @param documentNumber     número de documento de identidad
+ * @param documentType       tipo de documento de identidad; {@code null} si quien consulta no gestiona la cuenta
+ * @param documentNumber     número de documento; {@code null} si quien consulta no gestiona la cuenta
  * @param studentCode        código estudiantil
  * @param currentSemester    semestre que cursa
  * @param registrationCode   código de registro con el que se registró, o {@code null} si

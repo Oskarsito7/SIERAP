@@ -1,5 +1,7 @@
 package co.edu.unicesar.sierap.controller;
 
+import static org.hamcrest.Matchers.nullValue;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -111,6 +113,19 @@ class AccountEditIntegrationTest {
         own = student("Propio", teacher);
         ownToo = student("Propia", teacher);
         foreign = student("Ajeno", otherTeacher);
+    }
+
+    // ------------------------------------------------------------ privacidad del documento
+
+    @Test
+    void theDocumentIsOnlyShownToWhoManagesTheAccount() throws Exception {
+        mockMvc.perform(get("/api/students").param("programId", program.getId().toString())
+                        .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginToken(teacher)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[?(@.id == " + own.getId() + ")].documentNumber")
+                        .value(own.getDocumentNumber()))
+                .andExpect(jsonPath("$[?(@.id == " + foreign.getId() + ")].manageable").value(false))
+                .andExpect(jsonPath("$[?(@.id == " + foreign.getId() + ")].documentNumber").value(nullValue()));
     }
 
     // ------------------------------------------------------------ edición

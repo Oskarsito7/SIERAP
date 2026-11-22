@@ -143,7 +143,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional(readOnly = true)
     public UserSummaryResponse getCurrentUser(Long userId) {
-        return UserMapper.toSummary(findUser(userId));
+        return UserMapper.toSummaryWithDocument(findUser(userId));
     }
 
     @Override
@@ -210,7 +210,7 @@ public class AuthServiceImpl implements AuthService {
         refreshTokenRepository.save(new RefreshToken(user, OpaqueTokens.hash(refreshToken),
                 now.plusDays(properties.refreshTokenDays()), now));
         TokenResponse token = new TokenResponse(jwtService.createAccessToken(user),
-                jwtService.getAccessTokenSeconds(), UserMapper.toSummary(user));
+                jwtService.getAccessTokenSeconds(), UserMapper.toSummaryWithDocument(user));
         return new AuthSession(token, refreshToken);
     }
 
