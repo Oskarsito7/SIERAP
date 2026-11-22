@@ -2,6 +2,8 @@ package co.edu.unicesar.sierap.security;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -40,6 +42,8 @@ class RateLimitFilterTest {
     private MockHttpServletResponse call(RateLimitFilter target, String method, String uri, String ip)
             throws Exception {
         MockHttpServletRequest request = new MockHttpServletRequest(method, uri);
+        // Como Tomcat: la URI llega tal cual y el servlet path ya decodificado.
+        request.setServletPath(URLDecoder.decode(uri, StandardCharsets.UTF_8));
         request.setRemoteAddr(ip);
         MockHttpServletResponse response = new MockHttpServletResponse();
         target.doFilter(request, response, new MockFilterChain());
@@ -48,6 +52,15 @@ class RateLimitFilterTest {
 
     private int post(String uri, String ip) throws Exception {
         return call(filter, "POST", uri, ip).getStatus();
+    }
+
+    @Test
+    void anEncodedPathCountsAsTheSameRoute() throws Exception {
+        for (int i = 0; i < 3; i++) {
+            assertThat(post("/api/auth/login", "1.1.1.1")).isEqualTo(HttpServletResponse.SC_OK);
+        }
+        // "%6C" es la "l": Spring MVC la atiende como login, así que también se limita.
+        assertThat(post("/api/auth/%6Cogin", "1.1.1.1")).isEqualTo(429);
     }
 
     @Test

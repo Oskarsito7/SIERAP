@@ -63,7 +63,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         Instant now = clock.instant();
         Duration length = Duration.ofSeconds(properties.windowSeconds());
         removeExpired(now, length);
-        String key = request.getRequestURI() + "|" + request.getRemoteAddr();
+        String key = pathOf(request) + "|" + request.getRemoteAddr();
         Window window = windows.compute(key, (k, current) -> {
             if (current == null || !now.isBefore(current.start().plus(length))) {
                 return new Window(now, 1);
@@ -84,7 +84,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
         if (!"POST".equals(request.getMethod())) {
             return 0;
         }
-        return switch (request.getRequestURI()) {
+        return switch (pathOf(request)) {
             case "/api/auth/login" -> properties.login();
             case "/api/auth/register" -> properties.register();
             case "/api/auth/password/forgot" -> properties.forgot();
@@ -94,6 +94,17 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     /** Descarta las ventanas vencidas para que el mapa no crezca sin límite. */
+    /**
+     * Ruta ya decodificada y normalizada por el contenedor (servlet path + path info). No se
+     * usa {@code getRequestURI()} porque llega sin decodificar: {@code /api/auth/%6Cogin}
+     * no coincidiría con {@code /api/auth/login}, pero Spring MVC sí la atiende como login,
+     * y así se podría saltar el límite.
+     */
+    private static String pathOf(HttpServletRequest request) {
+        String pathInfo = request.getPathInfo();
+        return request.getServletPath() + (pathInfo == null ? "" : pathInfo);
+    }
+
     private void removeExpired(Instant now, Duration length) {
         windows.values().removeIf(window -> !now.isBefore(window.start().plus(length)));
     }
