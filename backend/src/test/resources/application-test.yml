@@ -11,3 +11,9 @@ sierap:
   # Las entregas de las pruebas van a una carpeta temporal.
   storage:
     base-path: ${java.io.tmpdir}/sierap-test-files
+  # El programador no corre en las pruebas de integración: nada envía ni encola solo.
+  mail:
+    outbox:
+      enabled: false
+  reminders:
+    enabled: false
