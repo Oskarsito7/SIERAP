@@ -357,6 +357,10 @@ value, so it does not contradict ADR-010. Each operation validates status and da
 submitting only in `LAUNCHED` and within the submission window). What happens when
 launching with groups below the minimum number of members is still pending.
 
+> **Note (2026-11-22):** ADR-023 adds a narrow exception: an admin can extend the end
+> dates of a launched moment (only to widen them, up to the UPC deadline, with a reason
+> and a trace in the audit log). The configuration stays locked.
+
 ---
 
 ## ADR-013 — Scores as `BigDecimal`
@@ -814,6 +818,57 @@ framework such as Quartz/ShedLock (too heavy for a single-instance deployment); 
 ~15 s late) and survives SMTP outages and restarts; with several backend instances the
 dispatcher would need row locking (`SELECT … FOR UPDATE SKIP LOCKED`) or a lock like
 ShedLock — not needed today. Emails stuck in `FAILED` stay in the table for inspection.
+
+---
+
+## ADR-023 — Audit log and exceptional extension of a launched moment
+
+**Date:** 2026-11-22.
+**Status:** Accepted (approved by the project lead).
+
+**Context:** sensitive operations (changing an email, deactivating an account, launching
+a moment, correcting a submitted evaluation, removing an evaluator...) left no trace of
+who did them or when, which makes disputes and audits hard. Separately, ADR-012 locks a
+launched moment, but real life needs it: a strike or a platform outage can force the
+submission or grading dates to move after the launch.
+
+**Decision:**
+
+- **Immutable audit log** (`audit_log`, entity `AuditLog`, migration V13): id, created_at,
+  actor (id and a copy of the name), `action` (enum `AuditAction`), entity type and id,
+  `faculty_id`, a short Spanish `summary` and the request IP. A PostgreSQL trigger
+  rejects `UPDATE` and `DELETE`, and there are no edit or delete endpoints.
+- `AuditService.record(...)` takes the authenticated actor and the IP when they exist and
+  writes in the **same transaction** as the audited operation (`Propagation.MANDATORY`):
+  if the operation rolls back, no record remains. Events: account creation, edition (which
+  fields; old and new email), activation and deactivation, bulk semester, CSV import (one
+  event with the count), registration code deactivation, moment launch and extension, global
+  parameter creation or change (old and new value), correction of an already submitted
+  evaluation, group deletion, member removal, and external evaluator assignment and removal.
+  The identity document number is never written in a summary (only that it changed).
+- **Query:** `GET /api/audit-log` (filters by action, date range and text; paginated).
+  The super_admin sees everything; an admin only the records of their faculty
+  (`faculty_id`). Events with no faculty (global parameters) are for the super_admin.
+- **Exceptional extension:** `PATCH /api/moments/{id}/extension` lets the admin of the
+  faculty (or the super_admin) widen `submissionEnd` and/or `gradingEnd` of a `LAUNCHED`
+  moment with a mandatory reason. Dates can only grow, the grading end cannot pass the
+  period's `upcEvaluationDeadline`, and the order between windows still holds: if the new
+  submission end reaches the grading start, the grading start moves to the next day, and if
+  that leaves the window inverted the request is rejected asking to extend the grading end
+  too. Every extension is audited with the old and new dates and the reason.
+
+**Alternatives considered:** auditing with a generic JPA listener or AOP (it hides what is
+recorded and the summaries would not be readable); writing the log asynchronously (it could
+lose records or record operations that rolled back); a PostgreSQL rule instead of a trigger
+(a rule silently ignores the change, the trigger fails loudly); letting the admin edit the
+dates of a launched moment freely (it breaks the guarantee of ADR-012).
+
+**Consequences:** this is a **bounded exception to ADR-012**: only the two end dates of a
+launched moment can change, only to widen them, and always leaving a trace; the rubric,
+weights and groups stay locked. Services that audit now depend on `AuditService`. Reading
+the actor name costs one query per record. The IP is the one the servlet container sees
+(`getRemoteAddr`); behind a reverse proxy it needs forwarded-header support in the
+deployment.
 
 ---
 
