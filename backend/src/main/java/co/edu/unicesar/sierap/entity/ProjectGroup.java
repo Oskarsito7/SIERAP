@@ -348,6 +348,20 @@ public class ProjectGroup {
     }
 
     /**
+     * Puntaje consolidado de un integrante en un criterio, con sus ajustes: la misma
+     * fórmula que {@link #getIndividualScoreFor(LearningOutcome, Student)} aplicada a un
+     * solo criterio. Cada criterio se redondea por separado, así que la suma de los
+     * criterios de un RAP puede diferir en 0,01 del puntaje del RAP.
+     *
+     * @param criterion criterio del momento
+     * @param student   integrante del grupo
+     * @return el puntaje con 2 decimales, o vacío si ninguna evaluación enviada cuenta
+     */
+    public Optional<BigDecimal> getIndividualScoreFor(EvaluationCriterion criterion, Student student) {
+        return weightedGrade(evaluation -> evaluation.getScoreFor(criterion, student));
+    }
+
+    /**
      * Aplica la fórmula de {@link GradeCalculator} a las evaluaciones enviadas: el
      * puntaje de cada una con el tipo de su evaluador y los pesos del momento.
      */

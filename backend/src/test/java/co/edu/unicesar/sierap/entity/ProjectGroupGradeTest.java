@@ -96,6 +96,46 @@ class ProjectGroupGradeTest {
         assertThat(group.getGroupGrade()).hasValueSatisfying(grade -> assertThat(grade).isEqualByComparingTo("3.00"));
     }
 
+    @Test
+    void theScorePerCriterionWeightsTheKindsAndUsesTheStudentAdjustment() {
+        Evaluation byTeacher = evaluation(teacher, "1.00", "2.00");
+        byTeacher.adjust(ana, level(secondCriterion, "0.50"));
+        byTeacher.submit();
+        evaluation(externalEvaluator(businessType), "0.00", "2.00").submit();
+
+        // Sin ajuste (Beto): 0,75 × 1,00 + 0,25 × 0,00 = 0,75 y 0,75 × 2,00 + 0,25 × 2,00 = 2,00
+        assertThat(group.getIndividualScoreFor(firstCriterion, beto))
+                .hasValueSatisfying(score -> assertThat(score).isEqualByComparingTo("0.75"));
+        assertThat(group.getIndividualScoreFor(secondCriterion, beto))
+                .hasValueSatisfying(score -> assertThat(score).isEqualByComparingTo("2.00"));
+        // Con ajuste (Ana) en el segundo criterio: 0,75 × 0,50 + 0,25 × 2,00 = 0,875 → 0,88
+        assertThat(group.getIndividualScoreFor(firstCriterion, ana))
+                .hasValueSatisfying(score -> assertThat(score).isEqualByComparingTo("0.75"));
+        assertThat(group.getIndividualScoreFor(secondCriterion, ana))
+                .hasValueSatisfying(score -> assertThat(score).isEqualByComparingTo("0.88"));
+    }
+
+    @Test
+    void theScorePerCriterionIsEmptyWithoutSubmittedEvaluations() {
+        evaluation(teacher, "1.00", "2.00");
+
+        assertThat(group.getIndividualScoreFor(firstCriterion, ana)).isEmpty();
+    }
+
+    @Test
+    void theCriteriaAddUpToTheOutcomeScoreWhenNothingIsRounded() {
+        evaluation(teacher, "1.00", "2.00").submit();
+        evaluation(externalEvaluator(businessType), "0.00", "2.00").submit();
+
+        BigDecimal criteriaSum = group.getIndividualScoreFor(firstCriterion, ana).orElseThrow()
+                .add(group.getIndividualScoreFor(secondCriterion, ana).orElseThrow());
+        BigDecimal outcomesSum = group.getIndividualScoreFor(rap1, ana).orElseThrow()
+                .add(group.getIndividualScoreFor(rap2, ana).orElseThrow());
+        assertThat(criteriaSum).isEqualByComparingTo(outcomesSum);
+        assertThat(group.getIndividualScoreFor(firstCriterion, ana).orElseThrow())
+                .isEqualByComparingTo(group.getIndividualScoreFor(rap1, ana).orElseThrow());
+    }
+
     /** Evaluación en borrador del evaluador, con el nivel de puntaje dado en cada criterio. */
     private Evaluation evaluation(User evaluator, String firstScore, String secondScore) {
         Evaluation evaluation = new Evaluation(evaluator, NOW);

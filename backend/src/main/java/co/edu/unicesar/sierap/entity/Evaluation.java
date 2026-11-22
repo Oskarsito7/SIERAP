@@ -258,6 +258,19 @@ public class Evaluation {
     }
 
     /**
+     * Puntaje de un estudiante en un solo criterio: el de su ajuste si lo tiene o el del
+     * grupo si no (misma regla que {@link #getScoreFor(LearningOutcome, Student)}). Es
+     * el puntaje consolidado de esta evaluación; nunca expone el nivel elegido.
+     *
+     * @param criterion criterio a consultar
+     * @param student   integrante del grupo
+     * @return el puntaje que le corresponde; cero si el criterio no está calificado
+     */
+    public BigDecimal getScoreFor(EvaluationCriterion criterion, Student student) {
+        return criterionScore(findAdjustment(student, criterion), findGrade(criterion));
+    }
+
+    /**
      * Suma, criterio por criterio, el puntaje del ajuste del estudiante si lo tiene o
      * el del grupo si no; con {@code outcome} solo cuenta los criterios de ese RAP. Un
      * ajuste en un criterio que el grupo aún no tiene calificado (borrador) también
@@ -267,11 +280,11 @@ public class Evaluation {
         List<IndividualGrade> adjustments = getAdjustmentsFor(student);
         BigDecimal groupPart = grades.stream()
                 .filter(grade -> outcome == null || sameOutcome(grade.getCriterion().getLearningOutcome(), outcome))
-                .map(grade -> adjustments.stream()
-                        .filter(adjustment -> sameCriterion(adjustment.getCriterion(), grade.getCriterion()))
-                        .findFirst()
-                        .map(IndividualGrade::getScore)
-                        .orElse(grade.getScore()))
+                .map(grade -> criterionScore(
+                        adjustments.stream()
+                                .filter(adjustment -> sameCriterion(adjustment.getCriterion(), grade.getCriterion()))
+                                .findFirst(),
+                        Optional.of(grade)))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal adjustedOnly = adjustments.stream()
                 .filter(adjustment -> findGrade(adjustment.getCriterion()).isEmpty())
@@ -280,6 +293,13 @@ public class Evaluation {
                 .map(IndividualGrade::getScore)
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         return groupPart.add(adjustedOnly);
+    }
+
+    /** Regla común: el ajuste del estudiante manda; si no hay, el grupo; si tampoco, cero. */
+    private static BigDecimal criterionScore(Optional<IndividualGrade> adjustment, Optional<CriterionGrade> groupGrade) {
+        return adjustment.map(IndividualGrade::getScore)
+                .or(() -> groupGrade.map(CriterionGrade::getScore))
+                .orElse(BigDecimal.ZERO);
     }
 
     private Optional<CriterionGrade> findGrade(EvaluationCriterion criterion) {

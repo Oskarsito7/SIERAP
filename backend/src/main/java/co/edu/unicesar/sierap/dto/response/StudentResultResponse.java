@@ -42,9 +42,24 @@ public record StudentResultResponse(
      * @param description enunciado del RAP
      * @param score       su puntaje; {@code null} si no hay evaluaciones enviadas que cuenten
      * @param maxScore    puntaje máximo del RAP
+     * @param criteria    su puntaje consolidado en cada criterio del RAP, por orden de aparición
      */
     public record StudentOutcomeScoreResponse(String code, String description, BigDecimal score,
-                                              BigDecimal maxScore) {
+                                              BigDecimal maxScore, List<StudentCriterionScoreResponse> criteria) {
+    }
+
+    /**
+     * Puntaje consolidado del estudiante en un criterio: el que cuenta en su nota, con el
+     * mismo cálculo del RAP (promedio por tipo de evaluador, ponderado, con sus ajustes).
+     * Nunca se exponen los niveles que eligió cada evaluador ni quién eligió qué. Como
+     * cada criterio se redondea a 2 decimales por separado, la suma de los criterios
+     * puede diferir en 0,01 del puntaje del RAP.
+     *
+     * @param description enunciado del criterio
+     * @param score       su puntaje; {@code null} si no hay evaluaciones enviadas que cuenten
+     * @param maxScore    puntaje máximo del criterio
+     */
+    public record StudentCriterionScoreResponse(String description, BigDecimal score, BigDecimal maxScore) {
     }
 
     /**
