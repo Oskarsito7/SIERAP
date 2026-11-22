@@ -51,6 +51,17 @@ public interface AccountService {
     StudentResponse createStudent(AuthenticatedUser actor, NewStudentRequest request);
 
     /**
+     * Crea un estudiante como parte de una importación CSV: igual que
+     * {@link #createStudent}, pero sin registrar un evento por cada fila (la importación
+     * deja un único evento con la cantidad, ADR-023).
+     *
+     * @param actor   usuario que importa
+     * @param request datos del estudiante
+     * @return estudiante creado
+     */
+    StudentResponse createImportedStudent(AuthenticatedUser actor, NewStudentRequest request);
+
+    /**
      * Crea un evaluador externo de un tipo activo del catálogo.
      *
      * @param actor   usuario que crea la cuenta

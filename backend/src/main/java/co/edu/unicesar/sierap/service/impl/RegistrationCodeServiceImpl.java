@@ -15,6 +15,7 @@ import co.edu.unicesar.sierap.entity.Program;
 import co.edu.unicesar.sierap.entity.RegistrationCode;
 import co.edu.unicesar.sierap.entity.Teacher;
 import co.edu.unicesar.sierap.entity.User;
+import co.edu.unicesar.sierap.entity.enums.AuditAction;
 import co.edu.unicesar.sierap.exception.BusinessRuleException;
 import co.edu.unicesar.sierap.exception.ForbiddenAccessException;
 import co.edu.unicesar.sierap.exception.ResourceNotFoundException;
@@ -24,6 +25,7 @@ import co.edu.unicesar.sierap.repository.RegistrationCodeRepository;
 import co.edu.unicesar.sierap.repository.StudentRepository;
 import co.edu.unicesar.sierap.repository.TeacherRepository;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
+import co.edu.unicesar.sierap.service.AuditService;
 import co.edu.unicesar.sierap.service.RegistrationCodeService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -49,6 +51,7 @@ public class RegistrationCodeServiceImpl implements RegistrationCodeService {
     private final ProgramRepository programRepository;
     private final StudentRepository studentRepository;
     private final AccessScope accessScope;
+    private final AuditService auditService;
     private final Clock clock;
 
     /**
@@ -59,16 +62,19 @@ public class RegistrationCodeServiceImpl implements RegistrationCodeService {
      * @param programRepository          repositorio de programas
      * @param studentRepository          repositorio de estudiantes (para contar registros)
      * @param accessScope                reglas de alcance
+     * @param auditService               bitácora de auditoría
      * @param clock                      reloj de la aplicación
      */
     public RegistrationCodeServiceImpl(RegistrationCodeRepository registrationCodeRepository,
                                        TeacherRepository teacherRepository, ProgramRepository programRepository,
-                                       StudentRepository studentRepository, AccessScope accessScope, Clock clock) {
+                                       StudentRepository studentRepository, AccessScope accessScope,
+                                       AuditService auditService, Clock clock) {
         this.registrationCodeRepository = registrationCodeRepository;
         this.teacherRepository = teacherRepository;
         this.programRepository = programRepository;
         this.studentRepository = studentRepository;
         this.accessScope = accessScope;
+        this.auditService = auditService;
         this.clock = clock;
     }
 
@@ -120,8 +126,11 @@ public class RegistrationCodeServiceImpl implements RegistrationCodeService {
             if (!code.isActive()) {
                 throw new BusinessRuleException("Un código desactivado no se puede reactivar; genere uno nuevo.");
             }
-        } else {
+        } else if (code.isActive()) {
             code.deactivate();
+            auditService.record(AuditAction.REGISTRATION_CODE_DEACTIVATED, "RegistrationCode", code.getId(),
+                    code.getTeacher().getFaculty().getId(), "Desactivó el código de registro " + code.getCode()
+                            + " del docente " + code.getTeacher().getFullName() + ".");
         }
         return toResponse(code);
     }

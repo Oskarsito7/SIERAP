@@ -24,6 +24,7 @@ import co.edu.unicesar.sierap.entity.Student;
 import co.edu.unicesar.sierap.entity.SuperAdmin;
 import co.edu.unicesar.sierap.entity.Teacher;
 import co.edu.unicesar.sierap.entity.User;
+import co.edu.unicesar.sierap.entity.enums.AuditAction;
 import co.edu.unicesar.sierap.entity.enums.EvaluationStatus;
 import co.edu.unicesar.sierap.entity.enums.MomentStatus;
 import co.edu.unicesar.sierap.exception.BusinessRuleException;
@@ -38,6 +39,7 @@ import co.edu.unicesar.sierap.repository.ProjectGroupRepository;
 import co.edu.unicesar.sierap.repository.StudentRepository;
 import co.edu.unicesar.sierap.repository.TeacherRepository;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
+import co.edu.unicesar.sierap.service.AuditService;
 import co.edu.unicesar.sierap.service.GroupService;
 import co.edu.unicesar.sierap.service.NotificationService;
 import org.springframework.stereotype.Service;
@@ -64,6 +66,7 @@ public class GroupServiceImpl implements GroupService {
     private final EvaluationRepository evaluationRepository;
     private final AccessScope accessScope;
     private final NotificationService notificationService;
+    private final AuditService auditService;
     private final Clock clock;
 
     /**
@@ -77,13 +80,15 @@ public class GroupServiceImpl implements GroupService {
      * @param evaluationRepository        evaluaciones
      * @param accessScope                 reglas de alcance de las cuentas
      * @param notificationService         avisos por correo
+     * @param auditService                bitácora de auditoría
      * @param clock                       reloj de la aplicación
      */
     public GroupServiceImpl(ProjectGroupRepository projectGroupRepository, MomentRepository momentRepository,
                             StudentRepository studentRepository, TeacherRepository teacherRepository,
                             ExternalEvaluatorRepository externalEvaluatorRepository,
                             EvaluationRepository evaluationRepository, AccessScope accessScope,
-                            NotificationService notificationService, Clock clock) {
+                            NotificationService notificationService, AuditService auditService,
+                            Clock clock) {
         this.projectGroupRepository = projectGroupRepository;
         this.momentRepository = momentRepository;
         this.studentRepository = studentRepository;
@@ -92,6 +97,7 @@ public class GroupServiceImpl implements GroupService {
         this.evaluationRepository = evaluationRepository;
         this.accessScope = accessScope;
         this.notificationService = notificationService;
+        this.auditService = auditService;
         this.clock = clock;
     }
 
@@ -195,6 +201,9 @@ public class GroupServiceImpl implements GroupService {
         }
         requireGroupFormationOpen(group.getMoment(), today());
         group.removeMember(student);
+        auditService.record(AuditAction.GROUP_MEMBER_REMOVED, "ProjectGroup", group.getId(),
+                facultyOf(group.getMoment()),
+                "Retiró a " + student.getFullName() + " del grupo " + describe(group) + ".");
     }
 
     @Override
@@ -246,6 +255,8 @@ public class GroupServiceImpl implements GroupService {
         if (!group.getMembers().isEmpty()) {
             throw new BusinessRuleException("El grupo tiene integrantes: retírelos antes de eliminarlo.");
         }
+        auditService.record(AuditAction.GROUP_DELETED, "ProjectGroup", group.getId(),
+                facultyOf(group.getMoment()), "Eliminó el grupo " + describe(group) + ".");
         projectGroupRepository.delete(group);
     }
 
@@ -383,6 +394,9 @@ public class GroupServiceImpl implements GroupService {
         }
         group.addEvaluator(evaluator);
         notificationService.notifyEvaluatorAssigned(evaluator, group);
+        auditService.record(AuditAction.GROUP_EVALUATOR_ASSIGNED, "ProjectGroup", group.getId(),
+                facultyOf(group.getMoment()),
+                "Asignó al evaluador externo " + evaluator.getFullName() + " al grupo " + describe(group) + ".");
         return GroupMapper.toResponse(group, teacher);
     }
 
@@ -400,6 +414,14 @@ public class GroupServiceImpl implements GroupService {
                     "El evaluador ya empezó a calificar este grupo: no se puede retirar.");
         }
         group.removeEvaluator(evaluator);
+        auditService.record(AuditAction.GROUP_EVALUATOR_REMOVED, "ProjectGroup", group.getId(),
+                facultyOf(group.getMoment()),
+                "Retiró al evaluador externo " + evaluator.getFullName() + " del grupo " + describe(group) + ".");
+    }
+
+    /** Grupo y momento para la bitácora: "Grupo A (Momento 1)". */
+    private static String describe(ProjectGroup group) {
+        return group.getName() + " (" + group.getMoment().getName() + ")";
     }
 
     // ---------------------------------------------------------------- reglas comunes

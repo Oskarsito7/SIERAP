@@ -15,11 +15,13 @@ import co.edu.unicesar.sierap.dto.response.StudentImportResultResponse;
 import co.edu.unicesar.sierap.dto.response.StudentImportResultResponse.RowError;
 import co.edu.unicesar.sierap.dto.response.StudentImportRowResponse;
 import co.edu.unicesar.sierap.entity.Program;
+import co.edu.unicesar.sierap.entity.enums.AuditAction;
 import co.edu.unicesar.sierap.exception.BusinessRuleException;
 import co.edu.unicesar.sierap.exception.ResourceNotFoundException;
 import co.edu.unicesar.sierap.repository.ProgramRepository;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
 import co.edu.unicesar.sierap.service.AccountService;
+import co.edu.unicesar.sierap.service.AuditService;
 import co.edu.unicesar.sierap.service.StudentImportService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,7 +30,7 @@ import org.springframework.web.multipart.MultipartFile;
 /**
  * Implementación de {@link StudentImportService}: lee el CSV con {@link StudentCsvParser},
  * valida con {@link StudentImportValidator} y crea cada estudiante por el mismo camino
- * que {@code POST /api/students} ({@link AccountService#createStudent}), de modo que
+ * que {@code POST /api/students} ({@link AccountService#createImportedStudent}), de modo que
  * reutiliza el alcance, las validaciones y el envío del enlace de contraseña.
  */
 @Service
@@ -42,6 +44,7 @@ public class StudentImportServiceImpl implements StudentImportService {
     private final AccessScope accessScope;
     private final StudentImportValidator validator;
     private final AccountService accountService;
+    private final AuditService auditService;
 
     /**
      * Crea el servicio.
@@ -50,13 +53,16 @@ public class StudentImportServiceImpl implements StudentImportService {
      * @param accessScope       reglas de alcance
      * @param validator         validador de filas
      * @param accountService    servicio de cuentas, por donde se crea cada estudiante
+     * @param auditService      bitácora de auditoría (un evento por importación)
      */
     StudentImportServiceImpl(ProgramRepository programRepository, AccessScope accessScope,
-                             StudentImportValidator validator, AccountService accountService) {
+                             StudentImportValidator validator, AccountService accountService,
+                             AuditService auditService) {
         this.programRepository = programRepository;
         this.accessScope = accessScope;
         this.validator = validator;
         this.accountService = accountService;
+        this.auditService = auditService;
     }
 
     @Override
@@ -70,7 +76,7 @@ public class StudentImportServiceImpl implements StudentImportService {
 
     @Override
     public StudentImportResultResponse importStudents(AuthenticatedUser actor, Long programId, MultipartFile file) {
-        requireScope(actor, programId);
+        Program program = requireScope(actor, programId);
         List<StudentImportRowResponse> rows = readAndValidate(file);
         int created = 0;
         List<RowError> errors = new ArrayList<>();
@@ -79,18 +85,24 @@ public class StudentImportServiceImpl implements StudentImportService {
                 errors.add(new RowError(row.row(), String.join(" ", row.errors())));
                 continue;
             }
-            accountService.createStudent(actor, new NewStudentRequest(row.firstNames(), row.lastNames(),
+            accountService.createImportedStudent(actor, new NewStudentRequest(row.firstNames(), row.lastNames(),
                     StudentImportValidator.parseDocumentType(row.documentType()), row.documentNumber(),
                     row.email(), programId, row.studentCode(), Integer.valueOf(row.currentSemester())));
             created++;
         }
+        if (created > 0) {
+            auditService.record(AuditAction.ACCOUNTS_IMPORTED, "Program", programId, program.getFaculty().getId(),
+                    "Importó " + created + (created == 1 ? " estudiante" : " estudiantes") + " al programa "
+                            + program.getName() + " desde un archivo CSV.");
+        }
         return new StudentImportResultResponse(created, errors);
     }
 
-    private void requireScope(AuthenticatedUser actor, Long programId) {
+    private Program requireScope(AuthenticatedUser actor, Long programId) {
         Program program = programRepository.findById(programId)
                 .orElseThrow(() -> new ResourceNotFoundException("Programa", programId));
         accessScope.requireFaculty(accessScope.loadActor(actor), program.getFaculty().getId());
+        return program;
     }
 
     private List<StudentImportRowResponse> readAndValidate(MultipartFile file) {
