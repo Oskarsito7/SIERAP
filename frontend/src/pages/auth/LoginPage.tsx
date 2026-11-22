@@ -70,10 +70,10 @@ export function LoginPage() {
             {submitting ? 'Ingresando…' : 'Ingresar'}
           </Button>
           <div className="flex flex-col gap-1 text-sm">
-            <Link to="/forgot-password" className="text-primary underline-offset-4 hover:underline">
+            <Link to="/forgot-password" className="text-link hover:text-link-hover underline-offset-4 hover:underline">
               ¿Olvidaste tu contraseña?
             </Link>
-            <Link to="/register" className="text-primary underline-offset-4 hover:underline">
+            <Link to="/register" className="text-link hover:text-link-hover underline-offset-4 hover:underline">
               Soy estudiante y tengo un código de registro
             </Link>
           </div>

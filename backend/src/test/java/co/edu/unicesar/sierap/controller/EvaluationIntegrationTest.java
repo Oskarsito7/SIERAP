@@ -334,6 +334,35 @@ class EvaluationIntegrationTest {
                 .andExpect(jsonPath("$.message").value("El momento todavía no se ha lanzado: aún no se puede calificar."));
     }
 
+    /**
+     * Auditoría de seguridad: si el docente fijó la fecha de evaluación y después el
+     * admin movió la ventana de calificación más tarde, manda la ventana del momento.
+     */
+    @Test
+    void aGroupDateLeftBeforeAMovedWindowDoesNotOpenGradingEarly() throws Exception {
+        Moment moved = new Moment(launched.getPeriod(), 4, "Momento 4", "Asignatura 4", 1, 3, "Bajo", 2, 4);
+        setWindows(moved, LocalDate.of(2026, 8, 3), LocalDate.of(2026, 8, 10), LocalDate.of(2026, 8, 11),
+                LocalDate.of(2026, 11, 11), LocalDate.of(2026, 11, 12), LocalDate.of(2026, 11, 20));
+        moved.addLearningOutcome(outcome("RAP1", "Problema", "1.00"));
+        moved.launch();
+        launched.getProgram().addMoment(moved);
+        // El programa ya está gestionado: al sincronizar, la cascada guarda esta misma instancia.
+        facultyRepository.flush();
+        EvaluationCriterion criterion = moved.getLearningOutcomes().get(0).getCriteria().get(0);
+        ProjectGroup stale = new ProjectGroup(moved, teacher, "Fecha vieja");
+        stale.addMember(ana);
+        // Fecha fijada cuando la ventana empezaba antes: hoy (10 de noviembre) ya pasó.
+        stale.setEvaluationDate(LocalDate.of(2026, 11, 8));
+        stale = projectGroupRepository.saveAndFlush(stale);
+
+        perform(put(evaluationPath(stale)), teacherToken, Map.of("levels", List.of(level(criterion, "Alto"))))
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("La ventana de calificación abre el 2026-11-12."));
+        submitFor(stale)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("La ventana de calificación abre el 2026-11-12."));
+    }
+
     // ------------------------------------------------------------ lista de evaluaciones
 
     @Test
@@ -368,6 +397,37 @@ class EvaluationIntegrationTest {
                             .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(outsider))))
                     .andExpect(status().isForbidden());
         }
+    }
+
+    @Test
+    void eachEvaluatorListsTheirOwnEvaluationsOfEveryGroupInOneRequest() throws Exception {
+        String evaluatorToken = loginToken(evaluator);
+        mockMvc.perform(get("/api/evaluations/mine").header(HttpHeaders.AUTHORIZATION, bearer(evaluatorToken)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", empty()));
+
+        save(evaluatorToken, Map.of("levels", List.of(level(problem, "Bajo")))).andExpect(status().isOk());
+        save(teacherToken, Map.of("levels", List.of(level(problem, "Alto"), level(defense, "Alto"))));
+        submit(teacherToken).andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/evaluations/mine").header(HttpHeaders.AUTHORIZATION, bearer(evaluatorToken)))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].groupId").value(group.getId()))
+                .andExpect(jsonPath("$[0].evaluator.kind").value("Empresario"))
+                .andExpect(jsonPath("$[0].status").value("DRAFT"));
+        mockMvc.perform(get("/api/evaluations/mine").header(HttpHeaders.AUTHORIZATION, bearer(teacherToken)))
+                .andExpect(jsonPath("$[*].groupId", contains(group.getId().intValue())))
+                .andExpect(jsonPath("$[0].status").value("SUBMITTED"));
+
+        // Si el docente lo retira del grupo, su evaluación deja de aparecer.
+        ProjectGroup reloaded = projectGroupRepository.findById(group.getId()).orElseThrow();
+        reloaded.removeEvaluator(evaluator);
+        projectGroupRepository.saveAndFlush(reloaded);
+        mockMvc.perform(get("/api/evaluations/mine").header(HttpHeaders.AUTHORIZATION, bearer(evaluatorToken)))
+                .andExpect(jsonPath("$", empty()));
+
+        mockMvc.perform(get("/api/evaluations/mine").header(HttpHeaders.AUTHORIZATION, bearer(loginToken(ana))))
+                .andExpect(status().isForbidden());
     }
 
     // ------------------------------------------------------------ utilidades

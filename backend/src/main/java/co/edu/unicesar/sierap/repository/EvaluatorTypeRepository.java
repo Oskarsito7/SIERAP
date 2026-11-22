@@ -25,4 +25,21 @@ public interface EvaluatorTypeRepository extends JpaRepository<EvaluatorType, Lo
      * @return tipos activos del catálogo
      */
     List<EvaluatorType> findByActiveTrueOrderByNameAsc();
+
+    /**
+     * Indica si ya existe un tipo de evaluador con ese nombre (sin distinguir mayúsculas).
+     *
+     * @param name nombre visible
+     * @return {@code true} si el nombre está en uso
+     */
+    boolean existsByNameIgnoreCase(String name);
+
+    /**
+     * Indica si otro tipo de evaluador distinto ya usa ese nombre (sin distinguir mayúsculas).
+     *
+     * @param name nombre visible
+     * @param id   identificador del tipo a excluir
+     * @return {@code true} si otro tipo usa ese nombre
+     */
+    boolean existsByNameIgnoreCaseAndIdNot(String name, Long id);
 }

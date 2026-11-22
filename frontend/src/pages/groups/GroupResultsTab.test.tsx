@@ -8,10 +8,10 @@ import type { GroupResults } from '@/types/results'
 import { GroupResultsTab } from './GroupResultsTab'
 import { momentFixture } from './testData'
 
-vi.mock('@/services/api/resultsService', () => ({ resultsService: { group: vi.fn() }, RESULTS_API_READY: true }))
+vi.mock('@/services/api/resultsService', () => ({ resultsService: { group: vi.fn() } }))
 vi.mock('@/services/api/evaluationService', () => ({ evaluationService: { list: vi.fn() } }))
 
-const outcomes = (first: number, second: number) => [
+const outcomes = (first: number | null, second: number | null) => [
   { id: 10, code: 'RAP1', score: first, maxScore: 1 },
   { id: 11, code: 'RAP2', score: second, maxScore: 2 },
 ]
@@ -37,9 +37,9 @@ describe('GroupResultsTab', () => {
   beforeEach(() => {
     vi.mocked(resultsService.group).mockReset()
     vi.mocked(evaluationService.list).mockResolvedValue([
-      { id: 1, evaluator: { id: 12, fullName: 'Marta Díaz', kind: 'Docente' }, status: 'SUBMITTED',
+      { id: 1, groupId: 7, evaluator: { id: 12, fullName: 'Marta Díaz', kind: 'Docente' }, status: 'SUBMITTED',
         evaluatedAt: '2026-11-24T10:00:00', totalScore: 2.5, comment: null },
-      { id: 2, evaluator: { id: 70, fullName: 'Carlos Pérez', kind: 'Egresado' }, status: 'DRAFT',
+      { id: 2, groupId: 7, evaluator: { id: 70, fullName: 'Carlos Pérez', kind: 'Egresado' }, status: 'DRAFT',
         evaluatedAt: '2026-11-24T11:00:00', totalScore: 1, comment: null },
     ])
   })
@@ -67,14 +67,18 @@ describe('GroupResultsTab', () => {
     vi.mocked(resultsService.group).mockResolvedValue(resultsFixture({
       final: true,
       groupGrade: null,
+      groupLearningOutcomes: outcomes(null, null),
       submittedEvaluations: 0,
-      members: [{ studentId: 50, fullName: 'Ana Gómez', individualGrade: null, learningOutcomes: outcomes(0, 0) }],
+      members: [
+        { studentId: 50, fullName: 'Ana Gómez', individualGrade: null, learningOutcomes: outcomes(null, null) },
+      ],
     }))
     render(<GroupResultsTab groupId={7} moment={momentFixture()} />)
 
     expect(await screen.findByText('Notas definitivas')).toBeInTheDocument()
     expect(screen.getByLabelText('Nota grupal')).toHaveTextContent('—')
     expect(screen.getByText('Todavía no hay evaluaciones enviadas.')).toBeInTheDocument()
+    expect(screen.getByText('— / 1,00')).toBeInTheDocument()
     expect(within(screen.getByRole('row', { name: /Ana Gómez/ })).getAllByText('—')).toHaveLength(3)
   })
 })

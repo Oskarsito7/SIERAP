@@ -20,7 +20,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.mock.env.MockEnvironment;
 
 /**
  * Pruebas unitarias de {@link SystemStatusServiceImpl}, con la base de datos
@@ -39,15 +38,11 @@ class SystemStatusServiceImplTest {
     @Mock
     private Connection connection;
 
-    private MockEnvironment environment;
-
     private SystemStatusServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        environment = new MockEnvironment();
-        environment.setActiveProfiles("prod");
-        service = new SystemStatusServiceImpl(dataSource, FIXED_CLOCK, environment, "sierap", "0.1.0");
+        service = new SystemStatusServiceImpl(dataSource, FIXED_CLOCK, "sierap", "0.1.0");
     }
 
     @Test
@@ -60,18 +55,8 @@ class SystemStatusServiceImplTest {
         assertThat(status.databaseAvailable()).isTrue();
         assertThat(status.application()).isEqualTo("sierap");
         assertThat(status.version()).isEqualTo("0.1.0");
-        assertThat(status.profiles()).containsExactly("prod");
         assertThat(status.timestamp()).isEqualTo(LocalDateTime.of(2026, 3, 15, 9, 30));
         verify(connection).close();
-    }
-
-    @Test
-    void reportsTheDefaultProfilesWhenNoProfileIsActive() throws SQLException {
-        when(dataSource.getConnection()).thenReturn(connection);
-        environment.setActiveProfiles();
-        environment.setDefaultProfiles("dev");
-
-        assertThat(service.getStatus().profiles()).containsExactly("dev");
     }
 
     @Test

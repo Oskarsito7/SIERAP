@@ -21,7 +21,6 @@ describe('HomePage', () => {
     getStatus.mockResolvedValue({
       application: 'sierap',
       version: '0.1.0',
-      profiles: ['dev'],
       databaseAvailable: true,
       timestamp: '2026-03-15T09:30:00',
     })
@@ -31,7 +30,7 @@ describe('HomePage', () => {
     expect(await screen.findByText('API conectada')).toBeInTheDocument()
     expect(screen.getByText('Base de datos disponible')).toBeInTheDocument()
     expect(screen.getByText('0.1.0')).toBeInTheDocument()
-    expect(screen.getByText('dev')).toBeInTheDocument()
+    expect(screen.queryByText('Perfil')).not.toBeInTheDocument()
   })
 
   it('shows the error and allows retrying when the API does not respond', async () => {
@@ -39,7 +38,6 @@ describe('HomePage', () => {
     getStatus.mockResolvedValueOnce({
       application: 'sierap',
       version: '0.1.0',
-      profiles: ['dev'],
       databaseAvailable: false,
       timestamp: '2026-03-15T09:30:00',
     })

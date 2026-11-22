@@ -95,7 +95,7 @@ class JwtServiceTest {
     }
 
     private static AuthProperties properties(String secret) {
-        return new AuthProperties(secret, 15, 7, false, 72, 1, "http://localhost:5173", "unicesar.edu.co",
+        return new AuthProperties(secret, 15, 7, false, 72, 1, 5, "http://localhost:5173", "unicesar.edu.co",
                 "SIERAP <no-reply@unicesar.edu.co>");
     }
 }

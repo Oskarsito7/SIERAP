@@ -10,6 +10,7 @@ import co.edu.unicesar.sierap.dto.request.AddMemberRequest;
 import co.edu.unicesar.sierap.dto.request.AssignEvaluatorRequest;
 import co.edu.unicesar.sierap.dto.request.NewGroupRequest;
 import co.edu.unicesar.sierap.dto.request.ProjectTitleRequest;
+import co.edu.unicesar.sierap.dto.request.ReassignGroupRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateGroupRequest;
 import co.edu.unicesar.sierap.dto.response.GroupResponse;
 import co.edu.unicesar.sierap.dto.response.StudentWithoutGroupResponse;
@@ -35,6 +36,7 @@ import co.edu.unicesar.sierap.repository.ExternalEvaluatorRepository;
 import co.edu.unicesar.sierap.repository.MomentRepository;
 import co.edu.unicesar.sierap.repository.ProjectGroupRepository;
 import co.edu.unicesar.sierap.repository.StudentRepository;
+import co.edu.unicesar.sierap.repository.TeacherRepository;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
 import co.edu.unicesar.sierap.service.GroupService;
 import org.springframework.stereotype.Service;
@@ -56,6 +58,7 @@ public class GroupServiceImpl implements GroupService {
     private final ProjectGroupRepository projectGroupRepository;
     private final MomentRepository momentRepository;
     private final StudentRepository studentRepository;
+    private final TeacherRepository teacherRepository;
     private final ExternalEvaluatorRepository externalEvaluatorRepository;
     private final EvaluationRepository evaluationRepository;
     private final AccessScope accessScope;
@@ -67,18 +70,20 @@ public class GroupServiceImpl implements GroupService {
      * @param projectGroupRepository      grupos
      * @param momentRepository            momentos
      * @param studentRepository           estudiantes
+     * @param teacherRepository           docentes
      * @param externalEvaluatorRepository evaluadores externos
      * @param evaluationRepository        evaluaciones
      * @param accessScope                 reglas de alcance de las cuentas
      * @param clock                       reloj de la aplicación
      */
     public GroupServiceImpl(ProjectGroupRepository projectGroupRepository, MomentRepository momentRepository,
-                            StudentRepository studentRepository,
+                            StudentRepository studentRepository, TeacherRepository teacherRepository,
                             ExternalEvaluatorRepository externalEvaluatorRepository,
                             EvaluationRepository evaluationRepository, AccessScope accessScope, Clock clock) {
         this.projectGroupRepository = projectGroupRepository;
         this.momentRepository = momentRepository;
         this.studentRepository = studentRepository;
+        this.teacherRepository = teacherRepository;
         this.externalEvaluatorRepository = externalEvaluatorRepository;
         this.evaluationRepository = evaluationRepository;
         this.accessScope = accessScope;
@@ -150,10 +155,13 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public GroupResponse join(AuthenticatedUser actor, Long id) {
         Student student = requireStudent(accessScope.loadActor(actor));
-        // Se bloquea la fila del grupo para que dos inscripciones simultáneas no pasen
-        // a la vez la validación del cupo.
+        // Se bloquea la fila del grupo para que dos inscripciones simultáneas no pasen a la
+        // vez la validación del cupo, y después la del estudiante para que dos solicitudes
+        // suyas a grupos distintos no lo dejen en dos grupos del mismo momento. El orden
+        // grupo → estudiante es el mismo en addMember y al guardar evaluaciones.
         ProjectGroup group = projectGroupRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Grupo", id));
+        lockStudent(student.getId());
         Moment moment = group.getMoment();
         if (!canAccessMoment(student, moment)) {
             throw new ForbiddenAccessException("No puede inscribirse en los grupos de este momento.");
@@ -270,14 +278,15 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public GroupResponse addMember(AuthenticatedUser actor, Long id, AddMemberRequest request) {
         Teacher teacher = requireTeacher(accessScope.loadActor(actor));
-        // Se bloquea la fila del grupo para que dos cambios simultáneos no se pisen.
+        // Se bloquea el grupo y después el estudiante (mismo orden que join): dos cambios
+        // simultáneos al grupo no se pisan, y dos docentes que agregan al mismo estudiante
+        // a grupos distintos quedan en fila.
         ProjectGroup group = projectGroupRepository.findByIdForUpdate(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Grupo", id));
         requireOwner(teacher, group);
         Moment moment = group.getMoment();
         requireGradingNotClosed(moment, today(), "agregar estudiantes");
-        Student student = studentRepository.findById(request.studentId())
-                .orElseThrow(() -> new ResourceNotFoundException("Estudiante", request.studentId()));
+        Student student = lockStudent(request.studentId());
         if (!Objects.equals(student.getProgram().getId(), moment.getProgram().getId())) {
             throw new BusinessRuleException("El estudiante no es del programa del momento.");
         }
@@ -290,9 +299,41 @@ public class GroupServiceImpl implements GroupService {
     }
 
     @Override
+    public GroupResponse reassignTeacher(AuthenticatedUser actor, Long id, ReassignGroupRequest request) {
+        User viewer = accessScope.loadActor(actor);
+        ProjectGroup group = projectGroupRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Grupo", id));
+        Moment moment = group.getMoment();
+        accessScope.requireFaculty(viewer, facultyOf(moment));
+        requireGradingNotClosed(moment, today(), "reasignar el grupo");
+        Teacher newTeacher = teacherRepository.findById(request.teacherId())
+                .orElseThrow(() -> new ResourceNotFoundException("Docente", request.teacherId()));
+        if (group.isEnabledBy(newTeacher)) {
+            throw new BusinessRuleException("El grupo ya es de " + newTeacher.getFullName() + ".");
+        }
+        if (!Objects.equals(newTeacher.getFaculty().getId(), facultyOf(moment))) {
+            throw new BusinessRuleException(newTeacher.getFullName() + " no es docente de la facultad del programa.");
+        }
+        if (!newTeacher.isActive()) {
+            throw new BusinessRuleException("La cuenta de " + newTeacher.getFullName() + " está desactivada.");
+        }
+        if (group.hasSubmittedTeacherEvaluation()) {
+            throw new BusinessRuleException(group.getTeacher().getFullName()
+                    + " ya envió su evaluación del grupo: no se puede reasignar.");
+        }
+        if (projectGroupRepository.existsByMomentIdAndTeacherIdAndNameIgnoreCase(moment.getId(),
+                newTeacher.getId(), group.getName())) {
+            throw new BusinessRuleException(newTeacher.getFullName() + " ya tiene un grupo llamado \""
+                    + group.getName() + "\" en este momento.");
+        }
+        group.reassignTo(newTeacher);
+        return GroupMapper.toResponse(group, viewer);
+    }
+
+    @Override
     public void removeMember(AuthenticatedUser actor, Long id, Long studentId) {
         Teacher teacher = requireTeacher(accessScope.loadActor(actor));
-        ProjectGroup group = findOwnGroup(teacher, id);
+        ProjectGroup group = findOwnGroupForUpdate(teacher, id);
         Student student = group.getMembers().stream()
                 .filter(member -> Objects.equals(member.getId(), studentId))
                 .findFirst()
@@ -341,7 +382,7 @@ public class GroupServiceImpl implements GroupService {
     @Override
     public void removeEvaluator(AuthenticatedUser actor, Long id, Long evaluatorId) {
         Teacher teacher = requireTeacher(accessScope.loadActor(actor));
-        ProjectGroup group = findOwnGroup(teacher, id);
+        ProjectGroup group = findOwnGroupForUpdate(teacher, id);
         requireGradingNotClosed(group.getMoment(), today(), "retirar evaluadores");
         ExternalEvaluator evaluator = group.getEvaluators().stream()
                 .filter(assigned -> Objects.equals(assigned.getId(), evaluatorId))
@@ -426,6 +467,25 @@ public class GroupServiceImpl implements GroupService {
         ProjectGroup group = findGroup(id);
         requireOwner(teacher, group);
         return group;
+    }
+
+    /**
+     * Como {@link #findOwnGroup}, pero bloquea la fila del grupo. Lo usan las
+     * operaciones que validan que no haya evaluaciones (enviadas o iniciadas) antes de
+     * retirar a alguien: guardar y enviar una evaluación toman el mismo bloqueo, así que
+     * la validación nunca ve un estado que otra transacción está por cambiar.
+     */
+    private ProjectGroup findOwnGroupForUpdate(Teacher teacher, Long id) {
+        ProjectGroup group = projectGroupRepository.findByIdForUpdate(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Grupo", id));
+        requireOwner(teacher, group);
+        return group;
+    }
+
+    /** Carga al estudiante bloqueando su fila (ver {@link StudentRepository#findByIdForUpdate}). */
+    private Student lockStudent(Long studentId) {
+        return studentRepository.findByIdForUpdate(studentId)
+                .orElseThrow(() -> new ResourceNotFoundException("Estudiante", studentId));
     }
 
     private void requireOwner(Teacher teacher, ProjectGroup group) {

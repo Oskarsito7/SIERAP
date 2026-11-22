@@ -2,6 +2,7 @@ package co.edu.unicesar.sierap.service;
 
 import java.util.List;
 
+import co.edu.unicesar.sierap.dto.request.CopyMomentsRequest;
 import co.edu.unicesar.sierap.dto.request.LaunchMomentRequest;
 import co.edu.unicesar.sierap.dto.request.MomentWeightsRequest;
 import co.edu.unicesar.sierap.dto.request.NewMomentRequest;
@@ -98,4 +99,14 @@ public interface MomentService {
      * @return detalle del momento lanzado
      */
     MomentDetailResponse launch(AuthenticatedUser actor, Long id, LaunchMomentRequest request);
+
+    /**
+     * Copia la configuración de momentos (RAP, criterios, niveles y pesos) de un
+     * periodo académico a otro para los programas en alcance (ADR-010).
+     *
+     * @param actor   usuario que realiza la copia (super_admin o admin de facultad)
+     * @param request parámetros de copia (periodo origen, destino y programa opcional)
+     * @return lista de los nuevos momentos creados en el periodo destino
+     */
+    List<MomentSummaryResponse> copy(AuthenticatedUser actor, CopyMomentsRequest request);
 }

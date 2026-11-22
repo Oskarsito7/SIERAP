@@ -7,9 +7,11 @@ import co.edu.unicesar.sierap.entity.enums.EvaluationStatus;
 
 /**
  * Evaluación de un grupo en la lista de evaluaciones
- * ({@code GET /api/groups/{id}/evaluations}, {@code docs/07}).
+ * ({@code GET /api/groups/{id}/evaluations} y {@code GET /api/evaluations/mine},
+ * {@code docs/07}).
  *
  * @param id          identificador
+ * @param groupId     grupo calificado
  * @param evaluator   quién califica y de qué tipo es
  * @param status      borrador o enviada
  * @param evaluatedAt fecha y hora de la última modificación
@@ -18,6 +20,7 @@ import co.edu.unicesar.sierap.entity.enums.EvaluationStatus;
  */
 public record EvaluationSummaryResponse(
         Long id,
+        Long groupId,
         EvaluatorRef evaluator,
         EvaluationStatus status,
         LocalDateTime evaluatedAt,

@@ -6,6 +6,7 @@ import co.edu.unicesar.sierap.dto.request.AddMemberRequest;
 import co.edu.unicesar.sierap.dto.request.AssignEvaluatorRequest;
 import co.edu.unicesar.sierap.dto.request.NewGroupRequest;
 import co.edu.unicesar.sierap.dto.request.ProjectTitleRequest;
+import co.edu.unicesar.sierap.dto.request.ReassignGroupRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateGroupRequest;
 import co.edu.unicesar.sierap.dto.response.GroupResponse;
 import co.edu.unicesar.sierap.dto.response.StudentWithoutGroupResponse;
@@ -201,6 +202,21 @@ public class GroupController {
     public GroupResponse addMember(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id,
                                    @Valid @RequestBody AddMemberRequest request) {
         return groupService.addMember(actor, id, request);
+    }
+
+    /**
+     * Pasa el grupo a otro docente de la facultad a mitad del momento.
+     *
+     * @param actor   admin de la facultad o super_admin
+     * @param id      grupo
+     * @param request docente que recibe el grupo
+     * @return grupo actualizado
+     */
+    @PutMapping("/groups/{id}/teacher")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    public GroupResponse reassignTeacher(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id,
+                                         @Valid @RequestBody ReassignGroupRequest request) {
+        return groupService.reassignTeacher(actor, id, request);
     }
 
     /**

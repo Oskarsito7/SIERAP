@@ -38,7 +38,7 @@ class SystemStatusIntegrationTest {
         mockMvc.perform(get("/api/status"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.application").value("sierap"))
-                .andExpect(jsonPath("$.profiles[0]").value("test"))
+                .andExpect(jsonPath("$.profiles").doesNotExist())
                 .andExpect(jsonPath("$.databaseAvailable").value(true))
                 .andExpect(jsonPath("$.timestamp").isNotEmpty());
     }

@@ -19,6 +19,11 @@ spring:
     port: ${MAIL_PORT:1025}
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
+    # Un servidor SMTP lento no puede retener indefinidamente el hilo de la petición.
+    properties:
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
   # Entregas (ADR-015): .zip hasta 100 MB y presentación hasta 30 MB. Spring rechaza con
   # 413 lo que supere estos límites; el límite de cada tipo lo valida el service.
   servlet:
@@ -42,6 +47,9 @@ sierap:
     refresh-cookie-secure: true
     setup-link-hours: 72
     reset-link-hours: 1
+    # Mientras haya un enlace de recuperación pendiente y más reciente que esto, pedir
+    # otro no envía un correo nuevo (la respuesta es la misma, sin revelar nada).
+    reset-link-cooldown-minutes: 5
     frontend-url: ${SIERAP_FRONTEND_URL:http://localhost:5173}
     institutional-email-domain: unicesar.edu.co
     mail-from: ${MAIL_FROM:SIERAP <no-reply@unicesar.edu.co>}

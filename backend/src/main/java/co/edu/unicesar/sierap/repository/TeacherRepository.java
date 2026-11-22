@@ -17,4 +17,12 @@ public interface TeacherRepository extends JpaRepository<Teacher, Long> {
      * @return docentes de la facultad
      */
     List<Teacher> findByFacultyId(Long facultyId);
+
+    /**
+     * Indica si existen docentes adscritos a una facultad.
+     *
+     * @param facultyId identificador de la facultad
+     * @return {@code true} si hay al menos un docente en la facultad
+     */
+    boolean existsByFacultyId(Long facultyId);
 }

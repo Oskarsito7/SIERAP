@@ -71,6 +71,12 @@ export const groupService = {
     await httpClient.delete(`/groups/${id}/members/${studentId}`)
   },
 
+  /** Pasa el grupo a otro docente de la facultad (admin o super_admin); el borrador del anterior se descarta. */
+  async reassign(id: number, teacherId: number): Promise<Group> {
+    const { data } = await httpClient.put<Group>(`/groups/${id}/teacher`, { teacherId })
+    return data
+  },
+
   /** Evaluador externo activo con ese correo o documento exactos; la API responde 404 si no hay. */
   async lookupEvaluator(query: string): Promise<UserSummary> {
     const { data } = await httpClient.get<UserSummary>('/external-evaluators/lookup', { params: { q: query } })

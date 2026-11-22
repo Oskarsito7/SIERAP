@@ -39,4 +39,28 @@ public interface PasswordTokenRepository extends JpaRepository<PasswordToken, Lo
             """)
     int invalidatePending(@Param("userId") Long userId, @Param("purpose") PasswordTokenPurpose purpose,
                           @Param("now") LocalDateTime now);
+
+    /**
+     * Invalida todos los enlaces pendientes de un usuario, sin importar su propósito.
+     * Se usa cuando la contraseña cambia: ningún enlace anterior debe seguir sirviendo.
+     *
+     * @param userId identificador del usuario
+     * @param now    momento de la invalidación
+     * @return cantidad de enlaces invalidados
+     */
+    @Modifying
+    @Query("UPDATE PasswordToken t SET t.usedAt = :now WHERE t.user.id = :userId AND t.usedAt IS NULL")
+    int invalidateAllPending(@Param("userId") Long userId, @Param("now") LocalDateTime now);
+
+    /**
+     * Indica si el usuario tiene un enlace pendiente de ese propósito creado después de
+     * cierto momento. Sirve para no reenviar enlaces de recuperación a cada petición.
+     *
+     * @param userId  identificador del usuario
+     * @param purpose propósito del enlace
+     * @param since   momento desde el que se busca
+     * @return {@code true} si existe un enlace pendiente más reciente
+     */
+    boolean existsByUserIdAndPurposeAndUsedAtIsNullAndCreatedAtAfter(Long userId, PasswordTokenPurpose purpose,
+                                                                     LocalDateTime since);
 }

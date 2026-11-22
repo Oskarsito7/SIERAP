@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react'
-import { ArrowLeft, Search } from 'lucide-react'
+import { ArrowLeft, Search, TriangleAlert } from 'lucide-react'
 import { Link, NavLink, useNavigate, useParams } from 'react-router'
 
 import { LoadStatus } from '@/components/LoadStatus'
@@ -21,6 +21,7 @@ import type { MomentSummary } from '@/types/moment'
 
 import { formatWindow, groupStatus } from './groupDisplay'
 import { GroupResultsTab } from './GroupResultsTab'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 interface GroupWithMoment {
   group: Group
@@ -97,7 +98,7 @@ export function GroupDetailPage({ tab = 'summary' }: { tab?: GroupTab }) {
         </CardContent>
       </Card>
 
-      <nav aria-label="Secciones del grupo" className="flex gap-1 border-b">
+      <nav aria-label="Secciones del grupo" className="flex flex-wrap gap-1 border-b">
         {TABS.map((item) => (
           <NavLink
             key={item.tab}
@@ -105,7 +106,7 @@ export function GroupDetailPage({ tab = 'summary' }: { tab?: GroupTab }) {
             end
             className={({ isActive }) =>
               `-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
-                isActive ? 'border-primary text-foreground' : 'text-muted-foreground border-transparent'
+                isActive ? 'border-primary text-upc-green-800 font-semibold' : 'text-muted-foreground border-transparent'
               }`
             }
           >
@@ -259,40 +260,38 @@ function MembersSection({ group, disabled, onChange }: { group: Group; disabled:
         {group.members.length === 0 ? (
           <p className="text-muted-foreground text-sm">El grupo todavía no tiene integrantes.</p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="text-muted-foreground border-b">
-                <tr>
-                  <th className="py-2 pr-4 font-medium">Nombre</th>
-                  <th className="py-2 pr-4 font-medium">Código</th>
-                  <th className="py-2 pr-4 font-medium">Correo</th>
-                  <th className="py-2 font-medium">
-                    <span className="sr-only">Acciones</span>
-                  </th>
+          <ResponsiveTable>
+            <thead className="text-muted-foreground border-b">
+              <tr>
+                <th className="py-2 pr-4 font-medium">Nombre</th>
+                <th className="py-2 pr-4 font-medium">Código</th>
+                <th className="py-2 pr-4 font-medium">Correo</th>
+                <th className="py-2 font-medium">
+                  <span className="sr-only">Acciones</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {group.members.map((member) => (
+                <tr key={member.id} className="border-b last:border-0">
+                  <td className="py-3 pr-4">{member.fullName}</td>
+                  <td className="py-3 pr-4">{member.studentCode}</td>
+                  <td className="py-3 pr-4 break-all">{member.email}</td>
+                  <td className="py-3 text-right">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      disabled={disabled}
+                      onClick={() => void remove(member.id, member.fullName)}
+                      aria-label={`Quitar a ${member.fullName}`}
+                    >
+                      Quitar
+                    </Button>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {group.members.map((member) => (
-                  <tr key={member.id} className="border-b last:border-0">
-                    <td className="py-3 pr-4">{member.fullName}</td>
-                    <td className="py-3 pr-4">{member.studentCode}</td>
-                    <td className="py-3 pr-4 break-all">{member.email}</td>
-                    <td className="py-3 text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={disabled}
-                        onClick={() => void remove(member.id, member.fullName)}
-                        aria-label={`Quitar a ${member.fullName}`}
-                      >
-                        Quitar
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </ResponsiveTable>
         )}
       </CardContent>
     </Card>
@@ -528,9 +527,12 @@ function EvaluatorsSection({
           <ul className="flex flex-col divide-y">
             {group.evaluators.map((evaluator) => (
               <li key={evaluator.id} className="flex items-center justify-between gap-3 py-3 text-sm">
-                <span>
-                  <span className="font-medium">{evaluator.fullName}</span>
-                  <span className="text-muted-foreground"> · {evaluator.evaluatorType}</span>
+                <span className="flex flex-col gap-1">
+                  <span>
+                    <span className="font-medium">{evaluator.fullName}</span>
+                    <span className="text-muted-foreground"> · {evaluator.evaluatorType}</span>
+                  </span>
+                  {!evaluator.countsInGrade && <NoWeightWarning evaluatorType={evaluator.evaluatorType} />}
                 </span>
                 <Button
                   variant="ghost"
@@ -547,6 +549,20 @@ function EvaluatorsSection({
         )}
       </CardContent>
     </Card>
+  )
+}
+
+/**
+ * Aviso de que la evaluación no contará en la nota porque el tipo del evaluador no tiene
+ * peso en el momento (o tiene 0 %). No impide asignarlo: el admin puede estar fijando
+ * los pesos todavía (decisión del 16/10, docs/04).
+ */
+function NoWeightWarning({ evaluatorType }: { evaluatorType: string }) {
+  return (
+    <span role="note" className="flex items-start gap-1 text-xs text-amber-700 dark:text-amber-400">
+      <TriangleAlert className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+      Su evaluación no contará en la nota: el tipo {evaluatorType} no tiene peso en este momento.
+    </span>
   )
 }
 
@@ -614,7 +630,7 @@ function AssignEvaluatorPanel({ group, onAssigned }: { group: Group; onAssigned:
       <FormError message={error} />
       <p className="text-muted-foreground text-xs">
         ¿No aparece?{' '}
-        <Link to="/external-evaluators" className="underline">
+        <Link to="/external-evaluators" className="text-link hover:text-link-hover underline">
           Créalo en Evaluadores externos
         </Link>{' '}
         y vuelve a buscarlo.

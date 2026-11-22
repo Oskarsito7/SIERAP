@@ -70,7 +70,9 @@ public record GroupResponse(
      * @param id            identificador del usuario
      * @param fullName      nombre completo
      * @param evaluatorType nombre del tipo de evaluador, p. ej. "Empresario"
+     * @param countsInGrade {@code true} si su tipo tiene peso en el momento; si no, su
+     *                      evaluación no cuenta en la nota (decisión del 16/10, docs/04)
      */
-    public record EvaluatorRef(Long id, String fullName, String evaluatorType) {
+    public record EvaluatorRef(Long id, String fullName, String evaluatorType, boolean countsInGrade) {
     }
 }

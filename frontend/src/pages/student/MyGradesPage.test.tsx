@@ -10,7 +10,7 @@ import type { StudentResult } from '@/types/results'
 import { momentFixture } from '../groups/testData'
 import { MyGradesPage } from './MyGradesPage'
 
-vi.mock('@/services/api/resultsService', () => ({ resultsService: { mine: vi.fn() }, RESULTS_API_READY: true }))
+vi.mock('@/services/api/resultsService', () => ({ resultsService: { mine: vi.fn() } }))
 vi.mock('@/services/api/momentService', () => ({ momentService: { list: vi.fn() } }))
 
 function resultFixture(overrides: Partial<StudentResult> = {}): StudentResult {
@@ -59,6 +59,19 @@ describe('MyGradesPage', () => {
     expect(screen.getByText('0,57 / 0,60')).toBeInTheDocument()
     expect(screen.getByText('Empresario')).toBeInTheDocument()
     expect(screen.getByText('Momento 1 · Programación II · 2026-2')).toBeInTheDocument()
+  })
+
+  it('shows a dash in a RAP that has no score that counts', async () => {
+    vi.mocked(resultsService.mine).mockResolvedValue([
+      resultFixture({
+        learningOutcomes: [{ code: 'RAP1', description: 'Formula el problema', score: null, maxScore: 0.6 }],
+      }),
+    ])
+    renderPage()
+
+    const meter = await screen.findByRole('meter', { name: 'RAP1: Formula el problema' })
+    expect(meter).not.toHaveAttribute('aria-valuenow')
+    expect(screen.getByText('— / 0,60')).toBeInTheDocument()
   })
 
   it('says when the grades will be ready and lets the student pick another moment', async () => {

@@ -2,7 +2,8 @@
 export interface OutcomeScore {
   id: number
   code: string
-  score: number
+  /** `null` mientras no hay nota. */
+  score: number | null
   maxScore: number
 }
 
@@ -34,7 +35,8 @@ export interface GroupResults {
 export interface StudentOutcomeScore {
   code: string
   description: string
-  score: number
+  /** `null` si no hay evaluaciones enviadas que cuenten. */
+  score: number | null
   maxScore: number
 }
 

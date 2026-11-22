@@ -39,7 +39,8 @@ const members = [
 ]
 
 function momentDetail(overrides = {}): MomentDetail {
-  return { ...momentFixture(overrides), maxScore: 5, learningOutcomes: [] }
+  return { ...momentFixture(overrides), teacherWeight: 100, evaluatorWeights: [], totalWeight: 100, maxScore: 5,
+    learningOutcomes: [] }
 }
 
 function apiError(status: number, message: string): AxiosError {
@@ -79,7 +80,7 @@ describe('GroupDetailPage', () => {
   it('shows the members, the dates and the evaluators of the group', async () => {
     service.get.mockResolvedValue(groupFixture({
       memberCount: 2, members, submissionDeadline: '2026-10-15',
-      evaluators: [{ id: 51, fullName: 'Sofía Vega', evaluatorType: 'Empresario' }],
+      evaluators: [{ id: 51, fullName: 'Sofía Vega', evaluatorType: 'Empresario', countsInGrade: true }],
     }))
     renderPage()
 
@@ -156,7 +157,7 @@ describe('GroupDetailPage', () => {
       role: 'EXTERNAL_EVALUATOR', active: true, mustChangePassword: false,
     })
     service.assignEvaluator.mockResolvedValue(groupFixture({
-      evaluators: [{ id: 51, fullName: 'Sofía Vega', evaluatorType: 'Empresario' }],
+      evaluators: [{ id: 51, fullName: 'Sofía Vega', evaluatorType: 'Empresario', countsInGrade: true }],
     }))
     renderPage()
 
@@ -169,6 +170,22 @@ describe('GroupDetailPage', () => {
     expect(service.lookupEvaluator).toHaveBeenCalledWith('sofia@tecnosoft.co')
     expect(service.assignEvaluator).toHaveBeenCalledWith(7, 51)
     expect(await screen.findByText('· Empresario')).toBeInTheDocument()
+  })
+
+  it('warns when the type of an assigned evaluator has no weight in the moment', async () => {
+    service.get.mockResolvedValue(groupFixture({
+      evaluators: [
+        { id: 51, fullName: 'Sofía Vega', evaluatorType: 'Empresario', countsInGrade: true },
+        { id: 52, fullName: 'Carlos Pérez', evaluatorType: 'Egresado', countsInGrade: false },
+      ],
+    }))
+    renderPage()
+
+    const notes = await screen.findAllByRole('note')
+    expect(notes).toHaveLength(1)
+    expect(notes[0]).toHaveTextContent(
+      'Su evaluación no contará en la nota: el tipo Egresado no tiene peso en este momento.')
+    expect(screen.getByRole('button', { name: 'Quitar a Carlos Pérez' })).toBeEnabled()
   })
 
   it('says when no evaluator matches the search', async () => {
@@ -214,6 +231,7 @@ describe('GroupDetailPage', () => {
         zipFileName: 'sierap-v1.zip', zipSize: 1024, presentationFileName: null, presentationSize: null,
         toGrade: true }],
       currentPresentation: null,
+      maxVersions: 20,
     })
     renderPage('/groups/7/submissions')
 

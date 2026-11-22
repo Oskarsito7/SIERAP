@@ -247,7 +247,17 @@ class ProjectGroup {
   +hasEvaluator(e: ExternalEvaluator) boolean
   +nextSubmissionVersion() int
   +getSubmissionToGrade() Submission
-  +getFinalGrade() BigDecimal
+  +getSubmittedEvaluations() List~Evaluation~
+  +getGroupGrade() Optional~BigDecimal~
+  +getGroupScoreFor(outcome: LearningOutcome) Optional~BigDecimal~
+  +getIndividualGrade(s: Student) Optional~BigDecimal~
+  +getIndividualScoreFor(outcome: LearningOutcome, s: Student) Optional~BigDecimal~
+  +hasSubmittedTeacherEvaluation() boolean
+  +reassignTo(t: Teacher) void
+}
+class GradeCalculator {
+  <<utility>>
+  +weightedGrade(scores, weights)$ Optional~BigDecimal~
 }
 class Submission {
   -id: Long
@@ -303,20 +313,37 @@ class Report {
   <<abstract>>
   -generatedAt: LocalDateTime
   -period: AcademicPeriod
-  +generate()* byte[]
+  +generate()* ReportData
 }
 class IndividualReport {
   -student: Student
-  +generate() byte[]
+  -group: ProjectGroup
+  +generate() ReportData
 }
 class GroupReport {
   -group: ProjectGroup
-  +generate() byte[]
+  +generate() ReportData
+}
+class MomentReport {
+  -moment: Moment
+  -groups: List~ProjectGroup~
+  -gradeScale: GradeScale
+  +generate() ReportData
 }
 class ComparativeReport {
-  -periodA: AcademicPeriod
-  -periodB: AcademicPeriod
-  +generate() byte[]
+  -momentA: Moment
+  -groupsA: List~ProjectGroup~
+  -momentB: Moment
+  -groupsB: List~ProjectGroup~
+  -gradeScale: GradeScale
+  +generate() ReportData
+}
+class GradeScale {
+  -passingPercentage: BigDecimal
+  -bands: List~GradeBand~
+  +of(passing: String, bands: String)$ GradeScale
+  +isPassing(grade: BigDecimal, maxScore: BigDecimal) boolean
+  +calculateDistribution(grades, maxScore) List
 }
 
 %% ================= Relationships =================
@@ -363,6 +390,7 @@ ProjectGroup "*" -- "*" ExternalEvaluator : assigned
 ProjectGroup "1" *-- "0..*" Submission
 
 ProjectGroup "1" *-- "0..*" Evaluation
+ProjectGroup ..> GradeCalculator : «use»
 Evaluation "*" -- "1" Evaluator : made by
 Evaluation ..> EvaluationStatus : «use»
 Evaluation "1" *-- "1..*" CriterionGrade
@@ -375,8 +403,11 @@ IndividualGrade "*" -- "1" PerformanceLevel : level for that student
 
 Report <|-- IndividualReport
 Report <|-- GroupReport
+Report <|-- MomentReport
 Report <|-- ComparativeReport
-Report ..> Evaluation : «use»
+Report ..> ProjectGroup : «use»
+MomentReport ..> GradeScale : «use»
+ComparativeReport ..> GradeScale : «use»
 ```
 
 ## Stage 1 changes (2026-09-24 decisions)
@@ -415,6 +446,27 @@ Report ..> Evaluation : «use»
 | Change | Reason |
 |---|---|
 | `IndividualGrade` (new), composed by `Evaluation`, with `adjust()`, `getTotalScoreFor()` and an overload of `getScoreFor()` per student | The group is graded once and every member inherits it; an evaluator can change the level of some criteria for one student, so each student has an individual grade besides the group grade (ADR-018). |
+
+## Stage 6 (2026-10-16 decisions)
+
+| Change | Reason |
+|---|---|
+| `ProjectGroup.getFinalGrade()` becomes `getGroupGrade()`, `getIndividualGrade()` and their per-RAP versions, plus `getSubmittedEvaluations()` | The lead decided that the grade is computed in the domain model: the group has its submitted evaluations and its moment has the weights, so it computes both grades itself. They return `Optional` because there is no grade while no submitted evaluation counts. |
+| `GradeCalculator` (new, utility) and the dependency `ProjectGroup ..> GradeCalculator` | It holds the ADR-018 formula: average within each kind of evaluator, weighting with the moment percentages and spreading the weight of the absent kinds; a kind without weight does not count, and only the result is rounded (decisions of 2026-10-16). |
+| `IndividualGrade` is no longer drawn as designed only | It is built (V7, #21). |
+
+## Changes of the Stage 7 contract (2026-10-29 decisions)
+
+| Change | Reason |
+|---|---|
+| `Report.generate()` and its subclasses return `ReportData` instead of `byte[]`; new `MomentReport` subclass | In Moment 1 reports are shown on screen with charts and tables (exporting to PDF or Excel is deferred to Moment 2). Each subclass overrides `generate()` and returns its own `ReportData` record (covariant return type), keeping the polymorphic hierarchy for the rubric (RAP2) across the four reports: individual, group, consolidated per moment and comparative across periods. |
+
+## Stage 8 (what was built, 2026-11-11)
+
+| Change | Reason |
+|---|---|
+| The reports are no longer drawn as designed only; `MomentReport` and `ComparativeReport` keep their groups and a `GradeScale`; `ComparativeReport` takes the two moments instead of the two periods | It is the hierarchy built in #45: each report reads the grades of its groups (`Report ..> ProjectGroup` instead of `..> Evaluation`), and the passing score and the bands come from the global parameters through `GradeScale` (V10, decision of 2026-10-29). |
+| `ProjectGroup.hasSubmittedTeacherEvaluation()` and `reassignTo(Teacher)` | The faculty admin can pass a group to another teacher while the current one has not submitted their evaluation (decision of 2026-11-11). |
 
 ## Changes compared with the preliminary diagram (Phase 1)
 

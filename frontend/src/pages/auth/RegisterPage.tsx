@@ -89,7 +89,7 @@ export function RegisterPage() {
             Tu cuenta quedó creada. Enviamos a <strong>{registeredEmail}</strong> un enlace para crear
             tu contraseña; vence en 72 horas.
           </p>
-          <Link to="/login" className="text-primary text-sm underline-offset-4 hover:underline">
+          <Link to="/login" className="text-link hover:text-link-hover text-sm underline-offset-4 hover:underline">
             Ir a iniciar sesión
           </Link>
         </CardContent>
@@ -191,7 +191,7 @@ export function RegisterPage() {
           <Button type="submit" disabled={submitting}>
             {submitting ? 'Registrando…' : 'Registrarme'}
           </Button>
-          <Link to="/login" className="text-primary text-sm underline-offset-4 hover:underline">
+          <Link to="/login" className="text-link hover:text-link-hover text-sm underline-offset-4 hover:underline">
             Ya tengo cuenta
           </Link>
         </form>

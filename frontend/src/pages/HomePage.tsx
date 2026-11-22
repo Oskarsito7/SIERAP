@@ -111,8 +111,6 @@ function StatusDetail({ status }: { status: SystemStatus }) {
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-sm">
         <dt className="text-muted-foreground">Versión</dt>
         <dd>{status.version}</dd>
-        <dt className="text-muted-foreground">Perfil</dt>
-        <dd>{status.profiles.join(', ') || '—'}</dd>
         <dt className="text-muted-foreground">Hora del servidor</dt>
         <dd>{new Date(status.timestamp).toLocaleString('es-CO')}</dd>
       </dl>

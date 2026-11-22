@@ -86,6 +86,7 @@ public final class EvaluationMapper {
         User evaluator = (User) Hibernate.unproxy(evaluation.getEvaluator());
         return new EvaluationSummaryResponse(
                 evaluation.getId(),
+                evaluation.getProjectGroup().getId(),
                 new EvaluatorRef(evaluator.getId(), evaluator.getFullName(), kindOf(evaluator)),
                 evaluation.getStatus(),
                 evaluation.getEvaluatedAt(),

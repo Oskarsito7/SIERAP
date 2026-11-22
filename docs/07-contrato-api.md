@@ -56,9 +56,9 @@
 | `POST /api/auth/refresh` | anyone with the refresh cookie | — | `200 TokenResponse` + rotated cookie. `401` if the cookie is missing, expired, already used or its session was closed |
 | `POST /api/auth/logout` | anyone with the refresh cookie (works even if the access token expired) | — | `204`; closes that session and clears the cookie. Other sessions of the user stay open |
 | `GET /api/auth/me` | authenticated | — | `200 UserSummary` |
-| `POST /api/auth/password/change` | authenticated | `{ "currentPassword", "newPassword" }` | `200 TokenResponse` + new refresh cookie, with `mustChangePassword: false`; the user's other sessions are closed. `422` "La contraseña actual no es correcta." |
-| `POST /api/auth/password/forgot` | anyone | `{ "email" }` | Always `204`; if the account exists and is active, an email with a link is sent |
-| `POST /api/auth/password/set` | anyone with a link token | `{ "token", "newPassword" }` | `204`; sets the password of a new account or resets a forgotten one, and closes every session of the user. `422` if the token expired or was already used. The user then logs in normally |
+| `POST /api/auth/password/change` | authenticated | `{ "currentPassword", "newPassword" }` | `200 TokenResponse` + new refresh cookie, with `mustChangePassword: false`; the user's other sessions are closed and every pending password link (setup or reset) stops working. `403` if the account was deactivated (no new session is issued). `422` "La contraseña actual no es correcta." |
+| `POST /api/auth/password/forgot` | anyone | `{ "email" }` | Always `204`; if the account exists and is active, an email with a link is sent, unless a reset link sent less than `sierap.auth.reset-link-cooldown-minutes` (5) ago is still pending. The email is sent after the transaction commits |
+| `POST /api/auth/password/set` | anyone with a link token | `{ "token", "newPassword" }` | `204`; sets the password of a new account or resets a forgotten one, closes every session of the user and invalidates the user's other pending links, of either kind. `422` if the token expired or was already used. The user then logs in normally |
 | `POST /api/auth/register` | anyone with a registration code | `{ "registrationCode", "firstNames", "lastNames", "documentType", "documentNumber", "email", "studentCode", "currentSemester" }` | `202`; creates the student in the program of the code and sends the link to set the password. The code is case-insensitive. `422` if the code does not exist, expired or was deactivated, if the email is not institutional (`@unicesar.edu.co`), or if the email, document or student code is already registered |
 
 **Temporary password:** while `user.mustChangePassword` is `true`, only the
@@ -107,12 +107,13 @@ the link sent by email.
 | Method and route | Who | Body (besides `NewUserRequest`) | Answer |
 |---|---|---|---|
 | `POST /api/admins` | super_admin | `facultyId` | `201 UserSummary` |
+| `GET /api/admins?facultyId=` | super_admin | — | `200 UserSummary[]` (SA-05) |
 | `POST /api/teachers` | super_admin, admin of the faculty | `facultyId` | `201 UserSummary` |
-| `POST /api/students` | super_admin, admin or teacher of the faculty | `programId`, `studentCode`, `currentSemester` | `201 UserSummary` |
-| `POST /api/students/bulk` | same as above | `multipart/form-data`: `file`, `programId` | `200 { "created": n, "errors": [ { "row", "message" } ] }`. **Not implemented yet:** the file format is pending (see `docs/04`) |
+| `POST /api/students` | super_admin, admin or teacher of the faculty | `programId`, `studentCode`, `currentSemester` | `201 Student` |
+| `POST /api/students/bulk` | same as above | `multipart/form-data`: `file`, `programId` | `200 { "created": n, "errors": [ { "row", "message" } ] }`. **Not implemented:** moves to Moment 2 (`docs/04`, 2026-10-29) |
 | `POST /api/external-evaluators` | super_admin, admin, teacher | `evaluatorTypeId`; optional `organization`, `position`, `graduationYear`, `graduationProgramId` | `201 UserSummary` |
 | `GET /api/teachers?facultyId=` | super_admin, admin of the faculty | — | `200 UserSummary[]` |
-| `GET /api/students?programId=` | super_admin, admin or teacher of the faculty | — | `200 UserSummary[]` |
+| `GET /api/students?programId=` | super_admin, admin or teacher of the faculty | — | `200 Student[]` ordered by last and first names (DO-08). Optional `withoutGroupInMoment={momentId}`: only the active students of the program with their semester in the range of that moment and no group in it, the same rule as `students-without-group`; `404` if the moment does not exist, `422` if it belongs to another program |
 | `GET /api/external-evaluators` | super_admin (all), admin and teacher (the ones they created) | — | `200 UserSummary[]` |
 | `POST /api/users/{id}/password-link` | whoever manages that user (see below) | — | `204`; sends a new link: to create the password if the account has none yet, otherwise to reset it |
 | `PATCH /api/users/{id}` | whoever manages that user (see below) | `{ "active": false }` | `200 UserSummary`; deactivating also closes their sessions. `422` when deactivating your own account |
@@ -121,7 +122,23 @@ the link sent by email.
 **Who manages a user** (password link and activation): the super_admin, anyone; an
 admin, the teachers and students of their faculty and the external evaluators created
 by them or by users of their faculty; a teacher, the students and external evaluators
-they created. Out of scope answers `403`.
+they created, which includes those who registered with one of their codes. Out of scope
+answers `403`.
+
+```jsonc
+// Student (GET and POST /api/students): UserSummary plus
+{
+  /* ...UserSummary fields, "role": "STUDENT" */
+  "studentCode": "20261053",
+  "currentSemester": 2,
+  "registrationCode": "K7MQ4TZP",  // code they registered with; null if someone created the account
+  "createdBy": { "id": 4, "fullName": "Luis Gómez" },  // creator, or the owner of the code; null if unknown
+  "manageable": true               // the viewer can send the password link and activate or deactivate it
+}
+```
+
+`manageable` only lets the screen hide the actions it cannot use: the password link and
+`PATCH /api/users/{id}` still answer `403` out of scope.
 
 **Registration codes** (teacher, or admin/super_admin on behalf of a teacher):
 
@@ -417,9 +434,10 @@ window is open from its start date to its end date, both included.
 | Join, leave or switch groups (student) | The moment is in `CONFIGURATION` and today is within the group formation window |
 | Change the group dates, assign or remove evaluators (teacher) | Before the launch, or after it until the grading window closes |
 | Add a student without a group (teacher) | Any time until the grading window closes, even after the launch and above the maximum |
+| Reassign a group to another teacher (admin) | Until the grading window closes, while the current teacher has not submitted their evaluation |
 | Edit the project title (members or teacher) | Until the submission window ends |
 | Upload a submission | The moment is `LAUNCHED` and today is within the submission window |
-| Grade (draft, submit, correct, individual adjustments) | The moment is `LAUNCHED` and today is between the group's `evaluationDate` and the end of the grading window |
+| Grade (draft, submit, correct, individual adjustments) | The moment is `LAUNCHED` and today is between the group's `evaluationDate` (or the start of the grading window, if the date is not set or falls before it) and the end of the grading window |
 | Student sees their results | After the grading window ends |
 
 Outside those periods the API answers `422` with a message that says which window
@@ -496,7 +514,8 @@ Academic configuration" section below.
   "members": [ { "id": 40, "fullName": "Juan Rojas", "studentCode": "20261001", "email": "juan@unicesar.edu.co" } ],
   "submissionDeadline": "2026-11-15",   // null until the teacher sets it
   "evaluationDate": "2026-11-24",       // null until the teacher sets it
-  "evaluators": [ { "id": 51, "fullName": "Sofía Vega", "evaluatorType": "Empresario" } ],
+  "evaluators": [ { "id": 51, "fullName": "Sofía Vega", "evaluatorType": "Empresario",
+                    "countsInGrade": true } ],  // false if their type has no weight in the moment
   "myGroup": false                      // true if the caller is a member
 }
 ```
@@ -520,6 +539,7 @@ and of any moment where they already have a group (a teacher can add them out of
 | `GET /api/moments/{id}/students-without-group` | teacher and admin of the faculty | — | `200 [ { "id", "fullName", "studentCode", "currentSemester" } ]`: students of the program with their semester in range and no group in the moment |
 | `POST /api/groups/{id}/members` | the group's teacher | `{ "studentId" }` | `200 Group`. Any student of the moment's program who has no group in the moment, even outside the semester range, after the launch and above the maximum. `422` if they already have a group |
 | `DELETE /api/groups/{id}/members/{studentId}` | the group's teacher | — | `204`. While the group has no submitted evaluation; otherwise `422` |
+| `PUT /api/groups/{id}/teacher` | admin of the faculty, super_admin | `{ "teacherId" }` | `200 Group` with the new teacher. `422` if it is the same teacher, the teacher is of another faculty or inactive, the current teacher already submitted their evaluation, the new teacher already has a group with that name in the moment, or the grading window closed. The current teacher's draft evaluation is discarded |
 | `GET /api/students/me/groups` | student | — | `200 Group[]`: their groups, one per moment, newest first (history) |
 
 **External evaluators of a group** (Stage 4):
@@ -527,7 +547,7 @@ and of any moment where they already have a group (a teacher can add them out of
 | Method and route | Who | Body | Answer |
 |---|---|---|---|
 | `GET /api/external-evaluators/lookup?q=` | teacher, admin, super_admin | — | `200 UserSummary` of the active external evaluator whose email or document number is **exactly** `q`; `404` if there is none. It does not list or search partially, so evaluator accounts cannot be browsed |
-| `POST /api/groups/{id}/evaluators` | the group's teacher | `{ "evaluatorId" }` | `200 Group`. `422` if the evaluator is deactivated or already assigned |
+| `POST /api/groups/{id}/evaluators` | the group's teacher | `{ "evaluatorId" }` | `200 Group`. `422` if the evaluator is deactivated or already assigned. An evaluator whose type has no weight in the moment (or 0 %) is still assigned, with `countsInGrade: false`; the screen warns that their evaluation will not count (2026-10-16) |
 | `DELETE /api/groups/{id}/evaluators/{evaluatorId}` | the group's teacher | — | `204`. `422` if that evaluator already has an evaluation (draft or submitted) of the group |
 
 Creating an evaluator is the existing `POST /api/external-evaluators` (Stage 2).
@@ -552,8 +572,8 @@ Creating an evaluator is the existing `POST /api/external-evaluators` (Stage 2).
 
 | Method and route | Who | Body | Answer |
 |---|---|---|---|
-| `POST /api/groups/{id}/submissions` | a member | `multipart/form-data`: `zip` (required, `.zip`, up to 100 MB) and `presentation` (optional, `.pdf`, `.docx` or `.pptx`, up to 30 MB) | `201 Submission`, a new version (never overwrites). `late` is `true` if today is after the group's `submissionDeadline` (or, if the teacher did not set one, after the end of the window). `400` wrong type, `413` too large, `422` window closed |
-| `GET /api/groups/{id}/submissions` | members, the group's teacher, its assigned evaluators, admin of the faculty, super_admin | — | `200 { "versions": Submission[] (newest first), "currentPresentation": Submission \| null }`. `currentPresentation` is the newest version that has a presentation |
+| `POST /api/groups/{id}/submissions` | a member | `multipart/form-data`: `zip` (required, `.zip`, up to 100 MB) and `presentation` (optional, `.pdf`, `.docx` or `.pptx`, up to 30 MB) | `201 Submission`, a new version (never overwrites). `late` is `true` if today is after the group's `submissionDeadline` (or, if the teacher did not set one, after the end of the window). `400` wrong type, `413` too large, `422` window closed or the group already has `submission.max-versions` versions (global parameter, default 20, V11) |
+| `GET /api/groups/{id}/submissions` | members, the group's teacher, its assigned evaluators, admin of the faculty, super_admin | — | `200 { "versions": Submission[] (newest first), "currentPresentation": Submission \| null, "maxVersions": number \| null }`. `currentPresentation` is the newest version that has a presentation; `maxVersions` is the `submission.max-versions` global parameter (`null` if it is missing or invalid), so the UI can show "version X of N" |
 | `GET /api/submissions/{id}/zip` | same | — | `200` the file (`Content-Disposition: attachment`) |
 | `GET /api/submissions/{id}/presentation` | same | — | `200` the file; `404` if that version has none |
 
@@ -606,9 +626,10 @@ evaluation per group. They grade the group once and may adjust single students
 | `GET /api/groups/{id}/evaluation` | the group's teacher and its assigned evaluators | — | `200 EvaluationForm` (their own) |
 | `PUT /api/groups/{id}/evaluation` | same, within the grading period of the group | `{ "levels": [ { "criterionId", "levelId" } ], "comment", "adjustments": [ { "studentId", "criterionId", "levelId" } ] }` | `200 EvaluationForm`. Creates the evaluation as a draft the first time (a draft can be partial). `levels` sets the level of each criterion sent; the others keep theirs. `adjustments`, when sent, **replaces** all the previous ones (omit it to keep them); one equal to the group's level is dropped. If it was already submitted, it stays submitted, so it must stay complete (`422` otherwise). `422` if a level does not belong to its criterion or a student is not a member |
 | `POST /api/groups/{id}/evaluation/submit` | same | — | `200 EvaluationForm` with `status: SUBMITTED`. `422` "Falta calificar N criterios." if it is incomplete |
-| `GET /api/groups/{id}/evaluations` | the group's teacher, admin of the faculty, super_admin | — | `200 [ { "id", "evaluator": { "id", "fullName", "kind" }, "status", "evaluatedAt", "totalScore", "comment" } ]`. `kind` is "Docente" or the evaluator type name. External evaluators only see their own evaluation |
+| `GET /api/groups/{id}/evaluations` | the group's teacher, admin of the faculty, super_admin | — | `200 [ { "id", "groupId", "evaluator": { "id", "fullName", "kind" }, "status", "evaluatedAt", "totalScore", "comment" } ]`. `kind` is "Docente" or the evaluator type name. External evaluators only see their own evaluation |
+| `GET /api/evaluations/mine` | teacher, external evaluator | — | `200` the same summaries, only the caller's own evaluations (drafts and submitted) of every group they can grade today; groups not started yet do not appear. Lets the list of assigned groups show each status with one request instead of one per group. `403` for other roles |
 
-### Results (Stage 6) — D2 + D3
+### Results (Stage 6) — D1 (calculation and routes) + D3 (screens)
 
 ```jsonc
 // GroupResults: group grade and each member's individual grade
@@ -617,7 +638,7 @@ evaluation per group. They grade the group once and may adjust single students
   "final": false,                   // true once the grading window ended
   "maxScore": 5.0,
   "groupGrade": 4.52,               // null while there is no submitted evaluation
-  "groupLearningOutcomes": [ { "id": 10, "code": "RAP1", "score": 0.6, "maxScore": 0.6 } ],
+  "groupLearningOutcomes": [ { "id": 10, "code": "RAP1", "score": 0.6, "maxScore": 0.6 } ], // score null while there is no grade
   "members": [
     {
       "studentId": 40, "fullName": "Juan Rojas",
@@ -653,5 +674,253 @@ then weight the kinds with the weights the admin set in the moment (Stage 3),
 redistributing the weight of a kind without submitted evaluations among the others in
 proportion. The group grade uses the group levels; each individual grade uses the group
 levels replaced by that student's adjustments. Per RAP, the same with the scores of that
-RAP's criteria. Every grade is `BigDecimal` (ADR-013) with 2 decimals in the answer.
+RAP's criteria. A kind without weight in the moment (or 0 %) does not count. Every grade
+is `BigDecimal` (ADR-013), rounded half up to 2 decimals only at the end (2.995 → 3.00).
+
+## Stage 7 — Reporting (D2, with D3 on charts)
+
+Reports (RF 12) are SIERAP's main differentiator compared with AULAWEB. In Moment 1 they
+are rendered on screen with charts and tables; exporting to PDF or Excel is deferred to
+Moment 2 (`docs/04`, `docs/06`).
+
+### Polymorphic domain model (`Report` and `generate()`)
+
+The `Report` hierarchy in the class diagram (`docs/03`, `docs/diagramas/`) is preserved
+as an in-memory domain hierarchy (no database table: reports are computed on demand from
+the grades of `ProjectGroup`):
+
+- `Report` (abstract): holds `generatedAt: LocalDateTime` (from the injected `Clock`) and
+  `period: AcademicPeriod`, and declares `public abstract ReportData generate()`.
+- `ReportData`: sealed interface implemented by the four response records below
+  (`IndividualReportData`, `GroupReportData`, `MomentReportData`,
+  `ComparativeReportData`).
+- Subclasses — each overrides `generate()` with a covariant return type and computes its
+  figures using `ProjectGroup.getGroupGrade()`, `getGroupScoreFor(outcome)`,
+  `getIndividualGrade(student)` and `getIndividualScoreFor(outcome, student)`:
+  - `IndividualReport`: performance of a student in a moment, overall and per RAP.
+  - `GroupReport`: performance of a group per RAP and each member's individual grade.
+  - `MomentReport`: consolidated averages per RAP and grade distribution of a moment.
+  - `ComparativeReport`: semester X vs. semester Y for the same program and moment
+    number across two academic periods.
+
+### Aggregate-only rule for comparative reports (`docs/04`)
+
+Comparative reports (`ComparativeReport`) are handled **strictly at an aggregate level,
+without student names, document numbers, student codes or individual rows**. Comparing
+two cohorts across semesters serves curricular analysis and accreditation (evaluating how
+each RAP evolved from one period to another), not auditing individual students from past
+periods. Individual performance belongs exclusively to `IndividualReport` and
+`GroupReport`.
+
+### Who can read which report
+
+| Report | `super_admin` | `admin` | `teacher` | `student` |
+|---|---|---|---|---|
+| Individual (`GET /api/reports/individual`) | any | moments of their faculty | students of the groups they enabled | only their own (`studentId` omitted or their own id), after the grading window ends |
+| Group (`GET /api/reports/groups/{groupId}`) | any | groups of their faculty | the groups they enabled | — |
+| Consolidated per moment (`GET /api/reports/moments/{momentId}`) | any | moments of their faculty | moments of their faculty | — |
+| Comparative (`GET /api/reports/comparative`) | any | programs of their faculty | programs of their faculty | — |
+
+Out of scope answers `403`.
+
+### 1. Individual report — performance of a student per RAP
+
+```jsonc
+// IndividualReportData
+{
+  "generatedAt": "2026-11-29T10:30:00",
+  "period": { "id": 2, "code": "2026-2" },
+  "program": { "id": 1, "code": "108", "name": "Ingeniería de Sistemas" },
+  "moment": {
+    "id": 1, "momentNumber": 1, "name": "Momento 1",
+    "subject": "Programación II", "maxScore": 5.00
+  },
+  "student": {
+    "id": 40, "studentCode": "20241001",
+    "fullName": "Juan Rojas", "currentSemester": 4
+  },
+  "group": {
+    "id": 7, "name": "Grupo 3",
+    "projectTitle": "SIERAP", "teacherName": "Marta Díaz"
+  },
+  "final": true,                    // true once the grading window ended
+  "individualGrade": 4.40,          // null while the group has no countable submitted evaluation
+  "groupGrade": 4.52,
+  "percentage": 88.00,              // individualGrade / maxScore * 100 (null if individualGrade is null)
+  "learningOutcomes": [
+    {
+      "id": 10, "code": "RAP1", "description": "...",
+      "score": 0.48,                // student's individual score in this RAP
+      "groupScore": 0.60,           // group score in this RAP before individual adjustments
+      "maxScore": 0.60,
+      "percentage": 80.00           // score / maxScore * 100, rounded half up to 2 decimals
+    }
+  ],
+  "submittedEvaluations": 2,
+  "pendingEvaluations": 0
+}
+```
+
+### 2. Group report
+
+```jsonc
+// GroupReportData
+{
+  "generatedAt": "2026-11-29T10:30:00",
+  "period": { "id": 2, "code": "2026-2" },
+  "program": { "id": 1, "code": "108", "name": "Ingeniería de Sistemas" },
+  "moment": {
+    "id": 1, "momentNumber": 1, "name": "Momento 1",
+    "subject": "Programación II", "maxScore": 5.00
+  },
+  "group": {
+    "id": 7, "name": "Grupo 3",
+    "projectTitle": "SIERAP", "teacherName": "Marta Díaz"
+  },
+  "final": true,
+  "groupGrade": 4.52,               // null while there is no countable submitted evaluation
+  "percentage": 90.40,              // groupGrade / maxScore * 100
+  "learningOutcomes": [
+    {
+      "id": 10, "code": "RAP1", "description": "...",
+      "score": 0.60, "maxScore": 0.60, "percentage": 100.00
+    }
+  ],
+  "members": [
+    {
+      "studentId": 40, "studentCode": "20241001", "fullName": "Juan Rojas",
+      "individualGrade": 4.40,
+      "adjusted": true,             // true when individualGrade or any RAP score differs from the group's
+      "learningOutcomes": [
+        { "id": 10, "code": "RAP1", "score": 0.48, "maxScore": 0.60, "percentage": 80.00 }
+      ]
+    }
+  ],
+  "submittedEvaluations": 2,
+  "pendingEvaluations": 0
+}
+```
+
+### 3. Consolidated report per moment and program
+
+Aggregates all groups and students of a moment. Only groups with a computed grade
+(`getGroupGrade().isPresent()`, i.e. at least one countable submitted evaluation) enter
+the averages and the grade distribution; ungraded groups and students are reflected in
+`totalGroups` vs. `gradedGroups` and `totalStudents` vs. `gradedStudents`. Student-level
+metrics (`averageGrade`, `minGrade`, `maxGrade`, `passingCount`, `passingPercentage`, per-RAP
+averages and `distribution`) use each member's **individual grade** (`getIndividualGrade(student)`
+and `getIndividualScoreFor(outcome, student)`), which is their final grade (ADR-018).
+The passing threshold and grade distribution bands are dynamically computed from global parameters
+`report.passing-percentage` (e.g. `60`) and `report.grade-bands` (e.g. `Bajo:0;Básico:60;Alto:76;Sobresaliente:90`)
+scaled to `moment.maxScore` (decision 2026-10-29). If either parameter is missing, the API responds with
+`422 Unprocessable Entity`.
+
+```jsonc
+// MomentReportData
+{
+  "generatedAt": "2026-11-29T10:30:00",
+  "period": { "id": 2, "code": "2026-2" },
+  "program": { "id": 1, "code": "108", "name": "Ingeniería de Sistemas" },
+  "moment": {
+    "id": 1, "momentNumber": 1, "name": "Momento 1",
+    "subject": "Programación II", "maxScore": 5.00
+  },
+  "final": true,
+  "totalGroups": 6,
+  "gradedGroups": 5,
+  "totalStudents": 24,
+  "gradedStudents": 20,
+  "averageGroupGrade": 4.18,        // null when gradedGroups is 0
+  "averageGrade": 4.12,             // average of graded students' individual grades; null when gradedStudents is 0
+  "minGrade": 2.65,
+  "maxGrade": 4.85,
+  "passingCount": 18,               // graded students with individualGrade >= passing threshold (60% of maxScore)
+  "passingPercentage": 90.00,       // passingCount / gradedStudents * 100 (null when gradedStudents is 0)
+  "learningOutcomes": [
+    {
+      "id": 10, "code": "RAP1", "description": "...",
+      "averageScore": 0.47,         // average of getIndividualScoreFor(outcome, student) across graded students
+      "maxScore": 0.60,
+      "percentage": 78.33           // averageScore / maxScore * 100
+    }
+  ],
+  "distribution": [                 // buckets configured via 'report.grade-bands', scaled to moment.maxScore
+    { "range": "0.00 - 2.99", "label": "Bajo",          "min": 0.00, "max": 2.99, "count": 2, "percentage": 10.00 },
+    { "range": "3.00 - 3.79", "label": "Básico",        "min": 3.00, "max": 3.79, "count": 6, "percentage": 30.00 },
+    { "range": "3.80 - 4.49", "label": "Alto",          "min": 3.80, "max": 4.49, "count": 8, "percentage": 40.00 },
+    { "range": "4.50 - 5.00", "label": "Sobresaliente", "min": 4.50, "max": 5.00, "count": 4, "percentage": 20.00 }
+  ]
+}
+```
+
+### 4. Comparative report — semester X vs. semester Y
+
+Compares two academic periods (`periodA` as baseline and `periodB` as target) for the
+**same program and moment number** (`momentNumber`). Aggregate only (no student names or
+individual rows). RAPs are paired by their `code` (case-insensitive, ordered by appearance
+in `periodB` and then any RAP present only in `periodA`); if a RAP exists in only one of
+the two periods, the other period's fields (`averageScore`, `maxScore`, `percentage`) and
+`deltaPercentage` are `null`. Because `maxScore` can change between periods (ADR-010), the
+comparison across periods is expressed as achievement percentage (`0–100 %`) and its
+change in percentage points (`deltaPercentage = percentageB - percentageA`, as shown in
+wireframe `AD-08`).
+
+```jsonc
+// ComparativeReportData
+{
+  "generatedAt": "2026-11-29T10:30:00",
+  "program": { "id": 1, "code": "108", "name": "Ingeniería de Sistemas" },
+  "momentNumber": 1,
+  "periodA": {
+    "period": { "id": 1, "code": "2026-1" },
+    "momentId": 4, "momentName": "Momento 1", "subject": "Programación II", "maxScore": 5.00,
+    "gradedGroups": 5, "gradedStudents": 19,
+    "averageGrade": 3.78, "passingPercentage": 84.21,
+    "distribution": [
+      { "range": "0.00 - 2.99", "label": "Bajo",          "min": 0.00, "max": 2.99, "count": 3, "percentage": 15.79 },
+      { "range": "3.00 - 3.79", "label": "Básico",        "min": 3.00, "max": 3.79, "count": 7, "percentage": 36.84 },
+      { "range": "3.80 - 4.49", "label": "Alto",          "min": 3.80, "max": 4.49, "count": 6, "percentage": 31.58 },
+      { "range": "4.50 - 5.00", "label": "Sobresaliente", "min": 4.50, "max": 5.00, "count": 3, "percentage": 15.79 }
+    ]
+  },
+  "periodB": {
+    "period": { "id": 2, "code": "2026-2" },
+    "momentId": 1, "momentName": "Momento 1", "subject": "Programación II", "maxScore": 5.00,
+    "gradedGroups": 5, "gradedStudents": 20,
+    "averageGrade": 4.12, "passingPercentage": 90.00,
+    "distribution": [
+      { "range": "0.00 - 2.99", "label": "Bajo",          "min": 0.00, "max": 2.99, "count": 2, "percentage": 10.00 },
+      { "range": "3.00 - 3.79", "label": "Básico",        "min": 3.00, "max": 3.79, "count": 6, "percentage": 30.00 },
+      { "range": "3.80 - 4.49", "label": "Alto",          "min": 3.80, "max": 4.49, "count": 8, "percentage": 40.00 },
+      { "range": "4.50 - 5.00", "label": "Sobresaliente", "min": 4.50, "max": 5.00, "count": 4, "percentage": 20.00 }
+    ]
+  },
+  "deltaAverageGrade": 0.34,        // periodB.averageGrade - periodA.averageGrade (null if either is null)
+  "deltaPassingPercentage": 5.79,   // periodB.passingPercentage - periodA.passingPercentage
+  "learningOutcomes": [
+    {
+      "code": "RAP1",
+      "description": "...",         // description in periodB (or periodA if absent in periodB)
+      "averageScoreA": 0.43, "maxScoreA": 0.60, "percentageA": 71.67,
+      "averageScoreB": 0.47, "maxScoreB": 0.60, "percentageB": 78.33,
+      "deltaPercentage": 6.66       // percentageB - percentageA (null if either percentage is null)
+    }
+  ]
+}
+```
+
+### Routes and error rules
+
+| Method and route | Who | Answer |
+|---|---|---|
+| `GET /api/reports/individual?momentId=&studentId=` | `super_admin`, `admin` of the faculty, `teacher` of the student's group in that moment, or the `student` themselves (`studentId` optional for a student) | `200 IndividualReportData`. `404` if the moment or student does not exist. `422` "El estudiante no pertenece a ningún grupo de este momento." if the student has no group in that moment. `422` "Los resultados de este momento aún no están disponibles." when called by a student before the grading window ends |
+| `GET /api/reports/groups/{groupId}` | `super_admin`, `admin` of the faculty, the `teacher` who enabled the group | `200 GroupReportData` (sorted by member `fullName` and RAP `id`). `404` if the group does not exist |
+| `GET /api/reports/moments/{momentId}` | `super_admin`, `admin` and `teacher` of the faculty | `200 MomentReportData`. `404` if the moment does not exist |
+| `GET /api/reports/comparative?programId=&momentNumber=&periodAId=&periodBId=` | `super_admin`, `admin` and `teacher` of the faculty | `200 ComparativeReportData`. `422` "Debe elegir dos periodos académicos distintos para comparar." if `periodAId = periodBId`. `404` if the program or a period does not exist, or if the program has no moment with `momentNumber` in one of the two periods |
+
+**Rounding rule:** as decided for Stage 6 (`docs/04`, 2026-10-16), intermediate sums and
+averages keep 16 significant digits (`Decimal128`) and every decimal returned in a report
+(grades, RAP averages and percentages) is a `BigDecimal` rounded half up to 2 decimals at
+the end.
+
 

@@ -1,6 +1,7 @@
 package co.edu.unicesar.sierap.controller;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -26,6 +27,7 @@ import co.edu.unicesar.sierap.TestcontainersConfiguration;
 import co.edu.unicesar.sierap.entity.Admin;
 import co.edu.unicesar.sierap.entity.Faculty;
 import co.edu.unicesar.sierap.entity.Program;
+import co.edu.unicesar.sierap.entity.SuperAdmin;
 import co.edu.unicesar.sierap.entity.Teacher;
 import co.edu.unicesar.sierap.entity.User;
 import co.edu.unicesar.sierap.entity.enums.DocumentType;
@@ -269,6 +271,24 @@ class AuthIntegrationTest {
     }
 
     @Test
+    void onlyTheSuperAdminListsTheAdminsOfAFaculty() throws Exception {
+        int n = SEQUENCE.incrementAndGet();
+        Faculty faculty = facultyRepository.save(new Faculty("A" + n, "Facultad de administradores " + n));
+        User admin = persistAdmin(faculty);
+        User superAdmin = userRepository.save(new SuperAdmin("Super", "Prueba " + n, DocumentType.CC, "60" + n,
+                "super.prueba" + n + "@unicesar.edu.co", passwordEncoder.encode(PASSWORD), LocalDateTime.now(clock)));
+
+        mockMvc.perform(get("/api/admins").param("facultyId", faculty.getId().toString())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(superAdmin.getEmail()))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].email", contains(admin.getEmail())))
+                .andExpect(jsonPath("$[0].role").value("ADMIN"));
+        mockMvc.perform(get("/api/admins").param("facultyId", faculty.getId().toString())
+                        .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(admin.getEmail()))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void forgotPasswordSendsALinkOnlyWhenTheAccountExists() throws Exception {
         User teacher = persistTeacher(engineering);
 
@@ -287,6 +307,86 @@ class AuthIntegrationTest {
         setPassword(linkToken, "Clave-nueva-2").andExpect(status().isNoContent());
         login(teacher.getEmail(), PASSWORD).andExpect(status().isUnauthorized());
         login(teacher.getEmail(), "Clave-nueva-2").andExpect(status().isOk());
+    }
+
+    /** Auditoría de seguridad: pedir la recuperación varias veces seguidas envía un solo correo. */
+    @Test
+    void askingForAResetLinkTwiceInARowSendsOnlyOneEmail() throws Exception {
+        User teacher = persistTeacher(engineering);
+        for (int i = 0; i < 3; i++) {
+            mockMvc.perform(post("/api/auth/password/forgot")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json("email", teacher.getEmail())))
+                    .andExpect(status().isNoContent());
+        }
+
+        // capturedLinkToken verifica que hubo exactamente un envío de recuperación.
+        String linkToken = capturedLinkToken(teacher.getEmail(), PasswordTokenPurpose.PASSWORD_RESET);
+        setPassword(linkToken, "Clave-nueva-2").andExpect(status().isNoContent());
+    }
+
+    /** Auditoría de seguridad: una cuenta desactivada no renueva su sesión cambiando la contraseña. */
+    @Test
+    void aDeactivatedAccountCannotRenewItsSessionByChangingThePassword() throws Exception {
+        User teacher = persistTeacher(engineering);
+        String token = loginToken(teacher.getEmail());
+        teacher.setActive(false);
+        userRepository.save(teacher);
+
+        mockMvc.perform(post("/api/auth/password/change")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(token))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("currentPassword", PASSWORD, "newPassword", PASSWORD)))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message")
+                        .value("La cuenta está desactivada. Comuníquese con quien la creó."))
+                .andExpect(header().doesNotExist(HttpHeaders.SET_COOKIE));
+        login(teacher.getEmail(), PASSWORD).andExpect(status().isForbidden());
+    }
+
+    /** Auditoría de seguridad: cambiar la contraseña invalida los enlaces pendientes. */
+    @Test
+    void changingThePasswordInvalidatesThePendingResetLink() throws Exception {
+        User teacher = persistTeacher(engineering);
+        mockMvc.perform(post("/api/auth/password/forgot")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("email", teacher.getEmail())))
+                .andExpect(status().isNoContent());
+        String resetLink = capturedLinkToken(teacher.getEmail(), PasswordTokenPurpose.PASSWORD_RESET);
+
+        mockMvc.perform(post("/api/auth/password/change")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(teacher.getEmail())))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("currentPassword", PASSWORD, "newPassword", "Clave-nueva-2")))
+                .andExpect(status().isOk());
+
+        setPassword(resetLink, "Clave-intrusa-3")
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value("El enlace no es válido o ya venció. Solicite uno nuevo."));
+        login(teacher.getEmail(), "Clave-nueva-2").andExpect(status().isOk());
+    }
+
+    /** Auditoría de seguridad: usar un enlace invalida los demás enlaces pendientes, de cualquier tipo. */
+    @Test
+    void usingAResetLinkInvalidatesThePendingSetupLink() throws Exception {
+        User admin = persistAdmin(engineering);
+        String email = "docente" + SEQUENCE.incrementAndGet() + "@unicesar.edu.co";
+        mockMvc.perform(post("/api/teachers")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(loginToken(admin.getEmail())))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(newUser(email, "facultyId", engineering.getId())))
+                .andExpect(status().isCreated());
+        String setupLink = capturedLinkToken(email, PasswordTokenPurpose.ACCOUNT_SETUP);
+        mockMvc.perform(post("/api/auth/password/forgot")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("email", email)))
+                .andExpect(status().isNoContent());
+        String resetLink = capturedLinkToken(email, PasswordTokenPurpose.PASSWORD_RESET);
+
+        setPassword(resetLink, PASSWORD).andExpect(status().isNoContent());
+
+        setPassword(setupLink, "Clave-intrusa-3").andExpect(status().isUnprocessableEntity());
+        login(email, PASSWORD).andExpect(status().isOk());
     }
 
     @Test

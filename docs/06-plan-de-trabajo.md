@@ -43,7 +43,8 @@ the three build together at the beginning.
 
 ## 2. Stages
 
-Duration in relative weeks; adjust to the real Moment 1 delivery date. Stages 0–2 are
+Duration in relative weeks; adjust to the real Moment 1 delivery date, which falls
+between November 15 and 30, 2026 (`docs/04`, 2026-10-29). Stages 0–2 are
 **sequential and blocking**; from stage 3 onward there is real parallelism.
 
 ### Stage 0 — Foundations (Week 1) · all 3 together
@@ -220,7 +221,9 @@ AULAWEB's main gap, and therefore what weighs the most in the presentation.
 - Group report.
 - Consolidated report per program/moment.
 - **Comparisons**: semester X vs. semester Y, by year, by program.
-- Export (PDF/Excel — decide the real scope based on the remaining time).
+- Everything on screen with charts. Exporting to PDF or Excel moves to Moment 2
+  (decided on 2026-10-29).
+- Target: done by November 12, to leave the last week for Stage 8.
 
 **Covers RF:** 12.
 
@@ -235,6 +238,16 @@ AULAWEB's main gap, and therefore what weighs the most in the presentation.
 - Formal delivery document in `docs/entregas/` + mockups + package diagram.
 - Presentation rehearsal: **each person must be able to explain the three verticals**.
 - Merge `release/*` → `main` + tag `v1.0.0-momento1`.
+
+**Status on 2026-11-11.** End-to-end pass done in a browser against PostgreSQL with
+`bd/02-seed-dev.sql`, one role at a time: registration with a code and the emailed
+link (RF 1), the student's groups, submissions and grades, including a closed period
+with comments (RF 2–4), the external evaluator grading with an individual adjustment
+(RF 5–6), the teacher's groups, members, dates, evaluators and students (RF 7–9), the
+admin's moments, launch checks and group reassignment (RF 10), the super admin's
+catalogs and admins (RF 11) and the four reports, including 2026-1 vs. 2026-2 (RF 12).
+The weighted grades on screen match ADR-018 by hand. Pending: the delivery document,
+the rehearsal and `main`.
 
 ---
 

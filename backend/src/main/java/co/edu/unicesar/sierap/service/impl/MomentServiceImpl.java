@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import co.edu.unicesar.sierap.dto.request.CopyMomentsRequest;
 import co.edu.unicesar.sierap.dto.request.LaunchMomentRequest;
 import co.edu.unicesar.sierap.dto.request.MomentWeightsRequest;
 import co.edu.unicesar.sierap.dto.request.NewMomentRequest;
@@ -25,9 +26,11 @@ import co.edu.unicesar.sierap.dto.response.MomentWeightsResponse;
 import co.edu.unicesar.sierap.entity.AcademicPeriod;
 import co.edu.unicesar.sierap.entity.EvaluationCriterion;
 import co.edu.unicesar.sierap.entity.EvaluatorType;
+import co.edu.unicesar.sierap.entity.EvaluatorWeight;
 import co.edu.unicesar.sierap.entity.ExternalEvaluator;
 import co.edu.unicesar.sierap.entity.LearningOutcome;
 import co.edu.unicesar.sierap.entity.Moment;
+import co.edu.unicesar.sierap.entity.PerformanceLevel;
 import co.edu.unicesar.sierap.entity.Program;
 import co.edu.unicesar.sierap.entity.ProjectGroup;
 import co.edu.unicesar.sierap.entity.Student;
@@ -402,6 +405,101 @@ public class MomentServiceImpl implements MomentService {
         moment.launch();
         Moment saved = momentRepository.save(moment);
         return MomentMapper.toDetail(saved, LocalDate.now(clock), groups.size());
+    }
+
+    @Override
+    @Transactional
+    public List<MomentSummaryResponse> copy(AuthenticatedUser actor, CopyMomentsRequest request) {
+        if (Objects.equals(request.fromPeriodId(), request.toPeriodId())) {
+            throw new BusinessRuleException("El periodo de origen y de destino no pueden ser el mismo.");
+        }
+
+        AcademicPeriod fromPeriod = academicPeriodRepository.findById(request.fromPeriodId())
+                .orElseThrow(() -> new ResourceNotFoundException("Periodo académico", request.fromPeriodId()));
+        AcademicPeriod toPeriod = academicPeriodRepository.findById(request.toPeriodId())
+                .orElseThrow(() -> new ResourceNotFoundException("Periodo académico", request.toPeriodId()));
+
+        User viewer = accessScope.loadActor(actor);
+
+        List<Moment> sourceMoments;
+        if (request.programId() != null) {
+            Program program = programRepository.findById(request.programId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Programa", request.programId()));
+            accessScope.requireFaculty(viewer, program.getFaculty().getId());
+            sourceMoments = momentRepository.findByPeriodIdAndProgramIdOrderByNumberAsc(fromPeriod.getId(), request.programId());
+        } else if (viewer instanceof SuperAdmin) {
+            sourceMoments = momentRepository.findByPeriodIdOrderByProgramNameAscNumberAsc(fromPeriod.getId());
+        } else {
+            Long facultyId = requireFaculty(viewer);
+            sourceMoments = momentRepository.findByPeriodIdAndProgramFacultyIdOrderByProgramNameAscNumberAsc(fromPeriod.getId(), facultyId);
+        }
+
+        if (sourceMoments.isEmpty()) {
+            throw new BusinessRuleException("El periodo de origen no tiene momentos configurados dentro del alcance.");
+        }
+
+        List<String> collisions = new ArrayList<>();
+        for (Moment source : sourceMoments) {
+            if (momentRepository.existsByProgramIdAndPeriodIdAndNumber(
+                    source.getProgram().getId(), toPeriod.getId(), source.getNumber())) {
+                collisions.add(source.getProgram().getName() + " (Momento " + source.getNumber() + ")");
+            }
+        }
+        if (!collisions.isEmpty()) {
+            throw new BusinessRuleException(
+                    "No se pudo copiar la configuración: ya existen momentos en el periodo destino ("
+                            + String.join(", ", collisions) + ").");
+        }
+
+        List<Moment> newMoments = new ArrayList<>();
+        for (Moment source : sourceMoments) {
+            Moment target = new Moment(
+                    toPeriod,
+                    source.getNumber(),
+                    source.getName(),
+                    source.getSubject(),
+                    source.getSemesterFrom(),
+                    source.getSemesterTo(),
+                    source.getRequirementLevel(),
+                    source.getMinMembers(),
+                    source.getMaxMembers());
+            source.getProgram().addMoment(target);
+
+            target.setTeacherWeight(source.getTeacherWeight());
+            for (EvaluatorWeight ew : source.getEvaluatorWeights()) {
+                target.setEvaluatorWeight(ew.getEvaluatorType(), ew.getWeight());
+            }
+
+            for (LearningOutcome sourceOutcome : source.getLearningOutcomes()) {
+                LearningOutcome targetOutcome = new LearningOutcome(sourceOutcome.getCode(), sourceOutcome.getDescription());
+                target.addLearningOutcome(targetOutcome);
+
+                for (EvaluationCriterion sourceCriterion : sourceOutcome.getCriteria()) {
+                    EvaluationCriterion targetCriterion = new EvaluationCriterion(
+                            sourceCriterion.getDescription(),
+                            sourceCriterion.getDisplayOrder());
+                    targetOutcome.addCriterion(targetCriterion);
+
+                    for (PerformanceLevel sourceLevel : sourceCriterion.getLevels()) {
+                        PerformanceLevel targetLevel = new PerformanceLevel(
+                                sourceLevel.getName(),
+                                sourceLevel.getDescription(),
+                                sourceLevel.getScore(),
+                                sourceLevel.getDisplayOrder());
+                        targetCriterion.addLevel(targetLevel);
+                    }
+                }
+            }
+
+            newMoments.add(momentRepository.save(target));
+        }
+
+        LocalDate today = LocalDate.now(clock);
+        return newMoments.stream()
+                .sorted(Comparator.comparing((Moment m) -> m.getProgram().getName())
+                        .thenComparingInt(Moment::getNumber))
+                .map(m -> MomentMapper.toSummary(m, today, 0))
+                .toList();
     }
 
     private List<String> collectBlockers(Moment moment) {

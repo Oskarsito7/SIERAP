@@ -95,6 +95,10 @@ export const ROLE_MENUS: Record<UserRole, MenuItem[]> = {
       description: 'La gestión de las cuentas de administradores',
       stage: 2,
     },
+    {
+      ...reports,
+      description: 'Los reportes de todas las facultades',
+    },
   ],
   ADMIN: [
     {
@@ -198,7 +202,7 @@ export interface MenuPage {
 
 /**
  * Páginas del menú agrupadas por ruta: "Códigos de registro" y "Reportes" son la misma
- * página para el admin y el docente, cada uno con su alcance.
+ * página para varios roles (super_admin, admin y docente), cada uno con su alcance.
  */
 export function menuPages(): MenuPage[] {
   const pages = new Map<string, MenuPage>()

@@ -16,6 +16,7 @@ import java.time.ZoneId;
 import java.util.List;
 import java.util.Optional;
 
+import co.edu.unicesar.sierap.dto.request.CopyMomentsRequest;
 import co.edu.unicesar.sierap.dto.request.LaunchMomentRequest;
 import co.edu.unicesar.sierap.dto.request.MomentWeightsRequest;
 import co.edu.unicesar.sierap.dto.request.MomentWeightsRequest.EvaluatorWeightItemRequest;
@@ -37,6 +38,7 @@ import co.edu.unicesar.sierap.entity.PerformanceLevel;
 import co.edu.unicesar.sierap.entity.Program;
 import co.edu.unicesar.sierap.entity.ProjectGroup;
 import co.edu.unicesar.sierap.entity.Student;
+import co.edu.unicesar.sierap.entity.SuperAdmin;
 import co.edu.unicesar.sierap.entity.Teacher;
 import co.edu.unicesar.sierap.entity.enums.DocumentType;
 import co.edu.unicesar.sierap.entity.enums.UserRole;
@@ -762,5 +764,176 @@ class MomentServiceImplTest {
         assertThatThrownBy(() -> momentService.launchCheck(adminActor, 200L))
                 .isInstanceOf(ForbiddenAccessException.class)
                 .hasMessage("Solo puede gestionar información de su facultad.");
+    }
+
+    @Test
+    void copyThrowsWhenSamePeriod() {
+        CopyMomentsRequest request = new CopyMomentsRequest(1L, 1L, null);
+
+        assertThatThrownBy(() -> momentService.copy(adminActor, request))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("El periodo de origen y de destino no pueden ser el mismo.");
+    }
+
+    @Test
+    void copyThrowsWhenPeriodNotFound() {
+        when(academicPeriodRepository.findById(1L)).thenReturn(Optional.empty());
+
+        CopyMomentsRequest request = new CopyMomentsRequest(1L, 2L, null);
+
+        assertThatThrownBy(() -> momentService.copy(adminActor, request))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void copyThrowsWhenProgramNotFound() {
+        AcademicPeriod period2 = new AcademicPeriod("2027-1", LocalDate.of(2027, 2, 1), LocalDate.of(2027, 6, 20), LocalDate.of(2027, 6, 10));
+
+        when(academicPeriodRepository.findById(1L)).thenReturn(Optional.of(period));
+        when(academicPeriodRepository.findById(2L)).thenReturn(Optional.of(period2));
+        when(accessScope.loadActor(adminActor)).thenReturn(admin);
+        when(programRepository.findById(999L)).thenReturn(Optional.empty());
+
+        CopyMomentsRequest request = new CopyMomentsRequest(1L, 2L, 999L);
+
+        assertThatThrownBy(() -> momentService.copy(adminActor, request))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void copyThrowsWhenProgramOutOfScope() {
+        AcademicPeriod period2 = new AcademicPeriod("2027-1", LocalDate.of(2027, 2, 1), LocalDate.of(2027, 6, 20), LocalDate.of(2027, 6, 10));
+
+        when(academicPeriodRepository.findById(1L)).thenReturn(Optional.of(period));
+        when(academicPeriodRepository.findById(2L)).thenReturn(Optional.of(period2));
+        when(accessScope.loadActor(adminActor)).thenReturn(admin);
+        when(programRepository.findById(100L)).thenReturn(Optional.of(program));
+        doThrow(new ForbiddenAccessException("Solo puede gestionar información de su facultad."))
+                .when(accessScope).requireFaculty(admin, faculty.getId());
+
+        CopyMomentsRequest request = new CopyMomentsRequest(1L, 2L, 100L);
+
+        assertThatThrownBy(() -> momentService.copy(adminActor, request))
+                .isInstanceOf(ForbiddenAccessException.class)
+                .hasMessage("Solo puede gestionar información de su facultad.");
+    }
+
+    @Test
+    void copyThrowsWhenNoSourceMomentsInScope() {
+        AcademicPeriod period2 = new AcademicPeriod("2027-1", LocalDate.of(2027, 2, 1), LocalDate.of(2027, 6, 20), LocalDate.of(2027, 6, 10));
+
+        when(academicPeriodRepository.findById(1L)).thenReturn(Optional.of(period));
+        when(academicPeriodRepository.findById(2L)).thenReturn(Optional.of(period2));
+        when(accessScope.loadActor(adminActor)).thenReturn(admin);
+        when(accessScope.facultyOf(admin)).thenReturn(faculty.getId());
+        when(momentRepository.findByPeriodIdAndProgramFacultyIdOrderByProgramNameAscNumberAsc(1L, faculty.getId()))
+                .thenReturn(List.of());
+
+        CopyMomentsRequest request = new CopyMomentsRequest(1L, 2L, null);
+
+        assertThatThrownBy(() -> momentService.copy(adminActor, request))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("El periodo de origen no tiene momentos configurados dentro del alcance.");
+    }
+
+    @Test
+    void copyThrowsWhenCollisionsInDestination() {
+        AcademicPeriod period2 = new AcademicPeriod("2027-1", LocalDate.of(2027, 2, 1), LocalDate.of(2027, 6, 20), LocalDate.of(2027, 6, 10));
+        ReflectionTestUtils.setField(period2, "id", 2L);
+        Moment moment = createFullyConfiguredMoment();
+
+        when(academicPeriodRepository.findById(1L)).thenReturn(Optional.of(period));
+        when(academicPeriodRepository.findById(2L)).thenReturn(Optional.of(period2));
+        when(accessScope.loadActor(adminActor)).thenReturn(admin);
+        when(accessScope.facultyOf(admin)).thenReturn(faculty.getId());
+        when(momentRepository.findByPeriodIdAndProgramFacultyIdOrderByProgramNameAscNumberAsc(1L, faculty.getId()))
+                .thenReturn(List.of(moment));
+        when(momentRepository.existsByProgramIdAndPeriodIdAndNumber(program.getId(), 2L, 1))
+                .thenReturn(true);
+
+        CopyMomentsRequest request = new CopyMomentsRequest(1L, 2L, null);
+
+        assertThatThrownBy(() -> momentService.copy(adminActor, request))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessage("No se pudo copiar la configuración: ya existen momentos en el periodo destino (Sistemas (Momento 1)).");
+    }
+
+    @Test
+    void copySuccessfullyWithRubricAndWeights() {
+        AcademicPeriod period2 = new AcademicPeriod("2027-1", LocalDate.of(2027, 2, 1), LocalDate.of(2027, 6, 20), LocalDate.of(2027, 6, 10));
+        ReflectionTestUtils.setField(period2, "id", 2L);
+
+        Moment source = createFullyConfiguredMoment();
+        EvaluatorType type = new EvaluatorType("Empresario", "Sector productivo");
+        ReflectionTestUtils.setField(type, "id", 10L);
+        source.setTeacherWeight(BigDecimal.valueOf(60));
+        source.setEvaluatorWeight(type, BigDecimal.valueOf(40));
+
+        when(academicPeriodRepository.findById(1L)).thenReturn(Optional.of(period));
+        when(academicPeriodRepository.findById(2L)).thenReturn(Optional.of(period2));
+        when(accessScope.loadActor(adminActor)).thenReturn(admin);
+        when(programRepository.findById(100L)).thenReturn(Optional.of(program));
+        when(momentRepository.findByPeriodIdAndProgramIdOrderByNumberAsc(1L, 100L)).thenReturn(List.of(source));
+        when(momentRepository.existsByProgramIdAndPeriodIdAndNumber(program.getId(), 2L, 1)).thenReturn(false);
+        when(momentRepository.save(any(Moment.class))).thenAnswer(inv -> {
+            Moment m = inv.getArgument(0);
+            ReflectionTestUtils.setField(m, "id", 300L);
+            return m;
+        });
+
+        CopyMomentsRequest request = new CopyMomentsRequest(1L, 2L, 100L);
+        List<MomentSummaryResponse> result = momentService.copy(adminActor, request);
+
+        assertThat(result).hasSize(1);
+        MomentSummaryResponse summary = result.get(0);
+        assertThat(summary.id()).isEqualTo(300L);
+        assertThat(summary.name()).isEqualTo("Momento 1");
+        assertThat(summary.status()).isEqualTo(co.edu.unicesar.sierap.entity.enums.MomentStatus.CONFIGURATION);
+        assertThat(summary.groupCount()).isEqualTo(0);
+        assertThat(summary.groupFormationStart()).isNull();
+        assertThat(summary.submissionStart()).isNull();
+        assertThat(summary.gradingStart()).isNull();
+
+        org.mockito.ArgumentCaptor<Moment> captor = org.mockito.ArgumentCaptor.forClass(Moment.class);
+        verify(momentRepository).save(captor.capture());
+        Moment copied = captor.getValue();
+
+        assertThat(copied.getPeriod()).isEqualTo(period2);
+        assertThat(copied.getStatus()).isEqualTo(co.edu.unicesar.sierap.entity.enums.MomentStatus.CONFIGURATION);
+        assertThat(copied.getTeacherWeight()).isEqualByComparingTo("60");
+        assertThat(copied.getEvaluatorWeights()).hasSize(1);
+        assertThat(copied.getEvaluatorWeights().get(0).getWeight()).isEqualByComparingTo("40");
+        assertThat(copied.getLearningOutcomes()).hasSize(1);
+        LearningOutcome copiedRap = copied.getLearningOutcomes().get(0);
+        assertThat(copiedRap.getCode()).isEqualTo("RAP1");
+        assertThat(copiedRap.getCriteria()).hasSize(1);
+        EvaluationCriterion copiedCrit = copiedRap.getCriteria().get(0);
+        assertThat(copiedCrit.getDescription()).isEqualTo("Criterio 1");
+        assertThat(copiedCrit.getLevels()).hasSize(1);
+        PerformanceLevel copiedLevel = copiedCrit.getLevels().get(0);
+        assertThat(copiedLevel.getName()).isEqualTo("Alto");
+        assertThat(copiedLevel.getScore()).isEqualByComparingTo("5");
+    }
+
+    @Test
+    void copySuccessfullyForSuperAdmin() {
+        AcademicPeriod period2 = new AcademicPeriod("2027-1", LocalDate.of(2027, 2, 1), LocalDate.of(2027, 6, 20), LocalDate.of(2027, 6, 10));
+        ReflectionTestUtils.setField(period2, "id", 2L);
+
+        Moment source = createFullyConfiguredMoment();
+        SuperAdmin superAdmin = new SuperAdmin("Admin", "General", DocumentType.CC, "1000", "super@unicesar.edu.co", "hash", LocalDateTime.now());
+        AuthenticatedUser superActor = new AuthenticatedUser(1L, "super@unicesar.edu.co", UserRole.SUPER_ADMIN, false);
+
+        when(academicPeriodRepository.findById(1L)).thenReturn(Optional.of(period));
+        when(academicPeriodRepository.findById(2L)).thenReturn(Optional.of(period2));
+        when(accessScope.loadActor(superActor)).thenReturn(superAdmin);
+        when(momentRepository.findByPeriodIdOrderByProgramNameAscNumberAsc(1L)).thenReturn(List.of(source));
+        when(momentRepository.existsByProgramIdAndPeriodIdAndNumber(program.getId(), 2L, 1)).thenReturn(false);
+        when(momentRepository.save(any(Moment.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        CopyMomentsRequest request = new CopyMomentsRequest(1L, 2L, null);
+        List<MomentSummaryResponse> result = momentService.copy(superActor, request);
+
+        assertThat(result).hasSize(1);
     }
 }

@@ -43,4 +43,28 @@ public interface ExternalEvaluatorRepository extends JpaRepository<ExternalEvalu
             """)
     Optional<ExternalEvaluator> findActiveByEmailOrDocument(@Param("email") String email,
                                                            @Param("document") String document);
+
+    /**
+     * Cuenta la cantidad de evaluadores externos con un tipo del catálogo.
+     *
+     * @param evaluatorTypeId identificador del tipo de evaluador
+     * @return cantidad de evaluadores externos
+     */
+    int countByEvaluatorTypeId(Long evaluatorTypeId);
+
+    /**
+     * Indica si existen evaluadores externos con un tipo del catálogo.
+     *
+     * @param evaluatorTypeId identificador del tipo de evaluador
+     * @return {@code true} si hay al menos un evaluador de ese tipo
+     */
+    boolean existsByEvaluatorTypeId(Long evaluatorTypeId);
+
+    /**
+     * Indica si existen evaluadores externos cuyo programa de egreso sea el indicado.
+     *
+     * @param programId identificador del programa
+     * @return {@code true} si algún evaluador referencia ese programa de egreso
+     */
+    boolean existsByGraduationProgramId(Long programId);
 }

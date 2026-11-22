@@ -6,6 +6,7 @@ import co.edu.unicesar.sierap.dto.request.AddMemberRequest;
 import co.edu.unicesar.sierap.dto.request.AssignEvaluatorRequest;
 import co.edu.unicesar.sierap.dto.request.NewGroupRequest;
 import co.edu.unicesar.sierap.dto.request.ProjectTitleRequest;
+import co.edu.unicesar.sierap.dto.request.ReassignGroupRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateGroupRequest;
 import co.edu.unicesar.sierap.dto.response.GroupResponse;
 import co.edu.unicesar.sierap.dto.response.StudentWithoutGroupResponse;
@@ -130,6 +131,19 @@ public interface GroupService {
      * @return grupo actualizado
      */
     GroupResponse addMember(AuthenticatedUser actor, Long id, AddMemberRequest request);
+
+    /**
+     * Pasa un grupo a otro docente activo de la facultad (decisión del 2026-11-11), hasta
+     * que cierre la ventana de calificación. No se puede si el docente actual ya envió su
+     * evaluación; su borrador, si lo tiene, se descarta. Los integrantes, las entregas y
+     * los evaluadores externos se quedan en el grupo.
+     *
+     * @param actor   admin de la facultad del programa o super_admin
+     * @param id      grupo
+     * @param request docente que recibe el grupo
+     * @return grupo actualizado
+     */
+    GroupResponse reassignTeacher(AuthenticatedUser actor, Long id, ReassignGroupRequest request);
 
     /**
      * Retira a un integrante mientras el grupo no tenga evaluaciones enviadas.

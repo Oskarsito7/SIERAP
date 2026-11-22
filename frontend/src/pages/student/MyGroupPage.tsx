@@ -1,20 +1,20 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Upload } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router'
 
 import { useAuth } from '@/auth/authContext'
 import { LoadStatus } from '@/components/LoadStatus'
 import { SubmissionHistoryCard } from '@/components/submissions/SubmissionHistoryCard'
+import { FileDropzone } from '@/components/forms/FileDropzone'
 import { FormError, FormField } from '@/components/forms/FormField'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Label } from '@/components/ui/label'
 import { formatDate, todayIso } from '@/lib/dates'
 import { formatSize, presentationError, PRESENTATION_EXTENSIONS, zipError } from '@/lib/files'
 import { useLoad } from '@/lib/useLoad'
 import { groupService } from '@/services/api/groupService'
-import { getErrorMessage } from '@/services/api/httpClient'
+import { getErrorMessage, isCanceled } from '@/services/api/httpClient'
 import { momentService } from '@/services/api/momentService'
 import { submissionService } from '@/services/api/submissionService'
 import type { Group } from '@/types/group'
@@ -106,10 +106,12 @@ function GroupView({ initialGroup, moment }: { initialGroup: Group; moment?: Mom
   const history = useLoad(() => submissionService.history(group.id), [group.id])
 
   const versions = history.state.kind === 'success' ? history.state.data.versions : []
+  const maxVersions = history.state.kind === 'success' ? history.state.data.maxVersions : null
   const nextVersion = (versions[0]?.versionNumber ?? 0) + 1
 
   const addVersion = (created: Submission) =>
     history.setData((current) => ({
+      ...current,
       versions: [
         created,
         ...current.versions.map((version) => (created.toGrade ? { ...version, toGrade: false } : version)),
@@ -122,7 +124,14 @@ function GroupView({ initialGroup, moment }: { initialGroup: Group; moment?: Mom
       <div className="flex flex-col gap-6">
         {moment?.submissionOpen ? (
           history.state.kind === 'success' && (
-            <UploadCard group={group} moment={moment} nextVersion={nextVersion} onUploaded={addVersion} />
+            <UploadCard
+              group={group}
+              moment={moment}
+              nextVersion={nextVersion}
+              uploadedVersions={versions.length}
+              maxVersions={maxVersions}
+              onUploaded={addVersion}
+            />
           )
         ) : (
           <p className="text-muted-foreground text-sm">{closedWindowMessage(moment)}</p>
@@ -143,11 +152,17 @@ function UploadCard({
   group,
   moment,
   nextVersion,
+  uploadedVersions,
+  maxVersions,
   onUploaded,
 }: {
   group: Group
   moment: MomentSummary
   nextVersion: number
+  /** Versiones que el grupo ya subió (el tope cuenta todas, también las tardías). */
+  uploadedVersions: number
+  /** Tope de versiones por grupo; `null` si no está configurado. */
+  maxVersions: number | null
   onUploaded: (submission: Submission) => void
 }) {
   const [zip, setZip] = useState<File | null>(null)
@@ -156,11 +171,28 @@ function UploadCard({
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [progress, setProgress] = useState<number | null>(null)
+  const abortRef = useRef<AbortController | null>(null)
   // Cambia después de cada carga para vaciar los campos de archivo.
   const [formKey, setFormKey] = useState(0)
 
+  // Si el estudiante sale de la página a mitad de una carga, se cancela.
+  useEffect(() => () => abortRef.current?.abort(), [])
+
   const deadline = group.submissionDeadline ?? moment.submissionEnd
   const late = deadline !== null && todayIso() > deadline
+  const limitReached = maxVersions !== null && uploadedVersions >= maxVersions
+  const uploading = progress !== null
+  const totalSize = (zip?.size ?? 0) + (presentation?.size ?? 0)
+
+  // Se valida apenas se elige o se suelta el archivo, no solo al pulsar "Subir".
+  const chooseZip = (file: File | null) => {
+    setZip(file)
+    setErrors((current) => ({ ...current, zip: file ? (zipError(file) ?? undefined) : undefined }))
+  }
+  const choosePresentation = (file: File | null) => {
+    setPresentation(file)
+    setErrors((current) => ({ ...current, presentation: presentationError(file) ?? undefined }))
+  }
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -170,17 +202,24 @@ function UploadCard({
     setErrors(found)
     if (found.zip || found.presentation || !zip) return
 
+    const controller = new AbortController()
+    abortRef.current = controller
     setProgress(0)
     try {
-      const created = await submissionService.upload(group.id, zip, presentation, setProgress)
+      const created = await submissionService.upload(group.id, zip, presentation, setProgress, controller.signal)
       onUploaded(created)
       setNotice(`Se subió la versión ${created.versionNumber}${created.late ? ' (tardía)' : ''}.`)
       setZip(null)
       setPresentation(null)
       setFormKey((key) => key + 1)
     } catch (uploadError) {
-      setError(getErrorMessage(uploadError))
+      if (isCanceled(uploadError)) {
+        setNotice('Se canceló la subida. Tus archivos siguen elegidos por si quieres intentarlo de nuevo.')
+      } else {
+        setError(getErrorMessage(uploadError))
+      }
     } finally {
+      abortRef.current = null
       setProgress(null)
     }
   }
@@ -192,97 +231,100 @@ function UploadCard({
           <CardTitle>Subir una versión nueva</CardTitle>
           {moment.submissionEnd && <Badge>Entregas abiertas hasta el {formatDate(moment.submissionEnd)}</Badge>}
         </div>
+        {maxVersions !== null && (
+          <CardDescription>
+            Tu grupo ha subido {uploadedVersions} de {maxVersions} versiones permitidas.
+          </CardDescription>
+        )}
       </CardHeader>
       <CardContent>
-        <form key={formKey} className="flex flex-col gap-4" onSubmit={submit} noValidate>
-          <div className="grid gap-4 md:grid-cols-2">
-            <FileField
-              label="Proyecto (.zip)"
-              hint="Hasta 100 MB"
-              accept=".zip"
-              file={zip}
-              error={errors.zip}
-              onChange={setZip}
-            />
-            <FileField
-              label="Presentación (opcional)"
-              hint=".pdf, .docx o .pptx · hasta 30 MB"
-              accept={PRESENTATION_EXTENSIONS.join(',')}
-              file={presentation}
-              error={errors.presentation}
-              onChange={setPresentation}
-            />
-          </div>
-          <p className="text-muted-foreground text-sm">
-            Será la versión {nextVersion}.{' '}
-            {deadline &&
-              (late
-                ? `Tu fecha límite fue el ${formatDate(deadline)}: esta versión quedará marcada como tardía.`
-                : `Tu fecha límite es el ${formatDate(deadline)}: después de esa fecha las versiones se ` +
-                  'marcan como tardías.')}
+        {limitReached ? (
+          <p role="status" className="bg-muted rounded-md px-3 py-2 text-sm">
+            Tu grupo ya subió las {maxVersions} versiones permitidas en este momento, así que no puede subir más. Se
+            califica la versión marcada en el historial.
           </p>
-          <FormError message={error} />
-          {notice && (
-            <p role="status" className="bg-muted rounded-md px-3 py-2 text-sm">
-              {notice}
+        ) : (
+          <form
+            key={formKey}
+            className="flex flex-col gap-4"
+            onSubmit={submit}
+            // Un archivo soltado fuera de los recuadros no debe hacer que el navegador lo abra.
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => event.preventDefault()}
+            noValidate
+          >
+            <div className="grid gap-4 md:grid-cols-2">
+              <FileDropzone
+                label="Proyecto (.zip)"
+                hint="Hasta 100 MB"
+                accept=".zip"
+                file={zip}
+                error={errors.zip}
+                disabled={uploading}
+                onChange={chooseZip}
+              />
+              <FileDropzone
+                label="Presentación (opcional)"
+                hint=".pdf, .docx o .pptx · hasta 30 MB"
+                accept={PRESENTATION_EXTENSIONS.join(',')}
+                file={presentation}
+                error={errors.presentation}
+                disabled={uploading}
+                onChange={choosePresentation}
+              />
+            </div>
+            <p className="text-muted-foreground text-sm">
+              Será la versión {nextVersion}
+              {maxVersions !== null && ` de ${maxVersions}`}.{' '}
+              {deadline &&
+                (late
+                  ? `Tu fecha límite fue el ${formatDate(deadline)}: esta versión quedará marcada como tardía.`
+                  : `Tu fecha límite es el ${formatDate(deadline)}: después de esa fecha las versiones se ` +
+                    'marcan como tardías.')}
             </p>
-          )}
-          <div className="flex items-center gap-3">
-            <Button type="submit" disabled={progress !== null}>
-              <Upload aria-hidden />
-              {progress !== null ? `Subiendo… ${progress} %` : `Subir versión ${nextVersion}`}
-            </Button>
-          </div>
-        </form>
+            {uploading && <UploadProgress percent={progress} totalSize={totalSize} />}
+            <FormError message={error} />
+            {notice && (
+              <p role="status" className="bg-muted rounded-md px-3 py-2 text-sm">
+                {notice}
+              </p>
+            )}
+            <div className="flex flex-wrap items-center gap-3">
+              <Button type="submit" disabled={uploading}>
+                <Upload aria-hidden />
+                {uploading ? 'Subiendo…' : `Subir versión ${nextVersion}`}
+              </Button>
+              {uploading && (
+                <Button type="button" variant="outline" onClick={() => abortRef.current?.abort()}>
+                  Cancelar subida
+                </Button>
+              )}
+            </div>
+          </form>
+        )}
       </CardContent>
     </Card>
   )
 }
 
-/** Campo de archivo con su nombre y tamaño una vez elegido. */
-function FileField({
-  label,
-  hint,
-  accept,
-  file,
-  error,
-  onChange,
-}: {
-  label: string
-  hint: string
-  accept: string
-  file: File | null
-  error?: string
-  onChange: (file: File | null) => void
-}) {
-  const id = label.replace(/\W+/g, '-').toLowerCase()
+/** Barra de avance de la carga, con lo subido en MB. */
+function UploadProgress({ percent, totalSize }: { percent: number; totalSize: number }) {
+  const loaded = Math.round((totalSize * percent) / 100)
   return (
-    <div className="flex flex-col gap-2 rounded-md border border-dashed p-4">
-      <Label htmlFor={id}>{label}</Label>
-      <span className="text-muted-foreground text-xs">{hint}</span>
-      {/* El campo nativo queda oculto porque su botón sale en el idioma del navegador. */}
-      <div className="flex flex-wrap items-center gap-3">
-        <input
-          id={id}
-          type="file"
-          accept={accept}
-          className="peer sr-only"
-          aria-invalid={error ? true : undefined}
-          onChange={(event) => onChange(event.target.files?.[0] ?? null)}
-        />
-        <Button
-          variant="outline"
-          size="sm"
-          className="peer-focus-visible:ring-ring/50 cursor-pointer peer-focus-visible:ring-[3px]"
-          asChild
-        >
-          <label htmlFor={id}>Elegir archivo</label>
-        </Button>
-        <span className="text-sm break-all">
-          {file ? `${file.name} · ${formatSize(file.size)}` : 'Ningún archivo elegido'}
-        </span>
+    <div className="flex flex-col gap-1">
+      <div
+        role="progressbar"
+        aria-label="Avance de la subida"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={percent}
+        className="bg-muted h-2 w-full overflow-hidden rounded-full"
+      >
+        <div className="bg-primary h-full transition-[width]" style={{ width: `${percent}%` }} />
       </div>
-      {error && <p className="text-destructive text-sm">{error}</p>}
+      <span className="text-muted-foreground text-xs">
+        {percent} % · {formatSize(loaded)} de {formatSize(totalSize)}
+      </span>
     </div>
   )
 }

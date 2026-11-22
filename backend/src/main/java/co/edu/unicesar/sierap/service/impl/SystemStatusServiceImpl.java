@@ -4,7 +4,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.Clock;
 import java.time.LocalDateTime;
-import java.util.List;
 
 import javax.sql.DataSource;
 
@@ -13,7 +12,6 @@ import co.edu.unicesar.sierap.service.SystemStatusService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Service;
 
 /**
@@ -33,7 +31,6 @@ public class SystemStatusServiceImpl implements SystemStatusService {
 
     private final DataSource dataSource;
     private final Clock clock;
-    private final Environment environment;
     private final String applicationName;
     private final String version;
 
@@ -42,18 +39,15 @@ public class SystemStatusServiceImpl implements SystemStatusService {
      *
      * @param dataSource      fuente de conexiones a PostgreSQL
      * @param clock           reloj de la aplicación
-     * @param environment     entorno de Spring, para leer los perfiles activos
      * @param applicationName nombre configurado en {@code spring.application.name}
      * @param version         versión del artefacto, configurada en {@code sierap.version}
      */
     public SystemStatusServiceImpl(DataSource dataSource,
                                    Clock clock,
-                                   Environment environment,
                                    @Value("${spring.application.name}") String applicationName,
                                    @Value("${sierap.version}") String version) {
         this.dataSource = dataSource;
         this.clock = clock;
-        this.environment = environment;
         this.applicationName = applicationName;
         this.version = version;
     }
@@ -63,18 +57,8 @@ public class SystemStatusServiceImpl implements SystemStatusService {
         return new SystemStatusResponse(
                 applicationName,
                 version,
-                profilesInUse(),
                 isDatabaseAvailable(),
                 LocalDateTime.now(clock));
-    }
-
-    /**
-     * Perfiles activos o, si no se activó ninguno, los perfiles por defecto
-     * ({@code spring.profiles.default}, que en SIERAP es {@code dev}).
-     */
-    private List<String> profilesInUse() {
-        String[] active = environment.getActiveProfiles();
-        return List.of(active.length > 0 ? active : environment.getDefaultProfiles());
     }
 
     private boolean isDatabaseAvailable() {

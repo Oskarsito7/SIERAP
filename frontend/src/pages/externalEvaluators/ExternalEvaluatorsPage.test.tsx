@@ -61,9 +61,9 @@ describe('ExternalEvaluatorsPage', () => {
   beforeEach(() => {
     Object.values(service).forEach((mock) => mock.mockReset())
     service.listEvaluatorTypes.mockResolvedValue([
-      { id: 1, name: 'Empresario', description: null, active: true },
-      { id: 2, name: 'Egresado', description: null, active: true },
-      { id: 3, name: 'Antiguo', description: null, active: false },
+      { id: 1, name: 'Empresario', description: null, active: true, evaluatorCount: 0 },
+      { id: 2, name: 'Egresado', description: null, active: true, evaluatorCount: 0 },
+      { id: 3, name: 'Antiguo', description: null, active: false, evaluatorCount: 0 },
     ])
   })
 

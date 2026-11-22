@@ -1,7 +1,6 @@
 import { Link, useSearchParams } from 'react-router'
 
 import { LoadStatus } from '@/components/LoadStatus'
-import { SampleDataNotice } from '@/components/results/SampleDataNotice'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate } from '@/lib/dates'
@@ -10,7 +9,7 @@ import { useLoad } from '@/lib/useLoad'
 import { momentService } from '@/services/api/momentService'
 import { resultsService } from '@/services/api/resultsService'
 import type { MomentSummary } from '@/types/moment'
-import type { StudentResult } from '@/types/results'
+import type { StudentOutcomeScore, StudentResult } from '@/types/results'
 
 /**
  * "Mis notas" del estudiante (wireframes ES-04 y ES-05): su nota final, la del grupo,
@@ -42,7 +41,6 @@ export function MyGradesPage() {
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-bold tracking-tight">Mis notas</h1>
-      <SampleDataNotice />
 
       {!result && (
         <Card className="max-w-xl">
@@ -153,16 +151,16 @@ function ResultView({ result }: { result: StudentResult }) {
                     aria-label={`${outcome.code}: ${outcome.description}`}
                     aria-valuemin={0}
                     aria-valuemax={outcome.maxScore}
-                    aria-valuenow={outcome.score}
+                    aria-valuenow={outcome.score ?? undefined}
                     className="bg-muted h-2 overflow-hidden rounded-full"
                   >
                     <div
                       className="bg-primary h-full rounded-full"
-                      style={{ width: `${outcome.maxScore > 0 ? (outcome.score / outcome.maxScore) * 100 : 0}%` }}
+                      style={{ width: `${achievement(outcome)}%` }}
                     />
                   </div>
                   <span className="whitespace-nowrap">
-                    {formatScore(outcome.score)} / {formatScore(outcome.maxScore)}
+                    {outcome.score === null ? '—' : formatScore(outcome.score)} / {formatScore(outcome.maxScore)}
                   </span>
                 </li>
               ))}
@@ -189,4 +187,10 @@ function ResultView({ result }: { result: StudentResult }) {
       </div>
     </div>
   )
+}
+
+/** Ancho de la barra de un RAP: su puntaje sobre el máximo, o 0 si todavía no hay nota. */
+function achievement(outcome: StudentOutcomeScore): number {
+  if (outcome.score === null || outcome.maxScore <= 0) return 0
+  return (outcome.score / outcome.maxScore) * 100
 }

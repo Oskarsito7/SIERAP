@@ -32,4 +32,13 @@ public interface PasswordLinkService {
      *         existe, ya se usó o venció
      */
     User consume(String token);
+
+    /**
+     * Invalida todos los enlaces pendientes del usuario, de cualquier tipo. Se usa
+     * cuando su contraseña cambia, para que un enlace anterior no pueda volver a
+     * cambiarla.
+     *
+     * @param user usuario cuya contraseña acaba de cambiar
+     */
+    void invalidateAllLinks(User user);
 }

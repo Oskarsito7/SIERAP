@@ -7,9 +7,9 @@ functional area. Diagrams:
   (Mermaid, rendered directly on GitHub). It is the Stage 1 contract.
 - **Detailed class diagram** (same model, on one sheet, for the delivery document):
   [PNG](diagramas/diagrama_clases_mejorado.png) · [SVG](diagramas/diagrama_clases_mejorado.svg) ·
-  [editable .drawio](diagramas/diagrama_clases_mejorado.drawio). Regenerated when Stage 1
-  closed (2026-09-28) from the code, plus what is designed but not built yet (marked
-  with a dashed border).
+  [editable .drawio](diagramas/diagrama_clases_mejorado.drawio). Updated at Stage 8
+  (2026-11-11) from the code: every class in it is built.
+- **Entity-relationship diagram** of the database: [`diagramas/diagrama_er.md`](diagramas/diagrama_er.md).
 - **Hierarchy diagram:** [`diagramas/diagrama_jerarquias.md`](diagramas/diagrama_jerarquias.md).
 - **Layer (package) diagram:** [`diagramas/diagrama_capas.md`](diagramas/diagrama_capas.md).
 - Preliminary class diagram (Phase 1): [`diagramas/diagrama_clases.drawio`](diagramas/diagrama_clases.drawio)
@@ -57,7 +57,8 @@ moment" and "Team decisions" sections) and in ADR-009 to ADR-014 of
 | Evaluacion | `Evaluation` | `evaluation` |
 | CalificacionCriterio | `CriterionGrade` | `criterion_grade` |
 | AjusteIndividual | `IndividualGrade` | `individual_grade` |
-| Reporte (Individual / Grupal / Comparativo) | `Report` (`IndividualReport` / `GroupReport` / `ComparativeReport`) | — |
+| Reporte (Individual / Grupal / Consolidado / Comparativo) | `Report` (`IndividualReport` / `GroupReport` / `MomentReport` / `ComparativeReport`) | — |
+| DatosReporte | `ReportData` (sealed interface) | — |
 
 The D1 and D2 names are already in the code. The D3 names are the proposal for its
 branch and should be confirmed by whoever implements it. The `ExternalEvaluator`
@@ -117,7 +118,7 @@ opened, the configuration of the previous period is copied as a starting point.
 | `Program` | Programa | code (unique, e.g. `108`), name, faculty | Academic program (e.g. Ingeniería de Sistemas) that belongs to a `Faculty`. |
 | `AcademicPeriod` | Periodo académico | code (e.g. 2026-2), startDate, endDate, upcEvaluationDeadline | Academic semester with the evaluation deadline set by the UPC. Allows validating dates (RF 9) and comparing results across semesters and years (RF 12). |
 | `Moment` | Momento | program, period, number, name, subject, semesterFrom, semesterTo, requirementLevel (free text), minMembers, maxMembers, status, groupFormationStart, groupFormationEnd, submissionStart, submissionEnd, gradingStart, gradingEnd, teacherWeight, evaluatorWeights | Assessment stage of a `Program` **in a period**. It has a lifecycle (ADR-012): in `CONFIGURATION` the admin defines its RAP, criteria, levels, members per group and date windows, and students form groups; once **launched** (`LAUNCHED`) the configuration and groups are locked and the windows mark when work is submitted and when it is graded. The status only changes through `launch()`, which checks that the configuration is complete (the three windows ordered without overlapping, grading ending no later than the UPC deadline, at least one RAP whose criteria all have levels, and the weights of the teacher and of the evaluator types adding up to exactly 100 %); after it, the configuration setters reject changes. The database backs these rules with `CHECK` constraints (V5). |
-| `EvaluatorWeight` | Peso de un tipo de evaluador | moment, evaluatorType, weight | Weight of an `EvaluatorType` in the final grade of a `Moment` (ADR-018), as a percentage greater than 0 and up to 100 with two decimals. The teacher's weight is `Moment.teacherWeight` (greater than 0, 100 by default) because every moment has a teacher. A type without weight in the moment takes no part in it: no external evaluators of that type can be assigned to its groups. The grade calculation reads `getTeacherWeight()` and `getWeightFor(type)` (zero if the type has no weight). Composed by `Moment` (V9). |
+| `EvaluatorWeight` | Peso de un tipo de evaluador | moment, evaluatorType, weight | Weight of an `EvaluatorType` in the final grade of a `Moment` (ADR-018), as a percentage greater than 0 and up to 100 with two decimals. The teacher's weight is `Moment.teacherWeight` (greater than 0, 100 by default) because every moment has a teacher. The evaluation of an external evaluator whose type has no weight in the moment does not count in the grade; they can still be assigned to its groups, with a warning (2026-10-16, `docs/04`). The grade calculation reads `getTeacherWeight()` and `getWeightFor(type)` (zero if the type has no weight). Composed by `Moment` (V9). |
 | `LearningOutcome` | RAP (Resultado de Aprendizaje del Programa) | moment, code, description | RAP assessed in a `Moment`. Each moment has its own RAP, which the admin creates, edits or deletes while the moment is in configuration. It weighs the sum of its criteria. |
 | `EvaluationCriterion` | Criterio de evaluación | learningOutcome, description, displayOrder | Grading item within a RAP (e.g. "Identificación del problema" in the UPC rubric). |
 | `PerformanceLevel` | Nivel de desempeño | criterion, name, description, score (`BigDecimal`, ADR-013), displayOrder | Level the evaluator can pick in a criterion (e.g. Bajo 0 · Básico 0.36 · Alto 0.48 · Sobresaliente 0.6). Names, number of levels and scores are defined by the admin for each criterion. |
@@ -127,7 +128,7 @@ opened, the configuration of the previous period is copied as a starting point.
 
 | Class | Spanish name | Attributes | Description |
 |---|---|---|---|
-| `ProjectGroup` | Grupo (= proyecto de aula) | moment, teacher, name, projectTitle, members, evaluators, submissionDeadline, evaluationDate | Group **and** classroom project at the same time (each group has a single project). A `Teacher` enables it in a moment with a `name`; students of the program whose current semester is within the moment's range join it (between the minimum and maximum of the moment). The members write the `projectTitle` (the teacher can edit it too) until the submission window ends. The teacher assigns external evaluators to it and sets its dates within the moment windows; after the launch they can still change the dates and the evaluators while the grading window is open. |
+| `ProjectGroup` | Grupo (= proyecto de aula) | moment, teacher, name, projectTitle, members, evaluators, submissionDeadline, evaluationDate | Group **and** classroom project at the same time (each group has a single project). A `Teacher` enables it in a moment with a `name`; students of the program whose current semester is within the moment's range join it (between the minimum and maximum of the moment). The members write the `projectTitle` (the teacher can edit it too) until the submission window ends. The teacher assigns external evaluators to it and sets its dates within the moment windows; after the launch they can still change the dates and the evaluators while the grading window is open. The faculty admin can pass it to another teacher of the faculty until grading closes, unless the current teacher already submitted their evaluation (2026-11-11). |
 | `Submission` | Entrega | projectGroup, versionNumber, zipFilePath, zipFileName, zipSize, presentationPath, presentationFileName, presentationSize (the three optional), submittedAt, late | Version of the group's submission: the `.zip` is required and the presentation optional (when a version has none, the latest presentation of an earlier version is shown). Each upload is a new version; history is kept. Uploads are accepted while the submission window is open; those after the group's deadline are marked `late`. Files are stored on the server disk with a name generated by the backend; the original name and the size are kept only to show them and for the download (ADR-015, V8). |
 
 ## Evaluation and reporting · D3
@@ -137,8 +138,8 @@ opened, the configuration of the previous period is copied as a starting point.
 | `Evaluation` | Evaluación | Grade that an `Evaluator` (the group's teacher or an assigned external evaluator) gives a `ProjectGroup`; groups one `CriterionGrade` per criterion of the moment. It has a `status` (`DRAFT` → `SUBMITTED`): the evaluator can save it half done and submit it later; only submitted evaluations count, and they can be corrected while the grading window is open. One evaluation per evaluator per group. Attributes: projectGroup, evaluator (`User`: JPA cannot map the `Evaluator` interface), status, evaluatedAt, comment (optional). |
 | `CriterionGrade` | Calificación por criterio | Performance level the evaluator picked in an `EvaluationCriterion` for the **whole group**, with a **copy of its score** taken when grading. Performance per RAP is the sum of that RAP's criteria, and the evaluation grade is the sum of all of them. Attributes: evaluation, criterion, level, score. One grade per criterion in each evaluation. |
 | `IndividualGrade` | Ajuste individual | Level an evaluator gives **one student** in one criterion when it differs from the group's level (e.g. that student did better in the presentation). By default every member inherits the group's levels; an `IndividualGrade` replaces the group's level only for that student and that criterion, so their individual grade differs from the others' (ADR-018). Attributes: evaluation, student (a member of the group), criterion, level, score (copy). At most one per student and criterion in each evaluation. |
-| `Report` (abstract) | Reporte | Report generated from the recorded `Evaluation`s, filterable by semester, moment, program or year. Defines an abstract `generate()`. |
-| `IndividualReport` / `GroupReport` / `ComparativeReport` | Reporte individual / grupal / comparativo | Subclasses of `Report`: each implements its own `generate()` (per student and RAP, per group, or comparing two periods). |
+| `Report` (abstract) | Reporte | Report generated on demand from the grades of `ProjectGroup` and its `Evaluation`s, filterable by period, moment or program. Defines an abstract `generate(): ReportData` (in Moment 1 reports are rendered on screen with charts; exporting to PDF or Excel is deferred to Moment 2). |
+| `IndividualReport` / `GroupReport` / `MomentReport` / `ComparativeReport` | Reporte individual / grupal / consolidado / comparativo | Subclasses of `Report`: each overrides `generate()` with its own `ReportData` record (per student and RAP, per group and its members, consolidated averages and grade distribution of a moment, or aggregate comparison of two periods of the same program and moment number). |
 
 **Group grade and individual grade (ADR-018):** the group is graded once. The
 **group grade** uses the group's levels only; the **individual grade** of each member
@@ -153,8 +154,11 @@ up to 100 % (to be modeled by D2 in Stage 3, together with the rest of the momen
 configuration; the moment cannot be launched otherwise). Several evaluators of
 the same kind are averaged within that kind; if a kind has no submitted evaluation,
 its weight is redistributed among the present kinds in proportion to their weights.
-The graded submission is the last on-time version, or the last late one if there is
-none on time.
+A kind without weight in the moment does not count, and only the result is rounded,
+half up, to 2 decimals (2026-10-16). `ProjectGroup` computes both grades in the domain
+model (`getGroupGrade()`, `getIndividualGrade(student)` and their per-RAP versions)
+with the `GradeCalculator` utility. The graded submission is the last on-time
+version, or the last late one if there is none on time.
 
 ## Enumerations
 
@@ -193,8 +197,9 @@ configurable `PerformanceLevel` entity, ADR-010), and so were the `EMPRESARIO` a
   `IndividualGrade`—`PerformanceLevel`;
   `User`—`User` (`createdBy`); `RegistrationCode`—`Teacher`; `RegistrationCode`—`Program`;
   `Student`—`RegistrationCode` (optional).
-- **Dependency:** `Report` depends on `Evaluation` (the report consumes evaluation
-  data without owning it).
+- **Dependency:** `Report` depends on `ProjectGroup` (the report reads the grades of its
+  groups without owning them); `MomentReport` and `ComparativeReport` use `GradeScale`,
+  built from the global parameters `report.passing-percentage` and `report.grade-bands`.
 
 ## Still to be defined
 

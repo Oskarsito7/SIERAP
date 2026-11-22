@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Check, Copy, LoaderCircle, RefreshCw } from 'lucide-react'
+import { Check, Copy, LoaderCircle, Plus, RefreshCw } from 'lucide-react'
 
 import { useAuth } from '@/auth/authContext'
 import { FormError } from '@/components/forms/FormField'
@@ -10,6 +10,9 @@ import { formatDate, todayIso } from '@/lib/dates'
 import { getErrorMessage } from '@/services/api/httpClient'
 import { registrationCodeService } from '@/services/api/registrationCodeService'
 import type { RegistrationCode } from '@/types/registrationCode'
+
+import { NewCodeForm } from './NewCodeForm'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 type LoadState =
   | { kind: 'loading' }
@@ -24,10 +27,8 @@ const ALL_TEACHERS = 'all'
 /**
  * Códigos de registro (wireframes DO-10 y AD-07). El docente ve los suyos; el admin, los
  * de los docentes de su facultad, con un filtro por docente. Un código activo se copia
- * para compartirlo y se puede desactivar antes de que venza (no se reactiva).
- *
- * Generar códigos queda pendiente: el formulario necesita la lista de programas de la
- * facultad, que la API todavía no expone.
+ * para compartirlo y se puede desactivar antes de que venza (no se reactiva). "Generar
+ * código" abre el formulario; el admin elige además el docente dueño del código.
  */
 export function RegistrationCodesPage() {
   const { user } = useAuth()
@@ -37,6 +38,8 @@ export function RegistrationCodesPage() {
   const [actionError, setActionError] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<number | null>(null)
   const [deactivatingId, setDeactivatingId] = useState<number | null>(null)
+  const [creating, setCreating] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
 
   const isTeacher = user?.role === 'TEACHER'
 
@@ -66,6 +69,13 @@ export function RegistrationCodesPage() {
   const retry = () => {
     setLoad({ kind: 'loading' })
     setAttempt((previous) => previous + 1)
+  }
+
+  const created = (code: RegistrationCode) => {
+    setLoad((current) => (current.kind === 'success' ? { kind: 'success', codes: [code, ...current.codes] } : current))
+    setCreating(false)
+    setTeacherFilter(ALL_TEACHERS)
+    setNotice(`Se generó el código ${code.code} para ${code.programName}.`)
   }
 
   const copy = async (code: RegistrationCode) => {
@@ -111,12 +121,25 @@ export function RegistrationCodesPage() {
             La dirección de registro es <span className="font-medium">{registerUrl()}</span>.
           </p>
         </div>
-        <div className="flex flex-col items-end gap-1">
-          <Button disabled>Generar código</Button>
-          <span className="text-muted-foreground text-xs">Disponible próximamente.</span>
-        </div>
+        <Button
+          onClick={() => {
+            setNotice(null)
+            setCreating((open) => !open)
+          }}
+        >
+          <Plus aria-hidden />
+          Generar código
+        </Button>
       </div>
 
+      {creating && (
+        <NewCodeForm forTeacher={isTeacher} onCreated={created} onCancel={() => setCreating(false)} />
+      )}
+      {notice && (
+        <p role="status" className="bg-muted rounded-md px-3 py-2 text-sm">
+          {notice}
+        </p>
+      )}
       <FormError message={actionError} />
 
       <Card>
@@ -167,64 +190,62 @@ export function RegistrationCodesPage() {
           )}
 
           {load.kind === 'success' && visible.length > 0 && (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="text-muted-foreground border-b">
-                  <tr>
-                    <th className="py-2 pr-4 font-medium">Código</th>
-                    {!isTeacher && <th className="py-2 pr-4 font-medium">Docente</th>}
-                    <th className="py-2 pr-4 font-medium">Programa</th>
-                    <th className="py-2 pr-4 font-medium">Vence</th>
-                    <th className="py-2 pr-4 font-medium">Registrados</th>
-                    <th className="py-2 pr-4 font-medium">Estado</th>
-                    <th className="py-2 font-medium">
-                      <span className="sr-only">Acciones</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {visible.map((code) => {
-                    const status = statusOf(code)
-                    return (
-                      <tr key={code.id} className="border-b last:border-0">
-                        <td className="py-3 pr-4 font-mono font-semibold tracking-wider">{code.code}</td>
-                        {!isTeacher && <td className="py-3 pr-4">{code.teacherName}</td>}
-                        <td className="py-3 pr-4">{code.programName}</td>
-                        <td className="py-3 pr-4">{formatDate(code.expiresOn)}</td>
-                        <td className="py-3 pr-4">{code.registeredCount}</td>
-                        <td className="py-3 pr-4">
-                          <Badge variant={status === 'Activo' ? 'default' : 'secondary'}>{status}</Badge>
-                        </td>
-                        <td className="py-3">
-                          {status === 'Activo' && (
-                            <div className="flex justify-end gap-2">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => void copy(code)}
-                                aria-label={`Copiar el código ${code.code}`}
-                              >
-                                {copiedId === code.id ? <Check aria-hidden /> : <Copy aria-hidden />}
-                                {copiedId === code.id ? 'Copiado' : 'Copiar'}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                disabled={deactivatingId === code.id}
-                                onClick={() => void deactivate(code)}
-                                aria-label={`Desactivar el código ${code.code}`}
-                              >
-                                Desactivar
-                              </Button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+            <ResponsiveTable>
+              <thead className="text-muted-foreground border-b">
+                <tr>
+                  <th className="py-2 pr-4 font-medium">Código</th>
+                  {!isTeacher && <th className="py-2 pr-4 font-medium">Docente</th>}
+                  <th className="py-2 pr-4 font-medium">Programa</th>
+                  <th className="py-2 pr-4 font-medium">Vence</th>
+                  <th className="py-2 pr-4 font-medium">Registrados</th>
+                  <th className="py-2 pr-4 font-medium">Estado</th>
+                  <th className="py-2 font-medium">
+                    <span className="sr-only">Acciones</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {visible.map((code) => {
+                  const status = statusOf(code)
+                  return (
+                    <tr key={code.id} className="border-b last:border-0">
+                      <td className="py-3 pr-4 font-mono font-semibold tracking-wider">{code.code}</td>
+                      {!isTeacher && <td className="py-3 pr-4">{code.teacherName}</td>}
+                      <td className="py-3 pr-4">{code.programName}</td>
+                      <td className="py-3 pr-4">{formatDate(code.expiresOn)}</td>
+                      <td className="py-3 pr-4">{code.registeredCount}</td>
+                      <td className="py-3 pr-4">
+                        <Badge variant={status === 'Activo' ? 'default' : 'secondary'}>{status}</Badge>
+                      </td>
+                      <td className="py-3">
+                        {status === 'Activo' && (
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => void copy(code)}
+                              aria-label={`Copiar el código ${code.code}`}
+                            >
+                              {copiedId === code.id ? <Check aria-hidden /> : <Copy aria-hidden />}
+                              {copiedId === code.id ? 'Copiado' : 'Copiar'}
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              disabled={deactivatingId === code.id}
+                              onClick={() => void deactivate(code)}
+                              aria-label={`Desactivar el código ${code.code}`}
+                            >
+                              Desactivar
+                            </Button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </ResponsiveTable>
           )}
         </CardContent>
       </Card>

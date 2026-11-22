@@ -626,6 +626,51 @@ group levels only. Reports can compare group and individual grades.
 
 ---
 
+## ADR-019 — Institutional identity of the UPC in the frontend
+
+**Date:** 2026-11-12.
+**Status:** Accepted (requested by the project lead with the university's material).
+
+**Context:** the university gave the team its Manual de Identidad Institucional 2024
+and the technical Guía de Color Institucional (colors, scales, neutrals, functional
+colors, typography, buttons, links, charts and accessibility rules), and asked that
+the whole frontend follow it. The screens used the neutral shadcn/ui theme.
+
+**Decision:**
+
+- The palette lives in `frontend/src/index.css` as Tailwind colors (`upc-green-50` to
+  `upc-green-900`, `upc-yellow`, the functional colors and `link`), and the shadcn/ui
+  tokens point to it, so every component inherits the identity from one place: primary
+  buttons in Verde Institucional Principal `#107B42`, white cards on `#F5F5F5`, text
+  `#1A1A1A` and `#444444`, borders `#D6D6D6`/`#BBBBBB`, errors `#D0021B`.
+- Layout of the guide's "Dashboards": side menu in Verde 900 with the logosymbol in
+  white and the active option in Verde 700 with a yellow mark; light top bar; page
+  titles in Verde 800. The public pages use the horizontal logosymbol with the system
+  name on the right, separated by a line, as the manual asks for dependencies.
+- The logosymbols are vector files cut from the manual's PDF (color, white and the
+  symbol, which is also the favicon); they are only scaled by height, never distorted.
+- Typography: Open Sans for text and Montserrat for titles (the manual's principal and
+  complementary families), served by the app itself through `@fontsource` so the demo
+  does not depend on the internet; Arial stays as the fallback.
+- Buttons and links as in the guide: secondary buttons white with green text and
+  border, disabled ones `#ECECEC` with `#777777`, links in `#1A73E8`.
+- Accessibility first (WCAG AA, as the guide demands): white on Verde 500 fails for
+  small text, so the user initials and every white text sit on Verde 700 or darker,
+  and yellow is used only as an accent, never as text on white.
+
+**Alternatives considered:** loading the fonts from Google Fonts (depends on the
+network during the demo); using raster logos (blurry at other sizes); following the
+guide's suggestion of a Verde 700 side menu with a Verde 900 top bar (two dark bars
+were too heavy; the UI components preview of the same material uses the dark side menu
+with a light bar, which is what was kept).
+
+**Consequences:** new screens take the identity from the tokens and the `UpcLogo`
+component without hard-coding colors; changing a color means editing `index.css` only.
+The grayscale wireframes in `docs/wireframes/` stay as they are: they describe the
+structure, not the visual identity.
+
+---
+
 ## Template for new entries
 
 ```

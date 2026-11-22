@@ -10,6 +10,9 @@ import type { UserRole, UserSummary } from '@/types/auth'
 vi.mock('@/services/api/systemStatusService', () => ({
   systemStatusService: { getStatus: vi.fn(() => new Promise(() => {})) },
 }))
+vi.mock('@/services/api/catalogService', () => ({
+  catalogService: { faculties: vi.fn(() => new Promise(() => {})) },
+}))
 
 function userWith(role: UserRole, overrides: Partial<UserSummary> = {}): UserSummary {
   return {
@@ -46,7 +49,14 @@ describe('AppLayout', () => {
   it.each<[UserRole, string[]]>([
     [
       'SUPER_ADMIN',
-      ['Facultades y programas', 'Periodos académicos', 'Parámetros globales', 'Tipos de evaluador', 'Administradores'],
+      [
+        'Facultades y programas',
+        'Periodos académicos',
+        'Parámetros globales',
+        'Tipos de evaluador',
+        'Administradores',
+        'Reportes',
+      ],
     ],
     ['ADMIN', ['Momentos', 'Docentes', 'Códigos de registro', 'Reportes']],
     ['TEACHER', ['Mis grupos', 'Mis estudiantes', 'Evaluadores externos', 'Códigos de registro', 'Reportes']],
@@ -67,20 +77,14 @@ describe('AppLayout', () => {
     expect(screen.getByText('Docente')).toBeInTheDocument()
   })
 
-  it('opens a menu option without a page as coming soon, with its stage', async () => {
-    renderAt('/', userWith('TEACHER'))
+  it('opens the page of a menu option and marks it as current', async () => {
+    renderAt('/', userWith('SUPER_ADMIN'))
 
-    await userEvent.click(screen.getByRole('link', { name: 'Mis estudiantes' }))
+    await userEvent.click(screen.getByRole('link', { name: 'Administradores' }))
 
-    expect(screen.getByRole('heading', { name: 'Próximamente' })).toBeInTheDocument()
-    expect(screen.getByText('La lista de tus estudiantes llega en la Etapa 2.')).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: 'Mis estudiantes' })).toHaveAttribute('aria-current', 'page')
-  })
-
-  it('uses the text of the role when two roles share a page', () => {
-    renderAt('/reports', userWith('TEACHER'))
-
-    expect(screen.getByText('Los reportes de tus grupos llega en la Etapa 7.')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { level: 1, name: 'Administradores' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Próximamente' })).not.toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Administradores' })).toHaveAttribute('aria-current', 'page')
   })
 
   it('does not open a page of another role', () => {

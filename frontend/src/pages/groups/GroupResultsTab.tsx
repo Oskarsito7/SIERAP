@@ -1,5 +1,4 @@
 import { LoadStatus } from '@/components/LoadStatus'
-import { SampleDataNotice } from '@/components/results/SampleDataNotice'
 import { Badge } from '@/components/ui/badge'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { formatDate } from '@/lib/dates'
@@ -10,6 +9,7 @@ import { resultsService } from '@/services/api/resultsService'
 import type { EvaluationSummary } from '@/types/evaluation'
 import type { MomentSummary } from '@/types/moment'
 import type { GroupResults } from '@/types/results'
+import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 /**
  * Resultados del grupo para su docente (wireframe DO-07): la nota grupal por RAP, las
@@ -29,7 +29,6 @@ export function GroupResultsTab({ groupId, moment }: { groupId: number; moment: 
   const { results, evaluations } = data.state.data
   return (
     <div className="flex flex-col gap-6">
-      <SampleDataNotice />
       <Card className="bg-muted/40">
         <CardContent className="text-sm">
           {results.final ? (
@@ -76,7 +75,7 @@ function GroupGradeCard({ results }: { results: GroupResults }) {
             <li key={outcome.id} className="flex justify-between py-2">
               <span>{outcome.code}</span>
               <span>
-                {results.groupGrade === null ? '—' : formatScore(outcome.score)} / {formatScore(outcome.maxScore)}
+                {outcome.score === null ? '—' : formatScore(outcome.score)} / {formatScore(outcome.maxScore)}
               </span>
             </li>
           ))}
@@ -101,7 +100,7 @@ function EvaluationsCard({ results, evaluations }: { results: GroupResults; eval
         {evaluations.length === 0 ? (
           <p className="text-muted-foreground text-sm">Nadie ha empezado a calificar este grupo.</p>
         ) : (
-          <table className="w-full text-left text-sm">
+          <ResponsiveTable>
             <thead className="text-muted-foreground border-b">
               <tr>
                 <th className="py-2 pr-4 font-medium">Evaluador</th>
@@ -125,7 +124,7 @@ function EvaluationsCard({ results, evaluations }: { results: GroupResults; eval
                 )
               })}
             </tbody>
-          </table>
+          </ResponsiveTable>
         )}
       </CardContent>
     </Card>
@@ -140,8 +139,8 @@ function MembersCard({ results }: { results: GroupResults }) {
       <CardHeader>
         <CardTitle>Notas individuales</CardTitle>
       </CardHeader>
-      <CardContent className="overflow-x-auto">
-        <table className="w-full text-left text-sm">
+      <CardContent>
+        <ResponsiveTable>
           <thead className="text-muted-foreground border-b">
             <tr>
               <th className="py-2 pr-4 font-medium">Estudiante</th>
@@ -167,7 +166,7 @@ function MembersCard({ results }: { results: GroupResults }) {
                   </td>
                   {member.learningOutcomes.map((outcome) => (
                     <td key={outcome.id} className="py-3 pr-4 text-right">
-                      {graded ? formatScore(outcome.score) : '—'}
+                      {graded && outcome.score !== null ? formatScore(outcome.score) : '—'}
                     </td>
                   ))}
                   <td className="py-3 text-right font-semibold">
@@ -177,7 +176,7 @@ function MembersCard({ results }: { results: GroupResults }) {
               )
             })}
           </tbody>
-        </table>
+        </ResponsiveTable>
       </CardContent>
     </Card>
   )

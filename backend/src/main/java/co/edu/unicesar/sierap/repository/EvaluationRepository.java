@@ -22,6 +22,14 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
     Optional<Evaluation> findByProjectGroupIdAndEvaluatorId(Long projectGroupId, Long evaluatorId);
 
     /**
+     * Evaluaciones (borradores y enviadas) que hizo un evaluador, de todos sus grupos.
+     *
+     * @param evaluatorId id del usuario evaluador
+     * @return sus evaluaciones
+     */
+    List<Evaluation> findByEvaluatorId(Long evaluatorId);
+
+    /**
      * Todas las evaluaciones de un grupo (docente y evaluadores externos).
      *
      * @param projectGroupId id del grupo
