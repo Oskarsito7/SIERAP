@@ -18,10 +18,11 @@ public final class SubmissionMapper {
     /**
      * Historial de entregas de un grupo.
      *
-     * @param group grupo con sus versiones cargadas, de la más antigua a la más reciente
+     * @param group       grupo con sus versiones cargadas, de la más antigua a la más reciente
+     * @param maxVersions máximo de versiones por grupo, o {@code null} si no está configurado
      * @return versiones de la más reciente a la más antigua y la presentación vigente
      */
-    public static SubmissionHistoryResponse toHistory(ProjectGroup group) {
+    public static SubmissionHistoryResponse toHistory(ProjectGroup group, Integer maxVersions) {
         Submission toGrade = group.getSubmissionToGrade();
         List<SubmissionResponse> versions = group.getSubmissions().reversed().stream()
                 .map(submission -> toResponse(submission, toGrade))
@@ -30,7 +31,7 @@ public final class SubmissionMapper {
                 .filter(version -> version.presentationFileName() != null)
                 .findFirst()
                 .orElse(null);
-        return new SubmissionHistoryResponse(versions, currentPresentation);
+        return new SubmissionHistoryResponse(versions, currentPresentation, maxVersions);
     }
 
     /**

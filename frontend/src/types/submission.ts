@@ -22,4 +22,6 @@ export interface SubmissionHistory {
   versions: Submission[]
   /** La versión más reciente que trae presentación, o `null`. */
   currentPresentation: Submission | null
+  /** Máximo de versiones por grupo (`submission.max-versions`); `null` si no está configurado. */
+  maxVersions: number | null
 }

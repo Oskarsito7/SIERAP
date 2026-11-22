@@ -8,6 +8,10 @@ import java.util.List;
  * @param versions            todas las versiones, de la más reciente a la más antigua
  * @param currentPresentation la versión más reciente que trae presentación;
  *                            {@code null} si ninguna la trae
+ * @param maxVersions         máximo de versiones por grupo (parámetro global
+ *                            {@code submission.max-versions}); {@code null} si el
+ *                            parámetro falta o no es un entero válido
  */
-public record SubmissionHistoryResponse(List<SubmissionResponse> versions, SubmissionResponse currentPresentation) {
+public record SubmissionHistoryResponse(List<SubmissionResponse> versions, SubmissionResponse currentPresentation,
+                                        Integer maxVersions) {
 }

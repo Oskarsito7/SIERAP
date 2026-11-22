@@ -50,10 +50,10 @@ import org.springframework.web.multipart.MultipartFile;
 @Transactional
 public class SubmissionServiceImpl implements SubmissionService {
 
-    /** Tipo de contenido con el que se descarga cada extensión. */
     /** Parámetro global con el máximo de versiones de entrega por grupo (V11). */
     public static final String PARAM_MAX_VERSIONS = "submission.max-versions";
 
+    /** Tipo de contenido con el que se descarga cada extensión. */
     private static final Map<String, String> CONTENT_TYPES = Map.of(
             ".zip", "application/zip",
             ".pdf", "application/pdf",
@@ -133,7 +133,9 @@ public class SubmissionServiceImpl implements SubmissionService {
         ProjectGroup group = projectGroupRepository.findById(groupId)
                 .orElseThrow(() -> new ResourceNotFoundException("Grupo", groupId));
         requireCanSeeSubmissions(accessScope.loadActor(actor), group);
-        return SubmissionMapper.toHistory(group);
+        // El historial se muestra aunque el tope esté mal configurado; solo la carga lo exige.
+        Integer maxVersions = maxVersions();
+        return SubmissionMapper.toHistory(group, maxVersions == null || maxVersions < 1 ? null : maxVersions);
     }
 
     @Override
@@ -237,15 +239,9 @@ public class SubmissionServiceImpl implements SubmissionService {
      * (ADR-015), así que sin tope un integrante podría llenar el almacenamiento.
      */
     private void requireVersionAvailable(ProjectGroup group) {
-        String value = globalParameterRepository.findByKey(PARAM_MAX_VERSIONS)
-                .orElseThrow(() -> new BusinessRuleException(
-                        "Falta configurar el parámetro global '" + PARAM_MAX_VERSIONS + "'"))
-                .getValue();
-        int maxVersions;
-        try {
-            maxVersions = Integer.parseInt(value.trim());
-        } catch (NumberFormatException exception) {
-            maxVersions = 0;
+        Integer maxVersions = maxVersions();
+        if (maxVersions == null) {
+            throw new BusinessRuleException("Falta configurar el parámetro global '" + PARAM_MAX_VERSIONS + "'");
         }
         if (maxVersions < 1) {
             throw new BusinessRuleException("El parámetro global '" + PARAM_MAX_VERSIONS
@@ -255,6 +251,24 @@ public class SubmissionServiceImpl implements SubmissionService {
             throw new BusinessRuleException("El grupo ya subió el máximo de " + maxVersions
                     + " versiones de entrega permitido en este momento.");
         }
+    }
+
+    /**
+     * Lee el parámetro global {@value #PARAM_MAX_VERSIONS}.
+     *
+     * @return el máximo de versiones; {@code 0} si el valor no es un entero y
+     *         {@code null} si el parámetro no existe
+     */
+    private Integer maxVersions() {
+        return globalParameterRepository.findByKey(PARAM_MAX_VERSIONS)
+                .map(parameter -> {
+                    try {
+                        return Integer.parseInt(parameter.getValue().trim());
+                    } catch (NumberFormatException exception) {
+                        return 0;
+                    }
+                })
+                .orElse(null);
     }
 
 }

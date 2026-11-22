@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -81,6 +81,7 @@ describe('MyGroupPage', () => {
           presentationSize: MB }),
       ],
       currentPresentation: submissionFixture({ id: 91, versionNumber: 1, presentationFileName: 'sustentacion.pdf' }),
+      maxVersions: 20,
     })
     renderPage()
 
@@ -95,13 +96,14 @@ describe('MyGroupPage', () => {
     expect(within(rows[2]).getByText('14/10/2026 22:41')).toBeInTheDocument()
     expect(screen.getByText('La presentación vigente es sustentacion.pdf, de la versión 1.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Subir versión 3' })).toBeInTheDocument()
+    expect(screen.getByText(/Será la versión 3 de 20\./)).toBeInTheDocument()
     expect(screen.getByText(/Tu fecha límite es el 25\/10\/2026/)).toBeInTheDocument()
   })
 
   it('uploads a new version and adds it to the history', async () => {
     myGroups.mockResolvedValue([group()])
     listMoments.mockResolvedValue([launched()])
-    history.mockResolvedValue({ versions: [], currentPresentation: null })
+    history.mockResolvedValue({ versions: [], currentPresentation: null, maxVersions: 20 })
     upload.mockResolvedValue(submissionFixture({ id: 95, zipFileName: 'final.zip', presentationFileName: 'final.pdf',
       presentationSize: MB }))
     renderPage()
@@ -113,7 +115,7 @@ describe('MyGroupPage', () => {
     expect(screen.getByText('final.zip · 41 MB')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Subir versión 1' }))
 
-    expect(upload).toHaveBeenCalledWith(7, zip, presentation, expect.any(Function))
+    expect(upload).toHaveBeenCalledWith(7, zip, presentation, expect.any(Function), expect.any(AbortSignal))
     expect(await screen.findByRole('status')).toHaveTextContent('Se subió la versión 1.')
     expect(screen.getByRole('button', { name: 'Descargar final.zip' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Subir versión 2' })).toBeInTheDocument()
@@ -122,7 +124,7 @@ describe('MyGroupPage', () => {
   it('checks the size and type of the files before uploading', async () => {
     myGroups.mockResolvedValue([group()])
     listMoments.mockResolvedValue([launched()])
-    history.mockResolvedValue({ versions: [], currentPresentation: null })
+    history.mockResolvedValue({ versions: [], currentPresentation: null, maxVersions: 20 })
     renderPage()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Subir versión 1' }))
@@ -137,10 +139,68 @@ describe('MyGroupPage', () => {
     expect(upload).not.toHaveBeenCalled()
   })
 
+  it('accepts a dropped file, validates it at once and lets the student remove it', async () => {
+    myGroups.mockResolvedValue([group()])
+    listMoments.mockResolvedValue([launched()])
+    history.mockResolvedValue({ versions: [], currentPresentation: null, maxVersions: 20 })
+    renderPage()
+
+    const dropzone = await screen.findByTestId('dropzone-Proyecto (.zip)')
+    fireEvent.drop(dropzone, { dataTransfer: { files: [file('notas.rar', MB)] } })
+    expect(screen.getByText('El proyecto debe ser un archivo .zip.')).toBeInTheDocument()
+
+    fireEvent.drop(dropzone, { dataTransfer: { files: [file('final.zip', 2 * MB)] } })
+    expect(screen.queryByText('El proyecto debe ser un archivo .zip.')).not.toBeInTheDocument()
+    expect(screen.getByText('final.zip · 2,0 MB')).toBeInTheDocument()
+
+    await userEvent.upload(screen.getByLabelText('Presentación (opcional)'), file('equivocada.pdf', MB))
+    await userEvent.click(screen.getByRole('button', { name: 'Quitar equivocada.pdf' }))
+    expect(screen.queryByText(/equivocada\.pdf/)).not.toBeInTheDocument()
+  })
+
+  it('shows the progress of the upload and lets the student cancel it', async () => {
+    myGroups.mockResolvedValue([group()])
+    listMoments.mockResolvedValue([launched()])
+    history.mockResolvedValue({ versions: [], currentPresentation: null, maxVersions: 20 })
+    upload.mockImplementation((_group, _zip, _presentation, onProgress, signal) => {
+      onProgress?.(40)
+      return new Promise((_resolve, reject) =>
+        signal?.addEventListener('abort', () => reject(Object.assign(new Error('canceled'), { __CANCEL__: true }))),
+      )
+    })
+    renderPage()
+
+    await userEvent.upload(await screen.findByLabelText('Proyecto (.zip)'), file('final.zip', 10 * MB))
+    await userEvent.click(screen.getByRole('button', { name: 'Subir versión 1' }))
+
+    expect(screen.getByRole('progressbar')).toHaveAttribute('aria-valuenow', '40')
+    expect(screen.getByText('40 % · 4,0 MB de 10 MB')).toBeInTheDocument()
+    await userEvent.click(screen.getByRole('button', { name: 'Cancelar subida' }))
+
+    expect(await screen.findByRole('status')).toHaveTextContent('Se canceló la subida.')
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument()
+    expect(screen.getByText('final.zip · 10 MB')).toBeInTheDocument()
+  })
+
+  it('shows how many versions are left and stops offering the upload at the limit', async () => {
+    myGroups.mockResolvedValue([group()])
+    listMoments.mockResolvedValue([launched()])
+    history.mockResolvedValue({
+      versions: [submissionFixture({ id: 92, versionNumber: 2 }), submissionFixture({ id: 91, versionNumber: 1 })],
+      currentPresentation: null,
+      maxVersions: 2,
+    })
+    renderPage()
+
+    expect(await screen.findByText('Tu grupo ha subido 2 de 2 versiones permitidas.')).toBeInTheDocument()
+    expect(screen.getByText(/ya subió las 2 versiones permitidas/)).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Subir versión/ })).not.toBeInTheDocument()
+  })
+
   it('warns that the version will be late after the group deadline', async () => {
     myGroups.mockResolvedValue([group({ submissionDeadline: '2026-10-10' })])
     listMoments.mockResolvedValue([launched()])
-    history.mockResolvedValue({ versions: [], currentPresentation: null })
+    history.mockResolvedValue({ versions: [], currentPresentation: null, maxVersions: 20 })
     renderPage()
 
     expect(
@@ -151,7 +211,7 @@ describe('MyGroupPage', () => {
   it('does not offer to upload outside the submission window', async () => {
     myGroups.mockResolvedValue([group()])
     listMoments.mockResolvedValue([launched({ submissionOpen: false, submissionEnd: '2026-10-10' })])
-    history.mockResolvedValue({ versions: [], currentPresentation: null })
+    history.mockResolvedValue({ versions: [], currentPresentation: null, maxVersions: 20 })
     renderPage()
 
     expect(await screen.findByText('La ventana de entregas cerró el 10/10/2026.')).toBeInTheDocument()
@@ -162,7 +222,7 @@ describe('MyGroupPage', () => {
   it('saves the project title', async () => {
     myGroups.mockResolvedValue([group({ projectTitle: null })])
     listMoments.mockResolvedValue([launched()])
-    history.mockResolvedValue({ versions: [], currentPresentation: null })
+    history.mockResolvedValue({ versions: [], currentPresentation: null, maxVersions: 20 })
     updateTitle.mockResolvedValue(group({ projectTitle: 'SIERAP 2' }))
     renderPage()
 

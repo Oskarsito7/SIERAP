@@ -9,12 +9,15 @@ export const submissionService = {
    * 100 MB puede tardar más que el tiempo por defecto del cliente.
    *
    * @param onProgress recibe el porcentaje subido (0 a 100)
+   * @param signal     permite cancelar la carga; la promesa se rechaza con un error
+   *                   que `isCanceled` reconoce
    */
   async upload(
     groupId: number,
     zip: File,
     presentation: File | null,
     onProgress?: (percent: number) => void,
+    signal?: AbortSignal,
   ): Promise<Submission> {
     const form = new FormData()
     form.append('zip', zip)
@@ -22,6 +25,7 @@ export const submissionService = {
     const { data } = await httpClient.post<Submission>(`/groups/${groupId}/submissions`, form, {
       headers: { 'Content-Type': 'multipart/form-data' },
       timeout: 0,
+      signal,
       onUploadProgress: (event) => {
         if (onProgress && event.total) onProgress(Math.round((event.loaded * 100) / event.total))
       },

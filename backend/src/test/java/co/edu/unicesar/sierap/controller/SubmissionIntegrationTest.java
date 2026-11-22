@@ -203,7 +203,8 @@ class SubmissionIntegrationTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.versions[*].versionNumber", contains(2, 1)))
                 .andExpect(jsonPath("$.versions[*].toGrade", contains(true, false)))
-                .andExpect(jsonPath("$.currentPresentation.versionNumber").value(1));
+                .andExpect(jsonPath("$.currentPresentation.versionNumber").value(1))
+                .andExpect(jsonPath("$.maxVersions").value(20));
     }
 
     @Test

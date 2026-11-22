@@ -231,6 +231,7 @@ describe('GroupDetailPage', () => {
         zipFileName: 'sierap-v1.zip', zipSize: 1024, presentationFileName: null, presentationSize: null,
         toGrade: true }],
       currentPresentation: null,
+      maxVersions: 20,
     })
     renderPage('/groups/7/submissions')
 

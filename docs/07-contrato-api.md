@@ -573,7 +573,7 @@ Creating an evaluator is the existing `POST /api/external-evaluators` (Stage 2).
 | Method and route | Who | Body | Answer |
 |---|---|---|---|
 | `POST /api/groups/{id}/submissions` | a member | `multipart/form-data`: `zip` (required, `.zip`, up to 100 MB) and `presentation` (optional, `.pdf`, `.docx` or `.pptx`, up to 30 MB) | `201 Submission`, a new version (never overwrites). `late` is `true` if today is after the group's `submissionDeadline` (or, if the teacher did not set one, after the end of the window). `400` wrong type, `413` too large, `422` window closed or the group already has `submission.max-versions` versions (global parameter, default 20, V11) |
-| `GET /api/groups/{id}/submissions` | members, the group's teacher, its assigned evaluators, admin of the faculty, super_admin | — | `200 { "versions": Submission[] (newest first), "currentPresentation": Submission \| null }`. `currentPresentation` is the newest version that has a presentation |
+| `GET /api/groups/{id}/submissions` | members, the group's teacher, its assigned evaluators, admin of the faculty, super_admin | — | `200 { "versions": Submission[] (newest first), "currentPresentation": Submission \| null, "maxVersions": number \| null }`. `currentPresentation` is the newest version that has a presentation; `maxVersions` is the `submission.max-versions` global parameter (`null` if it is missing or invalid), so the UI can show "version X of N" |
 | `GET /api/submissions/{id}/zip` | same | — | `200` the file (`Content-Disposition: attachment`) |
 | `GET /api/submissions/{id}/presentation` | same | — | `200` the file; `404` if that version has none |
 
