@@ -134,6 +134,41 @@ class PasswordTokenPurpose {
   PASSWORD_RESET
 }
 
+class EmailOutbox {
+  -id: Long
+  -recipient: String
+  -subject: String
+  -body: String
+  -status: EmailStatus
+  -attempts: int
+  -nextAttemptAt: LocalDateTime
+  -lastError: String
+  -createdAt: LocalDateTime
+  -sentAt: LocalDateTime
+  +backoffFor(failedAttempts: int)$ Duration
+  +markSent(now: LocalDateTime) void
+  +markFailedAttempt(now: LocalDateTime, error: String, maxAttempts: int) void
+}
+class EmailStatus {
+  <<enumeration>>
+  PENDING
+  SENT
+  FAILED
+}
+class ReminderSent {
+  -id: Long
+  -kind: ReminderKind
+  -referenceId: Long
+  -recipientId: Long
+  -sentOn: LocalDate
+}
+class ReminderKind {
+  <<enumeration>>
+  SUBMISSION_CLOSING
+  EVALUATION_PENDING
+  GRADES_PUBLISHED
+}
+
 %% ================= Academic structure and configuration (D2) =================
 class GlobalParameter {
   -key: String
@@ -360,6 +395,8 @@ User "0..1" -- "*" User : created by
 User "1" *-- "*" RefreshToken : sessions
 User "1" *-- "*" PasswordToken : password links
 PasswordToken ..> PasswordTokenPurpose : «use»
+EmailOutbox ..> EmailStatus : «use»
+ReminderSent ..> ReminderKind : «use»
 RegistrationCode "*" -- "1" Teacher : owned by
 RegistrationCode "*" -- "1" Program : registers into
 Student "*" -- "0..1" RegistrationCode : registered with
@@ -440,6 +477,12 @@ ComparativeReport ..> GradeScale : «use»
 | `Evaluation` shows `isSubmitted()` | It is in the code. |
 | The detailed `.drawio` is regenerated from this model | It was still the Phase 2 version, with the Spanish names. |
 | The legend of the detailed `.drawio` no longer marks `Moment.launch()` as designed only | It is built, with its validations and the V5 constraints (fixes from the PR #3 review). |
+
+## Email queue and reminders (2026-11-22)
+
+| Change | Reason |
+|---|---|
+| `EmailOutbox`, `EmailStatus`, `ReminderSent` and `ReminderKind` (new, infrastructure, no relationships) | Transactional email outbox and idempotent date-based reminders (ADR-022). The detailed `.drawio` has not been regenerated for them yet. |
 
 ## Changes of the contract of Stages 4 to 6 (2026-09-28 decisions)
 

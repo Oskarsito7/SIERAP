@@ -757,6 +757,64 @@ scaled out, move them to a shared store. Integration tests run with the limit di
 
 ---
 
+## ADR-022 — Transactional email outbox and scheduled reminders
+
+**Date:** 2026-11-22.
+**Status:** Accepted (approved by the project lead).
+
+**Context:** emails (ADR-017, ADR-021 notifications) were sent in the request thread,
+after commit, with `JavaMailSender` (10 s timeouts) and a failure was only logged: a
+mail server that was down meant a lost email with no retry, and a request could be slowed
+down by SMTP. The date-based reminders left out of wave 2 (`docs/04`, 2026-11-22) also
+need something that runs by itself.
+
+**Decision:**
+
+- **Transactional outbox.** `EmailService` now means "enqueue": its two methods insert a
+  row in `email_outbox` (`recipient`, `subject`, `body`, `status` `PENDING|SENT|FAILED`,
+  `attempts`, `next_attempt_at`, `last_error`, `created_at`, `sent_at`; index on
+  `status, next_attempt_at`) **inside the transaction of the operation**. If the operation
+  rolls back the email disappears with it, so `NotificationServiceImpl` and
+  `PasswordLinkServiceImpl` no longer use `afterCommit`. The new implementation is
+  `OutboxEmailService`; `SmtpEmailService` was removed and the real SMTP send lives in
+  `SmtpMailSender`, used only by the dispatcher.
+- **Dispatcher.** `EmailOutboxDispatcher` is a `@Scheduled(fixedDelay)` job
+  (`sierap.mail.outbox.dispatch-delay`, 15 s) that takes up to `batch-size` (20) `PENDING`
+  emails whose `next_attempt_at` has come and hands each one to `EmailOutboxProcessor`,
+  which delivers it in its own short transaction (a failure never affects the others).
+  Success: `SENT` + `sent_at`. Error: `attempts + 1`, `last_error` and a retry with
+  exponential wait (1, 2, 4, 8 minutes…); on reaching `max-attempts` (5) the email becomes
+  `FAILED` and is no longer retried. `MailOutboxProperties` (`sierap.mail.outbox.*`) holds
+  `enabled`, `dispatch-delay`, `max-attempts` and `batch-size`; `enabled` is `false` in the
+  test profile so the scheduler does not run in integration tests. `SchedulingConfig` turns
+  on `@EnableScheduling`.
+- **Date-based reminders.** `ReminderScheduler` runs `ReminderService` every day at 07:00
+  (`sierap.reminders.cron`, zone `America/Bogota`, disabled with
+  `sierap.reminders.enabled=false`), always with the injected `Clock`. For launched moments
+  only: (1) *submission closing in 2 days* — each active member of a group whose effective
+  deadline (`submissionDeadline`, or the moment's `submissionEnd`) is today + 2 and that has
+  no submission; (2) *pending evaluation* — each evaluator (teacher or assigned external)
+  of the groups of a moment whose `gradingEnd` is tomorrow and whose own evaluation is not
+  `SUBMITTED`, with the link to `/groups/{id}/evaluation` or `/assigned-groups/{id}`;
+  (3) *grades published* — the day after `gradingEnd`, each active student with a group in
+  the moment, linking to `/my-grades?momentId={id}`.
+- **Idempotency.** `reminder_sent` (`kind`, `reference_id`, `recipient_id`, `sent_on`,
+  unique by `kind + reference_id + recipient_id`) records each reminder; running the job
+  twice or restarting the server does not repeat it. The whole job is a single transaction,
+  so emails and records are enqueued together or not at all.
+
+**Alternatives considered:** keep sending after commit and add retries in memory (lost on
+restart, still tied to the request thread); a message broker such as RabbitMQ or a job
+framework such as Quartz/ShedLock (too heavy for a single-instance deployment); Spring
+`@Async` (no persistence, no retries).
+
+**Consequences:** migration V12 adds two tables; delivery is now asynchronous (up to
+~15 s late) and survives SMTP outages and restarts; with several backend instances the
+dispatcher would need row locking (`SELECT … FOR UPDATE SKIP LOCKED`) or a lock like
+ShedLock — not needed today. Emails stuck in `FAILED` stay in the table for inspection.
+
+---
+
 ## Template for new entries
 
 ```
