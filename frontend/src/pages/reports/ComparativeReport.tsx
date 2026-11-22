@@ -21,11 +21,14 @@ import { formatDelta, formatGrade, formatPercentage } from './reportFormat'
 export function ComparativeReport({
   periods,
   defaultPeriodId,
+  facultyId = null,
 }: {
   periods: AcademicPeriod[]
   defaultPeriodId: number
+  /** Facultad elegida por el super_admin; `null` ofrece los programas de todas. */
+  facultyId?: number | null
 }) {
-  const programs = useLoad(() => catalogService.programs(), [])
+  const programs = useLoad(() => catalogService.programs(facultyId ?? undefined), [facultyId])
 
   if (programs.state.kind !== 'success') {
     return <LoadStatus state={programs.state} onRetry={programs.reload} label="Cargando los programas…" />
@@ -70,7 +73,7 @@ function ComparativeFilters({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-wrap items-end gap-4">
+      <div className="flex flex-wrap items-end gap-4 print:hidden">
         <div className="w-64">
           <SelectField
             label="Programa"

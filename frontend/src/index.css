@@ -172,7 +172,8 @@
  * las capas de Tailwind para imponerse a las utilidades de las celdas (padding,
  * alineación, bordes) sin usar !important.
  */
-@media (width < 40rem) {
+/* Solo en pantalla: al imprimir, las tablas se quedan como tablas aunque la hoja sea angosta. */
+@media screen and (width < 40rem) {
   .responsive-table thead {
     position: absolute;
     width: 1px;
@@ -225,5 +226,29 @@
     flex-wrap: wrap;
     justify-content: flex-end;
     gap: 0.5rem;
+  }
+}
+
+/*
+ * Impresión (y "Guardar como PDF" del navegador) de los reportes: se ocultan el menú,
+ * la barra superior y los filtros (clases `print:hidden`), se conservan los colores de
+ * las gráficas y se evita partir una tarjeta entre dos hojas.
+ */
+@media print {
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+  * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  html,
+  body {
+    background: #fff;
+  }
+  [data-slot='card'] {
+    break-inside: avoid;
+    box-shadow: none;
   }
 }
