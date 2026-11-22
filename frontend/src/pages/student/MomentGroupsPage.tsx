@@ -19,7 +19,8 @@ import type { MomentSummary } from '@/types/moment'
  * "Grupos del momento" del estudiante (wireframes ES-01 y ES-02): los grupos de todos
  * los docentes de un momento de su programa. Se inscribe, se cambia o se sale mientras
  * la conformación esté abierta; cambiarse pide confirmación porque lo saca de su grupo
- * actual. El momento elegido queda en la dirección (`?momentId=`).
+ * actual. El momento elegido queda en la dirección (`?momentId=`) y el docente por el que se
+ * filtra también (`?teacherId=`).
  */
 export function MomentGroupsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -69,6 +70,8 @@ export function MomentGroupsPage() {
 function MomentGroups({ moment }: { moment: MomentSummary }) {
   const userId = useAuth().user?.id
   const groups = useLoad(() => groupService.list(moment.id), [moment.id])
+  const [searchParams, setSearchParams] = useSearchParams()
+  const [hideFull, setHideFull] = useState(false)
   const [pending, setPending] = useState<number | null>(null)
   const [switchTo, setSwitchTo] = useState<Group | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -76,6 +79,28 @@ function MomentGroups({ moment }: { moment: MomentSummary }) {
   const list = groups.state.kind === 'success' ? groups.state.data : []
   const myGroup = list.find((group) => group.myGroup)
   const open = moment.groupFormationOpen
+
+  const teachersById = new Map(list.map((group) => [group.teacher.id, group.teacher.fullName]))
+  const teachers = [...teachersById]
+    .map(([id, fullName]) => ({ id, fullName }))
+    .sort((a, b) => a.fullName.localeCompare(b.fullName))
+  const requestedTeacher = Number(searchParams.get('teacherId'))
+  // Un docente de la dirección que ya no tiene grupos en este momento no filtra nada.
+  const teacherId = teachers.some((teacher) => teacher.id === requestedTeacher) ? requestedTeacher : null
+  // El grupo propio se muestra siempre, aunque esté completo.
+  const visible = list.filter(
+    (group) => (teacherId === null || group.teacher.id === teacherId) && (!hideFull || !group.full || group.myGroup),
+  )
+  const chooseTeacher = (value: string) =>
+    setSearchParams(
+      (current) => {
+        const next = new URLSearchParams(current)
+        if (value) next.set('teacherId', value)
+        else next.delete('teacherId')
+        return next
+      },
+      { replace: true },
+    )
 
   /** Saca al estudiante de un grupo en la lista local, sin volver a pedirla. */
   const withoutMe = (group: Group): Group => ({
@@ -165,8 +190,36 @@ function MomentGroups({ moment }: { moment: MomentSummary }) {
       )}
 
       {list.length > 0 && (
+        <div className="flex flex-wrap items-end gap-x-6 gap-y-3">
+          <label className="flex min-w-56 flex-col gap-2 text-sm font-medium">
+            Docente
+            <select
+              className="border-input bg-background h-9 rounded-md border px-3 text-sm font-normal"
+              value={teacherId ?? ''}
+              onChange={(event) => chooseTeacher(event.target.value)}
+            >
+              <option value="">Todos los docentes</option>
+              {teachers.map((teacher) => (
+                <option key={teacher.id} value={teacher.id}>
+                  {teacher.fullName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="flex h-9 items-center gap-2 text-sm font-medium">
+            <input type="checkbox" checked={hideFull} onChange={(event) => setHideFull(event.target.checked)} />
+            Ocultar grupos completos
+          </label>
+        </div>
+      )}
+
+      {list.length > 0 && visible.length === 0 && (
+        <p className="text-muted-foreground text-sm">Ningún grupo coincide con los filtros elegidos.</p>
+      )}
+
+      {visible.length > 0 && (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-          {list.map((group) => (
+          {visible.map((group) => (
             <GroupCard
               key={group.id}
               group={group}
