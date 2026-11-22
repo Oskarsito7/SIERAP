@@ -14,6 +14,11 @@ spring:
           starttls:
             enable: true
 
+# Detrás de un proxy inverso la IP real llega en X-Forwarded-For; el límite de intentos
+# por IP (ADR-021) la necesita para no contar todo como una sola IP.
+server:
+  forward-headers-strategy: native
+
 logging:
   level:
     root: INFO
