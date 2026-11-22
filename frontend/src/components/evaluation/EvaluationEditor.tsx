@@ -1,5 +1,6 @@
-import { useId, useMemo, useState } from 'react'
-import { Download } from 'lucide-react'
+import { useEffect, useId, useMemo, useState } from 'react'
+import { Download, Eye } from 'lucide-react'
+import { Dialog } from 'radix-ui'
 
 import { LoadStatus } from '@/components/LoadStatus'
 import { FormError } from '@/components/forms/FormField'
@@ -17,13 +18,30 @@ import { evaluationService } from '@/services/api/evaluationService'
 import { getErrorMessage } from '@/services/api/httpClient'
 import { submissionService } from '@/services/api/submissionService'
 import type { CriterionForm, EvaluationForm, SaveEvaluationRequest } from '@/types/evaluation'
-import type { SubmissionHistory } from '@/types/submission'
+import type { Submission, SubmissionHistory } from '@/types/submission'
 
 /** Nivel elegido por criterio (`criterionId` → `levelId`). */
 type Levels = Record<number, number>
 
 /** Ajustes por estudiante (`studentId` → nivel por criterio). */
 type Adjustments = Record<number, Levels>
+
+/** Lo que se califica en pantalla: es lo que se guarda y contra lo que se compara. */
+interface Snapshot {
+  levels: Levels
+  adjustments: Adjustments
+  comment: string
+}
+
+/** Cuánto se espera sin cambios nuevos antes de autoguardar el borrador. */
+const AUTOSAVE_DELAY_MS = 30_000
+
+/** Estado del autoguardado que se anuncia junto a los botones. */
+type AutosaveState =
+  | { kind: 'idle' }
+  | { kind: 'saving' }
+  | { kind: 'saved'; at: string }
+  | { kind: 'error'; message: string; key: string }
 
 /**
  * Calificación propia de un grupo (wireframes DO-05, DO-06 y EV-02), la misma para el
@@ -68,6 +86,14 @@ function EditorBody({
   const [adjusting, setAdjusting] = useState<number | null>(null)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // Línea base: lo último guardado. Parte de lo que llegó de la API y el autoguardado la
+  // avanza sin remontar el editor, para no tocar lo que la persona sigue escribiendo.
+  const [baseline, setBaseline] = useState(() => snapshotKey(snapshotOf(form)))
+  const [saved, setSaved] = useState<{ id: number | null; evaluatedAt: string | null }>({
+    id: form.id,
+    evaluatedAt: form.evaluatedAt,
+  })
+  const [autosave, setAutosave] = useState<AutosaveState>({ kind: 'idle' })
 
   const criteria = useMemo(() => form.learningOutcomes.flatMap((outcome) => outcome.criteria), [form])
   const scores = useMemo(() => levelScores(criteria), [criteria])
@@ -79,26 +105,42 @@ function EditorBody({
       const levelId = adjustments[studentId]?.[criterion.id] ?? levels[criterion.id]
       return sum + (levelId === undefined ? 0 : scores[levelId])
     }, 0)
-  const dirty =
-    JSON.stringify(levels) !== JSON.stringify(initialLevels(form)) ||
-    JSON.stringify(adjustments) !== JSON.stringify(initialAdjustments(form)) ||
-    comment !== (form.comment ?? '')
+  const currentKey = snapshotKey({ levels, adjustments, comment })
+  const dirty = currentKey !== baseline
   const submitted = form.status === 'SUBMITTED'
+  const autosaving = autosave.kind === 'saving'
   const disabled = !form.canEdit || busy
+  // Los botones también esperan a que termine un autoguardado, para no guardar a la vez.
+  const actionsDisabled = disabled || autosaving
   // Mientras se guarda no se pregunta: al terminar, el formulario se reinicia con lo guardado.
   const blocker = useUnsavedChanges(dirty && form.canEdit && !busy)
 
-  const request = (): SaveEvaluationRequest => ({
-    levels: Object.entries(levels).map(([criterionId, levelId]) => ({ criterionId: Number(criterionId), levelId })),
-    comment,
-    adjustments: Object.entries(adjustments).flatMap(([studentId, byCriterion]) =>
-      Object.entries(byCriterion).map(([criterionId, levelId]) => ({
-        studentId: Number(studentId),
-        criterionId: Number(criterionId),
-        levelId,
-      })),
-    ),
-  })
+  const request = (): SaveEvaluationRequest => toRequest({ levels, adjustments, comment })
+
+  // Autoguardado: solo borradores o evaluaciones nuevas (una enviada se corrige a mano, porque
+  // cambia la nota en firme). Espera 30 s sin cambios y nunca corre con otro guardado en curso;
+  // tras un error no insiste con los mismos datos, reintenta cuando haya un cambio nuevo.
+  const failedKey = autosave.kind === 'error' ? autosave.key : null
+  useEffect(() => {
+    if (!form.canEdit || form.status === 'SUBMITTED') return
+    if (!dirty || busy || autosaving || currentKey === failedKey) return
+    const timer = setTimeout(() => {
+      const snapshot = JSON.parse(currentKey) as Snapshot
+      setAutosave({ kind: 'saving' })
+      evaluationService
+        .save(form.groupId, toRequest(snapshot))
+        .then((result) => {
+          // La línea base es lo que se envió, no lo que hay ahora: lo escrito después sigue pendiente.
+          setBaseline(currentKey)
+          setSaved({ id: result.id, evaluatedAt: result.evaluatedAt })
+          setAutosave({ kind: 'saved', at: result.evaluatedAt ? clockTime(result.evaluatedAt) : '' })
+        })
+        .catch((autosaveError) =>
+          setAutosave({ kind: 'error', message: getErrorMessage(autosaveError), key: currentKey }),
+        )
+    }, AUTOSAVE_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [form.canEdit, form.status, form.groupId, dirty, busy, autosaving, currentKey, failedKey])
 
   const run = async (action: () => Promise<EvaluationForm>) => {
     setError(null)
@@ -266,10 +308,10 @@ function EditorBody({
           <CardHeader>
             <div className="flex items-center justify-between gap-2">
               <Badge variant={submitted ? 'default' : 'outline'}>
-                {submitted ? 'Enviada' : form.status === 'DRAFT' ? 'Borrador' : 'Sin empezar'}
+                {submitted ? 'Enviada' : form.status === 'DRAFT' || saved.id !== null ? 'Borrador' : 'Sin empezar'}
               </Badge>
-              {form.evaluatedAt && (
-                <span className="text-muted-foreground text-xs">Guardada {formatDateTime(form.evaluatedAt)}</span>
+              {saved.evaluatedAt && (
+                <span className="text-muted-foreground text-xs">Guardada {formatDateTime(saved.evaluatedAt)}</span>
               )}
             </div>
           </CardHeader>
@@ -288,17 +330,18 @@ function EditorBody({
             <div className="flex flex-col gap-2">
               <Button
                 variant={submitted ? 'default' : 'outline'}
-                disabled={disabled || !dirty}
+                disabled={actionsDisabled || !dirty}
                 onClick={() => void save()}
               >
                 {busy ? 'Guardando…' : submitted ? 'Guardar corrección' : 'Guardar borrador'}
               </Button>
               {!submitted && (
-                <Button disabled={disabled || !complete} onClick={() => void submit()}>
+                <Button disabled={actionsDisabled || !complete} onClick={() => void submit()}>
                   Enviar evaluación
                 </Button>
               )}
             </div>
+            <AutosaveStatus state={autosave} />
             <p className="text-muted-foreground text-xs">
               {submitted
                 ? 'Ya cuenta para la nota. Puedes corregirla mientras la calificación esté abierta; ' +
@@ -390,10 +433,79 @@ function SubmissionBanner({ form, history }: { form: EvaluationForm; history: Su
             Descargar la presentación
           </Button>
         )}
+        {presentation && isPdf(presentation) && <PresentationViewer presentation={presentation} />}
         <FormError message={error} />
       </CardContent>
     </Card>
   )
+}
+
+/** Si la presentación es un PDF (los `.docx` y `.pptx` solo se descargan). */
+function isPdf(presentation: Submission): boolean {
+  return (presentation.presentationFileName ?? '').toLowerCase().endsWith('.pdf')
+}
+
+/** Botón y diálogo grande para leer la presentación PDF sin salir de la calificación. */
+function PresentationViewer({ presentation }: { presentation: Submission }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <Dialog.Root open={open} onOpenChange={setOpen}>
+      <Dialog.Trigger asChild>
+        <Button variant="link" className="h-auto p-0">
+          <Eye aria-hidden />
+          Ver presentación
+        </Button>
+      </Dialog.Trigger>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-50 bg-black/50" />
+        <Dialog.Content
+          aria-describedby={undefined}
+          className="bg-card fixed inset-4 z-50 flex flex-col gap-3 rounded-lg border p-4 shadow-lg"
+        >
+          <div className="flex items-center justify-between gap-2">
+            <Dialog.Title className="text-lg font-semibold">
+              Presentación del grupo · {presentation.presentationFileName}
+            </Dialog.Title>
+            <Dialog.Close asChild>
+              <Button variant="outline" size="sm">
+                Cerrar
+              </Button>
+            </Dialog.Close>
+          </div>
+          <PresentationFrame submissionId={presentation.id} />
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  )
+}
+
+type FrameState = { kind: 'loading' } | { kind: 'ready'; url: string } | { kind: 'error'; message: string }
+
+/** Descarga el PDF con el token y lo muestra en un iframe; revoca la URL al desmontar. */
+function PresentationFrame({ submissionId }: { submissionId: number }) {
+  const [state, setState] = useState<FrameState>({ kind: 'loading' })
+  useEffect(() => {
+    let cancelled = false
+    let objectUrl: string | null = null
+    submissionService
+      .downloadPresentation(submissionId)
+      .then((blob) => {
+        if (cancelled) return
+        objectUrl = URL.createObjectURL(new Blob([blob], { type: 'application/pdf' }))
+        setState({ kind: 'ready', url: objectUrl })
+      })
+      .catch((loadError) => {
+        if (!cancelled) setState({ kind: 'error', message: getErrorMessage(loadError) })
+      })
+    return () => {
+      cancelled = true
+      if (objectUrl) URL.revokeObjectURL(objectUrl)
+    }
+  }, [submissionId])
+
+  if (state.kind === 'loading') return <p className="text-muted-foreground text-sm">Cargando la presentación…</p>
+  if (state.kind === 'error') return <FormError message={state.message} />
+  return <iframe title="Presentación del grupo" src={state.url} className="w-full flex-1 rounded-md border" />
 }
 
 /**
@@ -502,6 +614,53 @@ function ScoreFigure({ label, value }: { label: string; value: string }) {
 function signed(value: number): string {
   const rounded = Math.round(value * 100) / 100
   return `${rounded > 0 ? '+' : ''}${formatScore(rounded)}`
+}
+
+/** Anuncia el estado del autoguardado sin interrumpir a quien escribe. */
+function AutosaveStatus({ state }: { state: AutosaveState }) {
+  const text =
+    state.kind === 'saving'
+      ? 'Guardando borrador…'
+      : state.kind === 'saved'
+        ? `Borrador guardado automáticamente${state.at ? ` a las ${state.at}` : ''}`
+        : state.kind === 'error'
+          ? `No se pudo guardar automáticamente: ${state.message}. Tus cambios siguen aquí; intenta guardar.`
+          : ''
+  return (
+    <p role="status" className="text-muted-foreground min-h-4 text-xs">
+      {text}
+    </p>
+  )
+}
+
+/** Hora `HH:mm` de una fecha y hora `YYYY-MM-DDTHH:mm:ss` de la API. */
+function clockTime(isoDateTime: string): string {
+  return isoDateTime.split('T')[1]?.slice(0, 5) ?? ''
+}
+
+function snapshotOf(form: EvaluationForm): Snapshot {
+  return { levels: initialLevels(form), adjustments: initialAdjustments(form), comment: form.comment ?? '' }
+}
+
+function snapshotKey(snapshot: Snapshot): string {
+  return JSON.stringify(snapshot)
+}
+
+function toRequest(snapshot: Snapshot): SaveEvaluationRequest {
+  return {
+    levels: Object.entries(snapshot.levels).map(([criterionId, levelId]) => ({
+      criterionId: Number(criterionId),
+      levelId,
+    })),
+    comment: snapshot.comment,
+    adjustments: Object.entries(snapshot.adjustments).flatMap(([studentId, byCriterion]) =>
+      Object.entries(byCriterion).map(([criterionId, levelId]) => ({
+        studentId: Number(studentId),
+        criterionId: Number(criterionId),
+        levelId,
+      })),
+    ),
+  }
 }
 
 function initialLevels(form: EvaluationForm): Levels {

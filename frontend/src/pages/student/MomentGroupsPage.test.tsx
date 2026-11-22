@@ -1,7 +1,7 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { AxiosError, type AxiosResponse } from 'axios'
-import { MemoryRouter } from 'react-router'
+import { MemoryRouter, useLocation } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { AuthContext } from '@/auth/authContext'
@@ -39,13 +39,18 @@ function myGroup(overrides: Partial<Group> = {}): Group {
   })
 }
 
-function renderPage() {
+function Location() {
+  return <span data-testid="search">{useLocation().search}</span>
+}
+
+function renderPage(entry = '/moment-groups') {
   render(
     <AuthContext.Provider
       value={{ state: { status: 'authenticated', user: studentUser }, user: studentUser, logout: vi.fn() }}
     >
-      <MemoryRouter initialEntries={['/moment-groups']}>
+      <MemoryRouter initialEntries={[entry]}>
         <MomentGroupsPage />
+        <Location />
       </MemoryRouter>
     </AuthContext.Provider>,
   )
@@ -153,6 +158,74 @@ describe('MomentGroupsPage', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Unirme' }))
 
     expect(await screen.findByRole('alert')).toHaveTextContent('El grupo ya tiene el máximo de 5 integrantes.')
+  })
+
+  describe('filters', () => {
+    const marta = { id: 12, fullName: 'Marta Díaz' }
+    const rafael = { id: 20, fullName: 'Rafael Ospino' }
+
+    function fiveGroups() {
+      listMoments.mockResolvedValue([momentFixture()])
+      listGroups.mockResolvedValue([
+        groupFixture({ id: 1, name: 'Grupo 1', teacher: marta }),
+        groupFixture({ id: 2, name: 'Grupo 2', teacher: rafael, memberCount: 5, full: true }),
+        groupFixture({ id: 3, name: 'Grupo 3', teacher: rafael }),
+        myGroup({ id: 4, name: 'Grupo 4', teacher: marta, memberCount: 5, full: true }),
+      ])
+    }
+    const titles = () =>
+      screen.getAllByText(/^Grupo \d$/, { selector: '[data-slot="card-title"]' }).map((node) => node.textContent)
+
+    it('filters by teacher, lists each teacher once and keeps the choice in the address', async () => {
+      fiveGroups()
+      renderPage()
+
+      const select = await screen.findByLabelText('Docente')
+      expect(within(select).getAllByRole('option').map((option) => option.textContent)).toEqual([
+        'Todos los docentes', 'Marta Díaz', 'Rafael Ospino',
+      ])
+      expect(titles()).toEqual(['Grupo 1', 'Grupo 2', 'Grupo 3', 'Grupo 4'])
+
+      await userEvent.selectOptions(select, 'Rafael Ospino')
+      expect(titles()).toEqual(['Grupo 2', 'Grupo 3'])
+      expect(screen.getByTestId('search')).toHaveTextContent('?teacherId=20')
+
+      await userEvent.selectOptions(select, 'Todos los docentes')
+      expect(titles()).toHaveLength(4)
+      expect(screen.getByTestId('search')).toBeEmptyDOMElement()
+    })
+
+    it('starts with the teacher of the address selected', async () => {
+      fiveGroups()
+      renderPage('/moment-groups?teacherId=12')
+
+      expect(await screen.findByLabelText('Docente')).toHaveValue('12')
+      expect(titles()).toEqual(['Grupo 1', 'Grupo 4'])
+    })
+
+    it('hides full groups except the own one', async () => {
+      fiveGroups()
+      renderPage()
+
+      await userEvent.click(await screen.findByLabelText('Ocultar grupos completos'))
+
+      expect(titles()).toEqual(['Grupo 1', 'Grupo 3', 'Grupo 4'])
+      expect(within(card('Grupo 4')).getByText('Mi grupo')).toBeInTheDocument()
+    })
+
+    it('says so when the filters leave nothing to show', async () => {
+      listMoments.mockResolvedValue([momentFixture()])
+      listGroups.mockResolvedValue([
+        groupFixture({ id: 1, name: 'Grupo 1', teacher: marta }),
+        groupFixture({ id: 2, name: 'Grupo 2', teacher: rafael, memberCount: 5, full: true }),
+      ])
+      renderPage('/moment-groups?teacherId=20')
+
+      await userEvent.click(await screen.findByLabelText('Ocultar grupos completos'))
+
+      expect(screen.getByText('Ningún grupo coincide con los filtros elegidos.')).toBeInTheDocument()
+      expect(screen.queryByText('Grupo 2', { selector: '[data-slot="card-title"]' })).not.toBeInTheDocument()
+    })
   })
 
   it('says so when there are no moments for the student', async () => {
