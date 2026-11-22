@@ -94,7 +94,7 @@ public class SecurityConfig {
                                 "/api/auth/login", "/api/auth/refresh", "/api/auth/logout",
                                 "/api/auth/password/forgot", "/api/auth/password/set", "/api/auth/register")
                         .permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/status").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/status", "/api/auth/privacy-policy").permitAll()
                         .requestMatchers(HttpMethod.GET, "/actuator/health/**").permitAll()
                         .requestMatchers("/actuator/**").denyAll()
                         .anyRequest().authenticated())

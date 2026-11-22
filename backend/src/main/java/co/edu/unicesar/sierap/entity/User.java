@@ -91,6 +91,13 @@ public abstract class User {
     @Column(nullable = false)
     private boolean active = true;
 
+    /**
+     * Fecha y hora en que la persona autorizó el tratamiento de sus datos personales
+     * (Ley 1581 de 2012); {@code null} mientras no lo haya hecho.
+     */
+    @Column(name = "privacy_accepted_at")
+    private LocalDateTime privacyAcceptedAt;
+
     /** Fecha y hora de creación de la cuenta, tomada del {@code Clock} del service. */
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -262,5 +269,25 @@ public abstract class User {
     /** @return fecha y hora de creación de la cuenta */
     public LocalDateTime getCreatedAt() {
         return createdAt;
+    }
+
+    /**
+     * Devuelve la fecha en que la persona autorizó el tratamiento de sus datos
+     * personales (Ley 1581 de 2012).
+     *
+     * @return fecha y hora de la autorización, o {@code null} si aún no la ha dado
+     */
+    public LocalDateTime getPrivacyAcceptedAt() {
+        return privacyAcceptedAt;
+    }
+
+    /**
+     * Registra la fecha en que la persona autorizó el tratamiento de sus datos
+     * personales.
+     *
+     * @param privacyAcceptedAt fecha y hora de la autorización, tomada del {@code Clock}
+     */
+    public void setPrivacyAcceptedAt(LocalDateTime privacyAcceptedAt) {
+        this.privacyAcceptedAt = privacyAcceptedAt;
     }
 }
