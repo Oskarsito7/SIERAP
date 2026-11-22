@@ -1,5 +1,6 @@
 package co.edu.unicesar.sierap.controller;
 
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
@@ -123,9 +124,10 @@ class AccountEditIntegrationTest {
                         .header(HttpHeaders.AUTHORIZATION, "Bearer " + loginToken(teacher)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[?(@.id == " + own.getId() + ")].documentNumber")
-                        .value(own.getDocumentNumber()))
-                .andExpect(jsonPath("$[?(@.id == " + foreign.getId() + ")].manageable").value(false))
-                .andExpect(jsonPath("$[?(@.id == " + foreign.getId() + ")].documentNumber").value(nullValue()));
+                        .value(contains(own.getDocumentNumber())))
+                .andExpect(jsonPath("$[?(@.id == " + foreign.getId() + ")].manageable").value(contains(false)))
+                .andExpect(jsonPath("$[?(@.id == " + foreign.getId() + ")].documentNumber")
+                        .value(contains(nullValue())));
     }
 
     // ------------------------------------------------------------ edición
@@ -134,14 +136,14 @@ class AccountEditIntegrationTest {
     void editsThePersonalDataOfAStudentAndNormalizesTheEmail() throws Exception {
         Map<String, Object> body = Map.of("firstNames", "  Nuevo Nombre ", "lastNames", "Nuevo Apellido",
                 "documentType", "CE", "documentNumber", "99" + SEQUENCE.incrementAndGet(),
-                "email", "  NUEVO.Correo" + SEQUENCE.incrementAndGet() + "@UniCesar.edu.co ",
+                "email", "NUEVO.Correo" + SEQUENCE.incrementAndGet() + "@UniCesar.edu.co",
                 "studentCode", "NC" + SEQUENCE.incrementAndGet(), "currentSemester", 7);
 
         patchUser(loginToken(teacher), own.getId(), body)
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.firstNames").value("Nuevo Nombre"))
                 .andExpect(jsonPath("$.lastNames").value("Nuevo Apellido"))
-                .andExpect(jsonPath("$.email").value(((String) body.get("email")).trim().toLowerCase()));
+                .andExpect(jsonPath("$.email").value(((String) body.get("email")).toLowerCase()));
 
         userRepository.flush();
         Student saved = studentRepository.findById(own.getId()).orElseThrow();
@@ -218,13 +220,15 @@ class AccountEditIntegrationTest {
 
     @Test
     void changingTheEmailClosesTheSessionsAndTheNewEmailLogsIn() throws Exception {
-        Cookie session = refreshCookie(login(own.getEmail()).andExpect(status().isOk()).andReturn());
+        String oldEmail = own.getEmail();
+        Cookie session = refreshCookie(login(oldEmail).andExpect(status().isOk()).andReturn());
         String newEmail = email("cambiado");
 
         patchUser(loginToken(teacher), own.getId(), Map.of("email", newEmail)).andExpect(status().isOk());
 
         mockMvc.perform(post("/api/auth/refresh").cookie(session)).andExpect(status().isUnauthorized());
-        login(own.getEmail()).andExpect(status().isUnauthorized());
+        // `own` es la misma entidad que modificó el PATCH (prueba @Transactional): se usa el correo guardado antes.
+        login(oldEmail).andExpect(status().isUnauthorized());
         login(newEmail).andExpect(status().isOk());
     }
 

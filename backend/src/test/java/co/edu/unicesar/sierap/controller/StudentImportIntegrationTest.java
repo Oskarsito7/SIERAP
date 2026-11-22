@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -25,6 +24,7 @@ import co.edu.unicesar.sierap.entity.Teacher;
 import co.edu.unicesar.sierap.entity.User;
 import co.edu.unicesar.sierap.entity.enums.DocumentType;
 import co.edu.unicesar.sierap.repository.FacultyRepository;
+import co.edu.unicesar.sierap.repository.PasswordTokenRepository;
 import co.edu.unicesar.sierap.repository.StudentRepository;
 import co.edu.unicesar.sierap.repository.UserRepository;
 import co.edu.unicesar.sierap.service.EmailService;
@@ -76,6 +76,9 @@ class StudentImportIntegrationTest {
 
     @Autowired
     private StudentRepository studentRepository;
+
+    @Autowired
+    private PasswordTokenRepository passwordTokenRepository;
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -148,6 +151,7 @@ class StudentImportIntegrationTest {
     @Test
     void bulkCreatesOnlyTheValidRowsAndReportsTheOthers() throws Exception {
         String token = loginToken();
+        long tokensBefore = passwordTokenRepository.count();
 
         bulk(token, sampleCsv(), "estudiantes.csv")
                 .andExpect(status().isOk())
@@ -165,8 +169,10 @@ class StudentImportIntegrationTest {
         assertThat(ana.hasPassword()).isFalse();
         assertThat(studentRepository.findByStudentCode("K" + n + "2")).isEmpty();
         assertThat(studentRepository.findByStudentCode("K" + n + "4")).isPresent();
-        // Cada estudiante creado recibe su correo para crear la contraseña.
-        verify(emailService, times(2)).sendPasswordLink(any(), any(), any(), anyInt());
+        // Cada estudiante creado recibe su enlace para crear la contraseña. El correo sale
+        // después del commit (PasswordLinkServiceImpl), que esta prueba @Transactional no hace:
+        // aquí se comprueba el token de cada uno; el envío lo cubre PasswordLinkServiceImplTest.
+        assertThat(passwordTokenRepository.count()).isEqualTo(tokensBefore + 2);
     }
 
     @Test
