@@ -573,7 +573,7 @@ Creating an evaluator is the existing `POST /api/external-evaluators` (Stage 2).
 | Method and route | Who | Body | Answer |
 |---|---|---|---|
 | `POST /api/groups/{id}/submissions` | a member | `multipart/form-data`: `zip` (required, `.zip`, up to 100 MB) and `presentation` (optional, `.pdf`, `.docx` or `.pptx`, up to 30 MB) | `201 Submission`, a new version (never overwrites). `late` is `true` if today is after the group's `submissionDeadline` (or, if the teacher did not set one, after the end of the window). `400` wrong type, `413` too large, `422` window closed or the group already has `submission.max-versions` versions (global parameter, default 20, V11) |
-| `GET /api/groups/{id}/submissions` | members, the group's teacher, its assigned evaluators, admin of the faculty, super_admin | — | `200 { "versions": Submission[] (newest first), "currentPresentation": Submission \| null }`. `currentPresentation` is the newest version that has a presentation |
+| `GET /api/groups/{id}/submissions` | members, the group's teacher, its assigned evaluators, admin of the faculty, super_admin | — | `200 { "versions": Submission[] (newest first), "currentPresentation": Submission \| null, "maxVersions": number \| null }`. `currentPresentation` is the newest version that has a presentation; `maxVersions` is the `submission.max-versions` global parameter (`null` if it is missing or invalid), so the UI can show "version X of N" |
 | `GET /api/submissions/{id}/zip` | same | — | `200` the file (`Content-Disposition: attachment`) |
 | `GET /api/submissions/{id}/presentation` | same | — | `200` the file; `404` if that version has none |
 
@@ -626,7 +626,8 @@ evaluation per group. They grade the group once and may adjust single students
 | `GET /api/groups/{id}/evaluation` | the group's teacher and its assigned evaluators | — | `200 EvaluationForm` (their own) |
 | `PUT /api/groups/{id}/evaluation` | same, within the grading period of the group | `{ "levels": [ { "criterionId", "levelId" } ], "comment", "adjustments": [ { "studentId", "criterionId", "levelId" } ] }` | `200 EvaluationForm`. Creates the evaluation as a draft the first time (a draft can be partial). `levels` sets the level of each criterion sent; the others keep theirs. `adjustments`, when sent, **replaces** all the previous ones (omit it to keep them); one equal to the group's level is dropped. If it was already submitted, it stays submitted, so it must stay complete (`422` otherwise). `422` if a level does not belong to its criterion or a student is not a member |
 | `POST /api/groups/{id}/evaluation/submit` | same | — | `200 EvaluationForm` with `status: SUBMITTED`. `422` "Falta calificar N criterios." if it is incomplete |
-| `GET /api/groups/{id}/evaluations` | the group's teacher, admin of the faculty, super_admin | — | `200 [ { "id", "evaluator": { "id", "fullName", "kind" }, "status", "evaluatedAt", "totalScore", "comment" } ]`. `kind` is "Docente" or the evaluator type name. External evaluators only see their own evaluation |
+| `GET /api/groups/{id}/evaluations` | the group's teacher, admin of the faculty, super_admin | — | `200 [ { "id", "groupId", "evaluator": { "id", "fullName", "kind" }, "status", "evaluatedAt", "totalScore", "comment" } ]`. `kind` is "Docente" or the evaluator type name. External evaluators only see their own evaluation |
+| `GET /api/evaluations/mine` | teacher, external evaluator | — | `200` the same summaries, only the caller's own evaluations (drafts and submitted) of every group they can grade today; groups not started yet do not appear. Lets the list of assigned groups show each status with one request instead of one per group. `403` for other roles |
 
 ### Results (Stage 6) — D1 (calculation and routes) + D3 (screens)
 

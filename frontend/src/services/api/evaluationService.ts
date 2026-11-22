@@ -27,4 +27,10 @@ export const evaluationService = {
     const { data } = await httpClient.get<EvaluationSummary[]>(`/groups/${groupId}/evaluations`)
     return data
   },
+
+  /** Evaluaciones propias en todos los grupos que el usuario puede calificar, en una sola petición. */
+  async mine(): Promise<EvaluationSummary[]> {
+    const { data } = await httpClient.get<EvaluationSummary[]>('/evaluations/mine')
+    return data
+  },
 }

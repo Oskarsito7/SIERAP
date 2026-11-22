@@ -49,7 +49,14 @@ describe('AppLayout', () => {
   it.each<[UserRole, string[]]>([
     [
       'SUPER_ADMIN',
-      ['Facultades y programas', 'Periodos académicos', 'Parámetros globales', 'Tipos de evaluador', 'Administradores'],
+      [
+        'Facultades y programas',
+        'Periodos académicos',
+        'Parámetros globales',
+        'Tipos de evaluador',
+        'Administradores',
+        'Reportes',
+      ],
     ],
     ['ADMIN', ['Momentos', 'Docentes', 'Códigos de registro', 'Reportes']],
     ['TEACHER', ['Mis grupos', 'Mis estudiantes', 'Evaluadores externos', 'Códigos de registro', 'Reportes']],

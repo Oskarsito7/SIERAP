@@ -73,6 +73,8 @@ export interface SaveEvaluationRequest {
 /** Evaluación en la lista de evaluaciones de un grupo (`GET /api/groups/{id}/evaluations`). */
 export interface EvaluationSummary {
   id: number
+  /** Grupo calificado. */
+  groupId: number
   evaluator: { id: number; fullName: string; kind: string }
   status: EvaluationStatus
   evaluatedAt: string

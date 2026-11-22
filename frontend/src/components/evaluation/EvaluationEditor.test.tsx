@@ -1,5 +1,6 @@
 import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { createMemoryRouter, Link, RouterProvider } from 'react-router'
 import { AxiosError, type AxiosResponse } from 'axios'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -77,6 +78,29 @@ function gradedForm(overrides: Partial<EvaluationForm> = {}): EvaluationForm {
   }
 }
 
+/**
+ * Muestra el editor dentro de un router de datos (lo exige el aviso de cambios sin
+ * guardar), con un enlace para intentar salir a otra página.
+ */
+function renderEditor() {
+  const router = createMemoryRouter(
+    [
+      {
+        path: '/groups/7/evaluation',
+        element: (
+          <>
+            <Link to="/groups">Volver a mis grupos</Link>
+            <EvaluationEditor groupId={7} />
+          </>
+        ),
+      },
+      { path: '/groups', element: <p>Lista de grupos</p> },
+    ],
+    { initialEntries: ['/groups/7/evaluation'] },
+  )
+  render(<RouterProvider router={router} />)
+}
+
 function criterion(name: string): HTMLElement {
   return screen.getByRole('radiogroup', { name })
 }
@@ -92,13 +116,14 @@ describe('EvaluationEditor', () => {
         zipFileName: 'sierap-v3.zip', zipSize: 1, presentationFileName: null, presentationSize: null,
         toGrade: true }],
       currentPresentation: null,
+      maxVersions: 20,
     })
   })
 
   it('grades the group criterion by criterion and saves a partial draft', async () => {
     loadForm.mockResolvedValue(formFixture())
     save.mockResolvedValue(formFixture({ id: 15, status: 'DRAFT', evaluatedAt: '2026-11-24T10:15:00' }))
-    render(<EvaluationEditor groupId={7} />)
+    renderEditor()
 
     expect(await screen.findByText(/Se califica la v3/)).toHaveTextContent('Se califica la v3 (14/11/2026 22:41, a tiempo)')
     expect(screen.getByText('Sin empezar')).toBeInTheDocument()
@@ -126,7 +151,7 @@ describe('EvaluationEditor', () => {
       index === 1 ? { ...outcome, criteria: [{ ...outcome.criteria[0], levelId: null }] } : outcome) }))
     save.mockResolvedValue(gradedForm())
     submit.mockResolvedValue(gradedForm({ status: 'SUBMITTED' }))
-    render(<EvaluationEditor groupId={7} />)
+    renderEditor()
 
     await userEvent.click(await within(await screen.findByRole('radiogroup', { name: 'Sustentación' }))
       .findByRole('radio', { name: 'Alto 2,00' }))
@@ -142,7 +167,7 @@ describe('EvaluationEditor', () => {
   it('adjusts one student and goes back to the group level by picking it again', async () => {
     loadForm.mockResolvedValue(gradedForm())
     save.mockResolvedValue(gradedForm())
-    render(<EvaluationEditor groupId={7} />)
+    renderEditor()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Ajustar a Ana Gómez' }))
     expect(screen.getByText('Ajuste individual · Ana Gómez')).toBeInTheDocument()
@@ -167,7 +192,7 @@ describe('EvaluationEditor', () => {
 
   it('locks the form outside the grading period', async () => {
     loadForm.mockResolvedValue(gradedForm({ canEdit: false, status: 'SUBMITTED' }))
-    render(<EvaluationEditor groupId={7} />)
+    renderEditor()
 
     expect(await screen.findByText(/Hoy no puedes modificar esta evaluación/)).toBeInTheDocument()
     expect(within(criterion('Problema')).getByRole('radio', { name: 'Bajo 0,00' })).toBeDisabled()
@@ -177,7 +202,7 @@ describe('EvaluationEditor', () => {
   it('shows the message of the API when submitting fails', async () => {
     loadForm.mockResolvedValue(gradedForm())
     submit.mockRejectedValue(apiError(422, 'La ventana de calificación cerró el 2026-11-28.'))
-    render(<EvaluationEditor groupId={7} />)
+    renderEditor()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Enviar evaluación' }))
 
@@ -187,9 +212,38 @@ describe('EvaluationEditor', () => {
 
   it('says when the group has not submitted anything', async () => {
     loadForm.mockResolvedValue(formFixture({ submissionToGrade: null }))
-    render(<EvaluationEditor groupId={7} />)
+    renderEditor()
 
     expect(await screen.findByText('El grupo todavía no ha subido entregas.')).toBeInTheDocument()
+  })
+
+  it('asks before leaving the page with unsaved changes', async () => {
+    loadForm.mockResolvedValue(formFixture())
+    renderEditor()
+
+    await userEvent.click(within(await screen.findByRole('radiogroup', { name: 'Problema' }))
+      .getByRole('radio', { name: 'Alto 1,00' }))
+    await userEvent.click(screen.getByRole('link', { name: 'Volver a mis grupos' }))
+
+    const dialog = await screen.findByRole('alertdialog', { name: '¿Salir sin guardar?' })
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Seguir calificando' }))
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+    expect(criterion('Problema')).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('link', { name: 'Volver a mis grupos' }))
+    await userEvent.click(await screen.findByRole('button', { name: 'Salir sin guardar' }))
+    expect(await screen.findByText('Lista de grupos')).toBeInTheDocument()
+  })
+
+  it('leaves without asking when there is nothing to save', async () => {
+    loadForm.mockResolvedValue(formFixture())
+    renderEditor()
+
+    await screen.findByRole('radiogroup', { name: 'Problema' })
+    await userEvent.click(screen.getByRole('link', { name: 'Volver a mis grupos' }))
+
+    expect(await screen.findByText('Lista de grupos')).toBeInTheDocument()
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
   })
 })
 

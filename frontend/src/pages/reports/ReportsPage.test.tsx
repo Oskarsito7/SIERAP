@@ -202,4 +202,38 @@ describe('ReportsPage', () => {
     expect(screen.getByRole('button', { name: 'Grupal' })).toHaveAttribute('aria-current', 'page')
     expect(await screen.findByRole('table', { name: 'Integrantes' })).toBeInTheDocument()
   })
+
+  it('lets the super_admin see the reports of every faculty and filter by one', async () => {
+    vi.mocked(catalogService.programs).mockResolvedValue([
+      programFixture(),
+      programFixture({ id: 2, name: 'Contaduría Pública', facultyId: 2, facultyName: 'Facultad de Ciencias Contables' }),
+    ])
+    vi.mocked(momentService.list).mockResolvedValue([
+      momentFixture({ id: 1, name: 'Momento 1', programId: 1, programName: 'Ingeniería de Sistemas' }),
+      momentFixture({ id: 5, name: 'Momento 1', programId: 2, programName: 'Contaduría Pública' }),
+    ])
+    renderAt('moment', 'SUPER_ADMIN')
+
+    expect(await screen.findByText(/de todas las facultades/)).toBeInTheDocument()
+    const momentSelect = await screen.findByLabelText('Momento')
+    expect(within(momentSelect).getAllByRole('option')).toHaveLength(2)
+
+    await userEvent.selectOptions(screen.getByLabelText('Facultad'), 'Facultad de Ciencias Contables')
+
+    const filtered = within(await screen.findByLabelText('Momento')).getAllByRole('option')
+    expect(filtered.map((option) => option.textContent)).toEqual(['Momento 1 · Contaduría Pública'])
+    expect(reports.moment).toHaveBeenLastCalledWith(5)
+  })
+
+  it('prints the report without the menu or the filters', async () => {
+    const print = vi.spyOn(window, 'print').mockImplementation(() => {})
+    renderAt('moment')
+
+    await screen.findByText('4,12')
+    await userEvent.click(screen.getByRole('button', { name: 'Imprimir o guardar como PDF' }))
+
+    expect(print).toHaveBeenCalledTimes(1)
+    expect(screen.getByRole('navigation', { name: 'Tipos de reporte' })).toHaveClass('print:hidden')
+    print.mockRestore()
+  })
 })

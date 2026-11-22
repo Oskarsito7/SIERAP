@@ -105,6 +105,11 @@ export function getErrorMessage(error: unknown): string {
   return 'No fue posible comunicarse con el servidor'
 }
 
+/** Indica si el error viene de una petición cancelada a propósito (`AbortController`). */
+export function isCanceled(error: unknown): boolean {
+  return axios.isCancel(error)
+}
+
 /** Errores de validación por campo (respuesta 400); vacío si no aplica. */
 export function getFieldErrors(error: unknown): Record<string, string> {
   if (axios.isAxiosError<ApiError>(error) && error.response?.data?.fieldErrors) {

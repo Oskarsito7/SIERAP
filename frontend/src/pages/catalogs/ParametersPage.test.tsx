@@ -22,7 +22,7 @@ describe('ParametersPage', () => {
       description: null })
     render(<ParametersPage />)
 
-    expect(await screen.findByText(/ninguna regla del sistema los usa/)).toBeInTheDocument()
+    expect(await screen.findByText('Todavía no hay parámetros globales.')).toBeInTheDocument()
     await userEvent.click(screen.getByRole('button', { name: 'Nuevo parámetro' }))
     const form = screen.getByRole('form', { name: 'Nuevo parámetro' })
     await userEvent.type(within(form).getByLabelText('Clave'), 'institution_name')
@@ -47,5 +47,35 @@ describe('ParametersPage', () => {
 
     expect(service.saveParameter).toHaveBeenCalledWith('zip_max_mb', '120', 'Límite del .zip')
     expect(await screen.findByText('120')).toBeInTheDocument()
+  })
+
+  it('marks the parameters the system uses and rejects a badly written value before saving', async () => {
+    service.parameters.mockResolvedValue([
+      { key: 'report.grade-bands', value: 'Bajo:0;Básico:60;Alto:76;Sobresaliente:90', description: null },
+    ])
+    service.saveParameter.mockResolvedValue({ key: 'report.grade-bands', value: 'Bajo:0;Alto:70',
+      description: null })
+    render(<ParametersPage />)
+
+    const row = await screen.findByRole('row', { name: /report\.grade-bands/ })
+    expect(within(row).getByText('En uso por el sistema')).toBeInTheDocument()
+    expect(within(row).getByText(/Niveles de desempeño/)).toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Editar report.grade-bands' }))
+    const form = screen.getByRole('form', { name: 'Editar report.grade-bands' })
+    expect(within(form).getByText(/Nombre:porcentaje mínimo, separados por punto y coma/)).toBeInTheDocument()
+    const value = within(form).getByLabelText('Valor')
+    await userEvent.clear(value)
+    await userEvent.type(value, 'Bajo:0;Alto:setenta')
+    await userEvent.click(within(form).getByRole('button', { name: 'Guardar' }))
+
+    expect(within(form).getByText('El porcentaje de "Alto" debe ser un número (con punto decimal si hace falta).'))
+      .toBeInTheDocument()
+    expect(service.saveParameter).not.toHaveBeenCalled()
+
+    await userEvent.clear(value)
+    await userEvent.type(value, 'Bajo:0;Alto:70')
+    await userEvent.click(within(form).getByRole('button', { name: 'Guardar' }))
+    expect(service.saveParameter).toHaveBeenCalledWith('report.grade-bands', 'Bajo:0;Alto:70', null)
   })
 })

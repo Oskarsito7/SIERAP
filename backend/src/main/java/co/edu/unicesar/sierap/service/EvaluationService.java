@@ -56,4 +56,13 @@ public interface EvaluationService {
      * @return evaluaciones, la del docente primero
      */
     List<EvaluationSummaryResponse> list(AuthenticatedUser actor, Long groupId);
+
+    /**
+     * Evaluaciones propias del evaluador en todos los grupos que hoy puede calificar,
+     * para mostrar su estado en una sola consulta (en vez de una por grupo).
+     *
+     * @param actor docente o evaluador externo
+     * @return sus evaluaciones; los grupos sin empezar no aparecen
+     */
+    List<EvaluationSummaryResponse> mine(AuthenticatedUser actor);
 }

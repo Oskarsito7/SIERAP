@@ -58,7 +58,7 @@ export function AppLayout() {
       )}
       <aside
         className={cn(
-          'bg-sidebar text-sidebar-foreground border-sidebar-border fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r transition-transform md:sticky md:top-0 md:h-svh md:translate-x-0',
+          'bg-sidebar text-sidebar-foreground border-sidebar-border fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r transition-transform md:sticky md:top-0 md:h-svh md:translate-x-0 print:hidden',
           menuOpen ? 'translate-x-0' : '-translate-x-full',
         )}
       >
@@ -107,7 +107,7 @@ export function AppLayout() {
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="bg-card sticky top-0 z-20 flex h-16 items-center gap-3 border-b px-4 md:px-8">
+        <header className="bg-card sticky top-0 z-20 flex h-16 items-center gap-3 border-b px-4 md:px-8 print:hidden">
           <Button
             variant="ghost"
             size="icon"
@@ -124,7 +124,7 @@ export function AppLayout() {
           <UserBadge user={user} />
         </header>
 
-        <main className="w-full max-w-6xl flex-1 px-4 py-8 md:px-8">
+        <main className="w-full max-w-6xl flex-1 px-4 py-8 md:px-8 print:max-w-none print:p-0">
           <Outlet />
         </main>
       </div>
