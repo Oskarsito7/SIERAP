@@ -9,6 +9,7 @@ import co.edu.unicesar.sierap.config.RateLimitProperties;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
+import org.springframework.security.config.Customizer;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
@@ -65,17 +66,17 @@ public class SecurityConfig {
      * @param errorWriter escritor de errores 401/403 con el formato de la API
      * @param rateLimit   límites de intentos por IP
      * @param clock       reloj de la aplicación
-     * @param corsSource  orígenes permitidos por CORS (ninguno si no se configuran)
      * @return cadena de filtros
      * @throws Exception si la configuración no es válida
      */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtService jwtService,
                                                    SecurityErrorWriter errorWriter,
-                                                   RateLimitProperties rateLimit, Clock clock,
-                                                   CorsConfigurationSource corsSource) throws Exception {
+                                                   RateLimitProperties rateLimit, Clock clock) throws Exception {
         return http
-                .cors(cors -> cors.configurationSource(corsSource))
+                // Toma el bean "corsConfigurationSource" por nombre: inyectarlo por tipo es
+                // ambiguo porque HandlerMappingIntrospector de Spring MVC también lo implementa.
+                .cors(Customizer.withDefaults())
                 .headers(headers -> headers
                         .referrerPolicy(referrer -> referrer
                                 .policy(ReferrerPolicyHeaderWriter.ReferrerPolicy.NO_REFERRER))
