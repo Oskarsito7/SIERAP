@@ -69,3 +69,55 @@ export interface NewStudentRequest {
   /** Semestre que cursa, desde 1. */
   currentSemester: number
 }
+
+/**
+ * Cuerpo de `PATCH /api/users/{id}` (`UpdateUserRequest`): todos los campos son
+ * opcionales y solo se cambian los que se envían. `studentCode` y `currentSemester`
+ * aplican únicamente a estudiantes.
+ */
+export interface UpdateUserRequest {
+  active?: boolean
+  firstNames?: string
+  lastNames?: string
+  documentType?: DocumentType
+  documentNumber?: string
+  email?: string
+  studentCode?: string
+  currentSemester?: number
+}
+
+/** Cuerpo de `PATCH /api/students/semester` (`SetSemesterRequest`). */
+export interface SetSemesterRequest {
+  /** De 1 a 500 estudiantes, sin repetidos. */
+  studentIds: number[]
+  /** Semestre que se les asigna, desde 1. */
+  currentSemester: number
+}
+
+/** Fila del CSV de estudiantes con su validación (`StudentImportRowResponse`). */
+export interface StudentImportRow {
+  /** Línea del archivo (la cabecera es la 1). */
+  row: number
+  firstNames: string
+  lastNames: string
+  documentType: string
+  documentNumber: string
+  email: string
+  studentCode: string
+  currentSemester: string
+  /** Errores de la fila en español; vacío si es válida. */
+  errors: string[]
+}
+
+/** Respuesta de `POST /api/students/bulk/preview` (`StudentImportPreviewResponse`): no escribe nada. */
+export interface StudentImportPreview {
+  rows: StudentImportRow[]
+  valid: number
+  invalid: number
+}
+
+/** Respuesta de `POST /api/students/bulk` (`StudentImportResultResponse`). */
+export interface StudentImportResult {
+  created: number
+  errors: { row: number; message: string }[]
+}

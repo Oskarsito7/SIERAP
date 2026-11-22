@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { UserPlus } from 'lucide-react'
 
 import { LoadStatus } from '@/components/LoadStatus'
+import { EditUserForm } from '@/components/forms/EditUserForm'
 import { FormError, FormField } from '@/components/forms/FormField'
 import { SelectField } from '@/components/forms/SelectField'
 import { Badge } from '@/components/ui/badge'
@@ -63,6 +64,7 @@ function FacultyAdmins({ faculty, faculties, onFacultyChange }: FacultyAdminsPro
   const admins = useLoad(() => adminService.list(faculty.id), [faculty.id])
   const [search, setSearch] = useState('')
   const [creating, setCreating] = useState(false)
+  const [editing, setEditing] = useState<UserSummary | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -119,11 +121,33 @@ function FacultyAdmins({ faculty, faculties, onFacultyChange }: FacultyAdminsPro
             correo para crear su contraseña.
           </p>
         </div>
-        <Button onClick={() => setCreating((open) => !open)}>
+        <Button
+          onClick={() => {
+            setEditing(null)
+            setCreating((open) => !open)
+          }}
+        >
           <UserPlus aria-hidden />
           Nuevo administrador
         </Button>
       </div>
+
+      {editing && (
+        <EditUserForm
+          key={editing.id}
+          user={editing}
+          onCancel={() => setEditing(null)}
+          onSaved={(updated, emailChanged) => {
+    setEditing(null)
+    setError(null)
+    setNotice(
+      `Se actualizaron los datos de ${updated.fullName}.` +
+        (emailChanged ? ' Se cerraron sus sesiones: deberá iniciar sesión con el correo nuevo.' : ''),
+    )
+    admins.reload()
+          }}
+        />
+      )}
 
       {creating && (
         <NewAdminForm
@@ -198,6 +222,17 @@ function FacultyAdmins({ faculty, faculties, onFacultyChange }: FacultyAdminsPro
                       </Badge>
                     </td>
                     <td className="py-3 text-right whitespace-nowrap">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setCreating(false)
+                          setEditing(admin)
+                        }}
+                        aria-label={`Editar a ${admin.fullName}`}
+                      >
+                        Editar
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"

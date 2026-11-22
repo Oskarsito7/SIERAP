@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { UserPlus } from 'lucide-react'
 
 import { LoadStatus } from '@/components/LoadStatus'
+import { EditUserForm } from '@/components/forms/EditUserForm'
 import { FormError, FormField } from '@/components/forms/FormField'
 import { SelectField } from '@/components/forms/SelectField'
 import { Badge } from '@/components/ui/badge'
@@ -24,6 +25,7 @@ export function ExternalEvaluatorsPage() {
   const evaluators = useLoad(() => accountService.listExternalEvaluators(), [])
   const [search, setSearch] = useState('')
   const [creating, setCreating] = useState(false)
+  const [editing, setEditing] = useState<UserSummary | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -54,11 +56,33 @@ export function ExternalEvaluatorsPage() {
             otro docente ya lo creó, se reutiliza su cuenta.
           </p>
         </div>
-        <Button onClick={() => setCreating((open) => !open)}>
+        <Button
+          onClick={() => {
+            setEditing(null)
+            setCreating((open) => !open)
+          }}
+        >
           <UserPlus aria-hidden />
           Nuevo evaluador
         </Button>
       </div>
+
+      {editing && (
+        <EditUserForm
+          key={editing.id}
+          user={editing}
+          onCancel={() => setEditing(null)}
+          onSaved={(updated, emailChanged) => {
+    setEditing(null)
+    setError(null)
+    setNotice(
+      `Se actualizaron los datos de ${updated.fullName}.` +
+        (emailChanged ? ' Se cerraron sus sesiones: deberá iniciar sesión con el correo nuevo.' : ''),
+    )
+    evaluators.reload()
+          }}
+        />
+      )}
 
       {creating && (
         <NewEvaluatorForm
@@ -119,6 +143,17 @@ export function ExternalEvaluatorsPage() {
                       </Badge>
                     </td>
                     <td className="py-3 text-right">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setCreating(false)
+                          setEditing(evaluator)
+                        }}
+                        aria-label={`Editar a ${evaluator.fullName}`}
+                      >
+                        Editar
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"
