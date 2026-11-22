@@ -3,6 +3,7 @@ package co.edu.unicesar.sierap.controller;
 import java.util.List;
 
 import co.edu.unicesar.sierap.dto.request.CopyMomentsRequest;
+import co.edu.unicesar.sierap.dto.request.ExtendMomentRequest;
 import co.edu.unicesar.sierap.dto.request.LaunchMomentRequest;
 import co.edu.unicesar.sierap.dto.request.MomentWeightsRequest;
 import co.edu.unicesar.sierap.dto.request.NewMomentRequest;
@@ -165,6 +166,22 @@ public class MomentController {
                                        @PathVariable Long id,
                                        @RequestBody(required = false) LaunchMomentRequest request) {
         return momentService.launch(actor, id, request);
+    }
+
+    /**
+     * Prórroga excepcional de las fechas de un momento ya lanzado (ADR-023).
+     *
+     * @param actor   usuario autenticado (super_admin o admin de la facultad)
+     * @param id      identificador del momento
+     * @param request nuevas fechas y motivo
+     * @return detalle del momento con las fechas ampliadas
+     */
+    @PatchMapping("/{id}/extension")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN')")
+    public MomentDetailResponse extend(@AuthenticationPrincipal AuthenticatedUser actor,
+                                       @PathVariable Long id,
+                                       @Valid @RequestBody ExtendMomentRequest request) {
+        return momentService.extend(actor, id, request);
     }
 
     /**

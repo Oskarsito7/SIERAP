@@ -51,6 +51,7 @@ import co.edu.unicesar.sierap.repository.MomentRepository;
 import co.edu.unicesar.sierap.repository.ProgramRepository;
 import co.edu.unicesar.sierap.repository.ProjectGroupRepository;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
+import co.edu.unicesar.sierap.service.AuditService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -87,6 +88,9 @@ class MomentServiceImplTest {
     @Mock
     private AccessScope accessScope;
 
+    @Mock
+    private AuditService auditService;
+
     private MomentServiceImpl momentService;
 
     private AcademicPeriod period;
@@ -101,7 +105,7 @@ class MomentServiceImplTest {
     void setUp() {
         momentService = new MomentServiceImpl(momentRepository, academicPeriodRepository,
                 programRepository, evaluatorTypeRepository, projectGroupRepository,
-                accessScope, FIXED_CLOCK);
+                accessScope, auditService, FIXED_CLOCK);
 
         period = new AcademicPeriod("2026-2", LocalDate.of(2026, 8, 3), LocalDate.of(2026, 12, 5),
                 LocalDate.of(2026, 11, 28));

@@ -49,6 +49,9 @@ public class AuditServiceImpl implements AuditService {
     /** Tamaño de página máximo de la consulta. */
     static final int MAX_SIZE = 200;
 
+    /** Largo máximo del resumen (ancho de la columna). */
+    static final int MAX_SUMMARY = 1000;
+
     private final AuditLogRepository auditLogRepository;
     private final UserRepository userRepository;
     private final AccessScope accessScope;
@@ -85,7 +88,7 @@ public class AuditServiceImpl implements AuditService {
             ip = attributes.getRequest().getRemoteAddr();
         }
         auditLogRepository.save(new AuditLog(LocalDateTime.now(clock), actorId, actorName, action, entityType,
-                entityId, facultyId, summary, ip));
+                entityId, facultyId, fit(summary), ip));
     }
 
     @Override
@@ -137,6 +140,11 @@ public class AuditServiceImpl implements AuditService {
             }
             return builder.and(predicates.toArray(new Predicate[0]));
         };
+    }
+
+    /** Recorta el resumen al ancho de la columna para que un texto largo nunca tumbe la operación. */
+    private static String fit(String summary) {
+        return summary.length() <= MAX_SUMMARY ? summary : summary.substring(0, MAX_SUMMARY - 1) + "…";
     }
 
     private static String escapeLike(String text) {

@@ -232,6 +232,58 @@ public class Moment {
     }
 
     /**
+     * Prórroga excepcional de un momento ya lanzado (ADR-023, excepción acotada al
+     * ADR-012): amplía el fin de las entregas y/o el de la calificación.
+     *
+     * <p>Cada fecha solo puede ampliarse (debe ser posterior a la actual) y la de
+     * calificación no puede pasar del límite de evaluación de la UPC del periodo. Si
+     * al ampliar las entregas estas terminan el mismo día o después de que empieza la
+     * calificación, esta empieza el día siguiente al nuevo fin de entregas; si con eso
+     * la ventana de calificación quedara invertida, se exige ampliar también su fin.</p>
+     *
+     * @param newSubmissionEnd nuevo último día de entregas, o {@code null} para no cambiarlo
+     * @param newGradingEnd    nuevo último día de calificación, o {@code null} para no cambiarlo
+     * @throws BusinessRuleException si el momento no está lanzado, no se indica ninguna
+     *                               fecha, una fecha no amplía la actual o se pasa del
+     *                               límite de la UPC
+     */
+    public void extend(LocalDate newSubmissionEnd, LocalDate newGradingEnd) {
+        if (status != MomentStatus.LAUNCHED) {
+            throw new BusinessRuleException("Solo se puede prorrogar un momento ya lanzado.");
+        }
+        if (newSubmissionEnd == null && newGradingEnd == null) {
+            throw new BusinessRuleException("Indique al menos una fecha para la prórroga.");
+        }
+        if (newSubmissionEnd != null && !newSubmissionEnd.isAfter(submissionEnd)) {
+            throw new BusinessRuleException("La nueva fecha de fin de entregas debe ser posterior a la actual ("
+                    + submissionEnd + "): las fechas solo se pueden ampliar.");
+        }
+        if (newGradingEnd != null && !newGradingEnd.isAfter(gradingEnd)) {
+            throw new BusinessRuleException("La nueva fecha de fin de calificación debe ser posterior a la actual ("
+                    + gradingEnd + "): las fechas solo se pueden ampliar.");
+        }
+        LocalDate targetSubmissionEnd = newSubmissionEnd != null ? newSubmissionEnd : submissionEnd;
+        LocalDate targetGradingEnd = newGradingEnd != null ? newGradingEnd : gradingEnd;
+        LocalDate upcDeadline = period.getUpcEvaluationDeadline();
+        if (targetGradingEnd.isAfter(upcDeadline)) {
+            throw new BusinessRuleException("La ventana de calificación debe terminar a más tardar el "
+                    + upcDeadline + ", límite de evaluación de la UPC.");
+        }
+        LocalDate targetGradingStart = gradingStart;
+        if (!targetSubmissionEnd.isBefore(targetGradingStart)) {
+            targetGradingStart = targetSubmissionEnd.plusDays(1);
+        }
+        if (targetGradingStart.isAfter(targetGradingEnd)) {
+            throw new BusinessRuleException("Con el nuevo fin de entregas la calificación empezaría el "
+                    + targetGradingStart + ", después de su fin (" + targetGradingEnd
+                    + "): amplíe también el fin de calificación.");
+        }
+        submissionEnd = targetSubmissionEnd;
+        gradingStart = targetGradingStart;
+        gradingEnd = targetGradingEnd;
+    }
+
+    /**
      * Indica si hoy se pueden conformar grupos: el momento sigue en configuración y
      * la fecha cae dentro de la ventana de conformación.
      *
