@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { catalogService } from '@/services/api/catalogService'
 import { momentService } from '@/services/api/momentService'
+import { answerConfirm } from '@/test/confirm'
 
 import { MomentDetailPage } from './MomentDetailPage'
 import { momentDetailFixture, periodFixture } from './testData'
@@ -84,10 +85,10 @@ describe('MomentDetailPage', () => {
   it('deletes a moment without groups after confirming', async () => {
     get.mockResolvedValue(momentDetailFixture())
     remove.mockResolvedValue()
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     renderPage()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Eliminar momento' }))
+    await answerConfirm('Eliminar')
 
     expect(remove).toHaveBeenCalledWith(1)
     expect(await screen.findByText('Lista de momentos')).toBeInTheDocument()

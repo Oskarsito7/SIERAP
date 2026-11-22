@@ -58,6 +58,35 @@ class AccountValidator {
     }
 
     /**
+     * Exige que el correo y el documento no los tenga otra cuenta (al editar una cuenta
+     * existente). Cada dato es opcional: solo se valida el que llega.
+     *
+     * @param userId         cuenta que se edita, excluida de la comparación
+     * @param email          correo nuevo, o {@code null} si no cambia
+     * @param documentNumber documento nuevo, o {@code null} si no cambia
+     */
+    void requireAvailableForUser(Long userId, String email, String documentNumber) {
+        if (email != null && userRepository.existsByEmailAndIdNot(normalizeEmail(email), userId)) {
+            throw new BusinessRuleException("Ya existe una cuenta con el correo " + normalizeEmail(email) + ".");
+        }
+        if (documentNumber != null && userRepository.existsByDocumentNumberAndIdNot(documentNumber.trim(), userId)) {
+            throw new BusinessRuleException("Ya existe una cuenta con el documento " + documentNumber.trim() + ".");
+        }
+    }
+
+    /**
+     * Exige que el código estudiantil no lo tenga otro estudiante (al editar uno existente).
+     *
+     * @param studentId   estudiante que se edita, excluido de la comparación
+     * @param studentCode código nuevo
+     */
+    void requireAvailableStudentCode(Long studentId, String studentCode) {
+        if (studentRepository.existsByStudentCodeAndIdNot(studentCode.trim(), studentId)) {
+            throw new BusinessRuleException("Ya existe un estudiante con el código " + studentCode.trim() + ".");
+        }
+    }
+
+    /**
      * Normaliza un correo igual que {@code User.setEmail}.
      *
      * @param email correo tal como llegó

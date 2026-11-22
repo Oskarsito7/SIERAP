@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { useLoad } from '@/lib/useLoad'
+import { useConfirm } from '@/lib/useConfirm'
 import { accountService } from '@/services/api/accountService'
 import { catalogService } from '@/services/api/catalogService'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
@@ -43,8 +44,15 @@ export function EvaluatorTypesPage() {
     }
   }
 
+  const [confirm, confirmDialog] = useConfirm()
+
   const remove = async (type: EvaluatorType) => {
-    if (!window.confirm(`¿Eliminar el tipo ${type.name}?`)) return
+    const confirmed = await confirm({
+      title: `¿Eliminar el tipo ${type.name}?`,
+      description: 'Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+    })
+    if (!confirmed) return
     setError(null)
     try {
       await catalogService.deleteEvaluatorType(type.id)
@@ -56,6 +64,7 @@ export function EvaluatorTypesPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      {confirmDialog}
       <div className="flex flex-col gap-1">
         <h1 className="text-2xl font-bold tracking-tight">Tipos de evaluador</h1>
         <p className="text-muted-foreground max-w-2xl text-sm">

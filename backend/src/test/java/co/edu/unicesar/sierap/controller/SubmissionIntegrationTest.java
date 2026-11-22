@@ -3,6 +3,10 @@ package co.edu.unicesar.sierap.controller;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.nullValue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -42,6 +46,7 @@ import co.edu.unicesar.sierap.repository.FacultyRepository;
 import co.edu.unicesar.sierap.repository.GlobalParameterRepository;
 import co.edu.unicesar.sierap.repository.ProjectGroupRepository;
 import co.edu.unicesar.sierap.repository.UserRepository;
+import co.edu.unicesar.sierap.service.NotificationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.BeforeEach;
@@ -56,6 +61,7 @@ import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.convention.TestBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.transaction.annotation.Transactional;
@@ -88,6 +94,10 @@ class SubmissionIntegrationTest {
 
     @TestBean
     private Clock clock;
+
+    /** Los avisos por correo se simulan: la prueba se revierte, así que no hay commit que los dispare. */
+    @MockitoBean
+    private NotificationService notificationService;
 
     @Autowired
     private MockMvc mockMvc;
@@ -181,6 +191,17 @@ class SubmissionIntegrationTest {
     }
 
     // ------------------------------------------------------------ subir versiones
+
+    @Test
+    void anUploadAsksForTheReceiptNotificationOnlyWhenItSucceeds() throws Exception {
+        upload(memberToken, group, null, null).andExpect(status().isBadRequest());
+        verifyNoInteractions(notificationService);
+
+        upload(memberToken, group, zip("proyecto-v1.zip"), null).andExpect(status().isCreated());
+
+        verify(notificationService).notifySubmissionUploaded(any(ProjectGroup.class),
+                argThat(submission -> submission.getVersionNumber() == 1), any(Student.class));
+    }
 
     @Test
     void eachUploadIsANewVersionAndTheHistoryShowsTheCurrentPresentation() throws Exception {

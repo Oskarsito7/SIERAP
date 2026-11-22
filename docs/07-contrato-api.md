@@ -37,7 +37,9 @@
   "email": "marta@unicesar.edu.co",
   "role": "TEACHER",               // SUPER_ADMIN | ADMIN | TEACHER | STUDENT | EXTERNAL_EVALUATOR
   "active": true,
-  "mustChangePassword": false
+  "mustChangePassword": false,
+  "documentType": "CC",            // CC | TI | CE | PASSPORT; the edit form shows them
+  "documentNumber": "1065432100"   // both null unless the viewer is that user or manages the account
 }
 
 // TokenResponse
@@ -110,16 +112,20 @@ the link sent by email.
 | `GET /api/admins?facultyId=` | super_admin | — | `200 UserSummary[]` (SA-05) |
 | `POST /api/teachers` | super_admin, admin of the faculty | `facultyId` | `201 UserSummary` |
 | `POST /api/students` | super_admin, admin or teacher of the faculty | `programId`, `studentCode`, `currentSemester` | `201 Student` |
-| `POST /api/students/bulk` | same as above | `multipart/form-data`: `file`, `programId` | `200 { "created": n, "errors": [ { "row", "message" } ] }`. **Not implemented:** moves to Moment 2 (`docs/04`, 2026-10-29) |
+| `POST /api/students/bulk/preview` | same as above | `multipart/form-data`: `file` (CSV, see below), `programId` | `200 { "rows": [ { "row", "firstNames", "lastNames", "documentType", "documentNumber", "email", "studentCode", "currentSemester", "errors": string[] } ], "valid": n, "invalid": m }`. Writes nothing. `row` is the line number in the file (the header is line 1); `errors` lists every problem of the row in Spanish (empty if the row is valid) |
+| `POST /api/students/bulk` | same as above | `multipart/form-data`: `file`, `programId` | `200 { "created": n, "errors": [ { "row", "message" } ] }`. Validates the file again and creates **only the valid rows**, the same way as `POST /api/students` (each one receives the email to set a password; `createdBy` is the user); `errors` has the rows that were not created |
+| `PATCH /api/students/semester` | super_admin, admin, teacher | `{ "studentIds": [1, 2], "currentSemester": 3 }` (1 to 500 distinct ids; semester ≥ 1) | `200 { "updated": n }`. All or nothing: `404` if an id does not exist, `422` if one is not a student, `403` if one is out of scope; then nothing changes |
 | `POST /api/external-evaluators` | super_admin, admin, teacher | `evaluatorTypeId`; optional `organization`, `position`, `graduationYear`, `graduationProgramId` | `201 UserSummary` |
 | `GET /api/teachers?facultyId=` | super_admin, admin of the faculty | — | `200 UserSummary[]` |
 | `GET /api/students?programId=` | super_admin, admin or teacher of the faculty | — | `200 Student[]` ordered by last and first names (DO-08). Optional `withoutGroupInMoment={momentId}`: only the active students of the program with their semester in the range of that moment and no group in it, the same rule as `students-without-group`; `404` if the moment does not exist, `422` if it belongs to another program |
 | `GET /api/external-evaluators` | super_admin (all), admin and teacher (the ones they created) | — | `200 UserSummary[]` |
 | `POST /api/users/{id}/password-link` | whoever manages that user (see below) | — | `204`; sends a new link: to create the password if the account has none yet, otherwise to reset it |
-| `PATCH /api/users/{id}` | whoever manages that user (see below) | `{ "active": false }` | `200 UserSummary`; deactivating also closes their sessions. `422` when deactivating your own account |
+| `PATCH /api/users/{id}` | whoever manages that user (see below) | every field is optional: `active`, `firstNames`, `lastNames`, `documentType`, `documentNumber`, `email` and, only for students, `studentCode`, `currentSemester` (≥ 1). Same format rules as on creation | `200 UserSummary`. `422` if the body has no field ("No hay cambios para guardar."), if the email, document or student code belongs to another account (same messages as on creation), if student fields are sent for a non-student or when deactivating your own account. Deactivating, or changing the email, also closes the user's sessions |
 | `GET /api/evaluator-types` | authenticated | — | `200 [ { "id", "name", "description", "active" } ]` |
 
-**Who manages a user** (password link and activation): the super_admin, anyone; an
+**CSV of the bulk upload** (`/api/students/bulk` and `/bulk/preview`): UTF-8 (a BOM is accepted), separator `,` or `;` (detected in the header), fields may be wrapped in double quotes (`""` for a literal quote). The header is required, in any order and case: `nombres,apellidos,tipo_documento,numero_documento,correo,codigo_estudiantil,semestre`. Empty rows are ignored. `tipo_documento` is `CC`, `TI` or `CE`. Whole-file errors answer `422`: not a `.csv`, more than 1 MB, no students, missing columns (the message names them) or more than 500 rows. Per-row errors (all of them, in Spanish): invalid fields, unknown document type, semester that is not an integer ≥ 1, email/document/code already in the database or repeated inside the file.
+
+**Who manages a user** (password link, activation and editing): the super_admin, anyone; an
 admin, the teachers and students of their faculty and the external evaluators created
 by them or by users of their faculty; a teacher, the students and external evaluators
 they created, which includes those who registered with one of their codes. Out of scope
@@ -537,7 +543,7 @@ and of any moment where they already have a group (a teacher can add them out of
 | `POST /api/groups/{id}/join` | student of an eligible moment | — | `200 Group`. If they were in another group of the same moment, they leave it in the same step (the screen asks for confirmation). `422` if the group is full or the group formation window is not open |
 | `POST /api/groups/{id}/leave` | a member | — | `204`. `422` if the group formation window is not open |
 | `GET /api/moments/{id}/students-without-group` | teacher and admin of the faculty | — | `200 [ { "id", "fullName", "studentCode", "currentSemester" } ]`: students of the program with their semester in range and no group in the moment |
-| `POST /api/groups/{id}/members` | the group's teacher | `{ "studentId" }` | `200 Group`. Any student of the moment's program who has no group in the moment, even outside the semester range, after the launch and above the maximum. `422` if they already have a group |
+| `POST /api/groups/{id}/members` | the group's teacher | `{ "studentId" }` | `200 Group`. Any student of the moment's program who has no group in the moment, even outside the semester range, after the launch and above the maximum. `422` if they already have a group. Emails the student that they were added (after commit; a mail failure is only logged) |
 | `DELETE /api/groups/{id}/members/{studentId}` | the group's teacher | — | `204`. While the group has no submitted evaluation; otherwise `422` |
 | `PUT /api/groups/{id}/teacher` | admin of the faculty, super_admin | `{ "teacherId" }` | `200 Group` with the new teacher. `422` if it is the same teacher, the teacher is of another faculty or inactive, the current teacher already submitted their evaluation, the new teacher already has a group with that name in the moment, or the grading window closed. The current teacher's draft evaluation is discarded |
 | `GET /api/students/me/groups` | student | — | `200 Group[]`: their groups, one per moment, newest first (history) |
@@ -547,7 +553,7 @@ and of any moment where they already have a group (a teacher can add them out of
 | Method and route | Who | Body | Answer |
 |---|---|---|---|
 | `GET /api/external-evaluators/lookup?q=` | teacher, admin, super_admin | — | `200 UserSummary` of the active external evaluator whose email or document number is **exactly** `q`; `404` if there is none. It does not list or search partially, so evaluator accounts cannot be browsed |
-| `POST /api/groups/{id}/evaluators` | the group's teacher | `{ "evaluatorId" }` | `200 Group`. `422` if the evaluator is deactivated or already assigned. An evaluator whose type has no weight in the moment (or 0 %) is still assigned, with `countsInGrade: false`; the screen warns that their evaluation will not count (2026-10-16) |
+| `POST /api/groups/{id}/evaluators` | the group's teacher | `{ "evaluatorId" }` | `200 Group`. `422` if the evaluator is deactivated or already assigned. An evaluator whose type has no weight in the moment (or 0 %) is still assigned, with `countsInGrade: false`; the screen warns that their evaluation will not count (2026-10-16). Emails the evaluator the assignment with a link to the group (after commit; a mail failure is only logged) |
 | `DELETE /api/groups/{id}/evaluators/{evaluatorId}` | the group's teacher | — | `204`. `422` if that evaluator already has an evaluation (draft or submitted) of the group |
 
 Creating an evaluator is the existing `POST /api/external-evaluators` (Stage 2).
@@ -572,7 +578,7 @@ Creating an evaluator is the existing `POST /api/external-evaluators` (Stage 2).
 
 | Method and route | Who | Body | Answer |
 |---|---|---|---|
-| `POST /api/groups/{id}/submissions` | a member | `multipart/form-data`: `zip` (required, `.zip`, up to 100 MB) and `presentation` (optional, `.pdf`, `.docx` or `.pptx`, up to 30 MB) | `201 Submission`, a new version (never overwrites). `late` is `true` if today is after the group's `submissionDeadline` (or, if the teacher did not set one, after the end of the window). `400` wrong type, `413` too large, `422` window closed or the group already has `submission.max-versions` versions (global parameter, default 20, V11) |
+| `POST /api/groups/{id}/submissions` | a member | `multipart/form-data`: `zip` (required, `.zip`, up to 100 MB) and `presentation` (optional, `.pdf`, `.docx` or `.pptx`, up to 30 MB) | `201 Submission`, a new version (never overwrites). `late` is `true` if today is after the group's `submissionDeadline` (or, if the teacher did not set one, after the end of the window). `400` wrong type, `413` too large, `422` window closed or the group already has `submission.max-versions` versions (global parameter, default 20, V11). Emails every active member, the uploader included, a receipt with the version, date and time, lateness and files (after commit; a mail failure is only logged) |
 | `GET /api/groups/{id}/submissions` | members, the group's teacher, its assigned evaluators, admin of the faculty, super_admin | — | `200 { "versions": Submission[] (newest first), "currentPresentation": Submission \| null, "maxVersions": number \| null }`. `currentPresentation` is the newest version that has a presentation; `maxVersions` is the `submission.max-versions` global parameter (`null` if it is missing or invalid), so the UI can show "version X of N" |
 | `GET /api/submissions/{id}/zip` | same | — | `200` the file (`Content-Disposition: attachment`) |
 | `GET /api/submissions/{id}/presentation` | same | — | `200` the file; `404` if that version has none |
@@ -658,7 +664,10 @@ evaluation per group. They grade the group once and may adjust single students
   "finalGrade": 4.40,               // their individual grade; null while not available
   "groupGrade": 4.52,
   "maxScore": 5.0,
-  "learningOutcomes": [ { "code": "RAP1", "description": "...", "score": 0.6, "maxScore": 0.6 } ],
+  "learningOutcomes": [ {
+    "code": "RAP1", "description": "...", "score": 0.6, "maxScore": 0.6,
+    "criteria": [ { "description": "...", "score": 0.4, "maxScore": 0.6 } ]   // ordered by displayOrder
+  } ],
   "comments": [ { "evaluatorKind": "Empresario", "comment": "Buen trabajo en equipo." } ]
 }
 ```
@@ -667,6 +676,12 @@ evaluation per group. They grade the group once and may adjust single students
 |---|---|---|
 | `GET /api/groups/{id}/results` | the group's teacher, admin of the faculty, super_admin | `200 GroupResults`, at any time (while the window is open it is a preview with the submitted evaluations so far) |
 | `GET /api/students/me/results` | student | `200 StudentResult[]`, newest first. Before the grading window ends, `available` is `false` and grades and comments are `null`/empty. Comments show the kind of evaluator, not their name, and never the levels each evaluator picked |
+
+`criteria` is the student's **consolidated** score in each criterion of the RAP: the one
+that counts in their grade (same formula as the RAP, with their own adjustments). `score`
+is `null` when no submitted evaluation counts. The student never receives the level each
+evaluator picked, the level names, or per-evaluator scores. Each criterion is rounded to 2
+decimals on its own, so the sum of the criteria can differ by 0.01 from the RAP `score`.
 
 **Formula** (`docs/03`, ADR-018): only submitted evaluations count. For each kind of
 evaluator (the teacher, and each evaluator type), average the scores of its evaluators;
@@ -917,6 +932,10 @@ wireframe `AD-08`).
 | `GET /api/reports/groups/{groupId}` | `super_admin`, `admin` of the faculty, the `teacher` who enabled the group | `200 GroupReportData` (sorted by member `fullName` and RAP `id`). `404` if the group does not exist |
 | `GET /api/reports/moments/{momentId}` | `super_admin`, `admin` and `teacher` of the faculty | `200 MomentReportData`. `404` if the moment does not exist |
 | `GET /api/reports/comparative?programId=&momentNumber=&periodAId=&periodBId=` | `super_admin`, `admin` and `teacher` of the faculty | `200 ComparativeReportData`. `422` "Debe elegir dos periodos académicos distintos para comparar." if `periodAId = periodBId`. `404` if the program or a period does not exist, or if the program has no moment with `momentNumber` in one of the two periods |
+| `GET /api/reports/moments/{momentId}/xlsx` | as `GET /api/reports/moments/{momentId}` | `200` grade sheet (`.xlsx`, `Content-Disposition: attachment`) with the sheets *Resumen*, *Estudiantes* and *Grupos* (ADR-020). The summary covers the whole moment; the student and group rows only include the groups the user can see (all for `super_admin` and the faculty `admin`, their own for a `teacher`). Same `403`/`404` as the JSON report |
+| `GET /api/reports/moments/{momentId}/pdf` | as `GET /api/reports/moments/{momentId}` | `200 application/pdf`: moment report with the UPC letterhead, indicators, RAP achievement, distribution and groups (same group scope as the grade sheet). "VISTA PREVIA" watermark while grading is open |
+| `GET /api/reports/groups/{groupId}/pdf` | as `GET /api/reports/groups/{groupId}` | `200 application/pdf`: group evaluation record (members with their grade, passed/failed and RAP scores, teacher signature line) |
+| `GET /api/reports/individual/pdf?momentId=&studentId=` | as `GET /api/reports/individual` | `200 application/pdf`: individual RAP bulletin. A student only downloads their own, after the grading window ends (same `403`/`422` as the JSON report) |
 
 **Rounding rule:** as decided for Stage 6 (`docs/04`, 2026-10-16), intermediate sums and
 averages keep 16 significant digits (`Decimal128`) and every decimal returned in a report

@@ -671,6 +671,53 @@ structure, not the visual identity.
 
 ---
 
+## ADR-020 — Exporting reports to Excel and PDF on the server
+
+**Date:** 2026-11-22.
+**Status:** Accepted (Moment 2; chosen by the project lead).
+
+**Context:** in Moment 1 reports were only shown on screen (`docs/04`, 2026-10-29) and
+exporting was deferred to Moment 2. Faculties need the grade sheet of a moment to load
+grades into the academic platform, executive reports for self-assessment and
+accreditation, a signed record of each group's evaluation, and students need a
+downloadable report of their RAP performance. Printing the web page from the browser
+works as a stopgap but depends on each browser and does not carry the institutional
+letterhead.
+
+**Decision:**
+
+- The server generates the files from the same `ReportData` that the screens use:
+  `ReportService` keeps validating who can see each report, and the new
+  `ReportExportService` only turns that data into a file. A file never shows anything
+  the user would not see on screen.
+- **Excel** with **Apache POI** (`poi-ooxml` 5.5.1, Apache 2.0): the grade sheet of a
+  moment (`MomentWorkbookWriter`) with three sheets: summary, one row per student
+  (group, group grade, individual adjustment, individual grade, passed/failed with the
+  `report.passing-percentage` threshold, and the score in each RAP as numbers) and one
+  row per group. A teacher only gets the rows of the groups they enabled.
+- **PDF** with **OpenPDF** (3.0.5, LGPL 2.1 / MPL 2.0, Java API without HTML
+  templates) (`ReportPdfWriter`): the moment report, the group's evaluation record and
+  the student's individual bulletin, with the UPC letterhead (logo rendered from the
+  manual's vector file), the generation date and user, vector bars for the RAP
+  achievement, and a "VISTA PREVIA" watermark while the grading window is open.
+- Endpoints next to the JSON ones: `GET /api/reports/moments/{id}/xlsx`,
+  `/moments/{id}/pdf`, `/groups/{id}/pdf` and `/individual/pdf` (`docs/07`).
+- The grade scale is loaded by `GradeScaleLoader`, shared by the reports and the
+  exports, so the screen and the files always use the same threshold.
+
+**Alternatives considered:** OpenHTMLtoPDF (HTML/CSS templates, easier to design but a
+much heavier dependency); generating the files in the browser (SheetJS or printing),
+which would not add server dependencies but repeats the scope rules in the client and
+gives a less official document; CSV only (no formats, no several sheets).
+
+**Consequences:** two new dependencies in `pom.xml` (`brotli4j` is excluded from
+OpenPDF because it is only used to read Brotli-compressed PDFs). `Report.generate()`
+still returns `ReportData`; exporting is a separate step, so the polymorphic hierarchy
+of reports does not change. Signed or verifiable certificates (hash, QR) are left for a
+later iteration.
+
+---
+
 ## Template for new entries
 
 ```

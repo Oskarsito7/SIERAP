@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useLoad } from '@/lib/useLoad'
+import { useConfirm } from '@/lib/useConfirm'
 import { catalogService } from '@/services/api/catalogService'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
 import type { CatalogEntryRequest, Faculty, Program } from '@/types/catalog'
@@ -126,8 +127,15 @@ function FacultyDetail({
   const sortByName = (list: Program[]) => [...list].sort((a, b) => a.name.localeCompare(b.name, 'es'))
   const programCount = (delta: number) => onChange({ ...faculty, programCount: faculty.programCount + delta })
 
+  const [confirm, confirmDialog] = useConfirm()
+
   const removeFaculty = async () => {
-    if (!window.confirm(`¿Eliminar la ${faculty.name} con sus programas?`)) return
+    const confirmed = await confirm({
+      title: `¿Eliminar la ${faculty.name}?`,
+      description: 'También se eliminan sus programas. Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+    })
+    if (!confirmed) return
     setError(null)
     try {
       await catalogService.deleteFaculty(faculty.id)
@@ -138,7 +146,12 @@ function FacultyDetail({
   }
 
   const removeProgram = async (program: Program) => {
-    if (!window.confirm(`¿Eliminar el programa ${program.name}?`)) return
+    const confirmed = await confirm({
+      title: `¿Eliminar el programa ${program.name}?`,
+      description: 'Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+    })
+    if (!confirmed) return
     setError(null)
     try {
       await catalogService.deleteProgram(program.id)
@@ -151,6 +164,7 @@ function FacultyDetail({
 
   return (
     <Card>
+      {confirmDialog}
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
         <div>
           <CardTitle>{faculty.name}</CardTitle>

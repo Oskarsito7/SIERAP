@@ -1,8 +1,8 @@
-import { render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { createMemoryRouter, Link, RouterProvider } from 'react-router'
 import { AxiosError, type AxiosResponse } from 'axios'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { evaluationService } from '@/services/api/evaluationService'
 import { submissionService } from '@/services/api/submissionService'
@@ -22,6 +22,7 @@ const loadForm = vi.mocked(evaluationService.form)
 const save = vi.mocked(evaluationService.save)
 const submit = vi.mocked(evaluationService.submit)
 const history = vi.mocked(submissionService.history)
+const downloadPresentation = vi.mocked(submissionService.downloadPresentation)
 
 /** Dos RAP de un criterio cada uno: "Problema" (máx. 1) y "Sustentación" (máx. 2). */
 function formFixture(overrides: Partial<EvaluationForm> = {}): EvaluationForm {
@@ -244,6 +245,166 @@ describe('EvaluationEditor', () => {
 
     expect(await screen.findByText('Lista de grupos')).toBeInTheDocument()
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+  })
+
+  describe('autosave', () => {
+    afterEach(() => vi.useRealTimers())
+
+    /** Espera a que cargue con el reloj real y recién entonces congela el tiempo. */
+    async function renderWithFakeTimers() {
+      renderEditor()
+      await screen.findByRole('radiogroup', { name: 'Problema' })
+      vi.useFakeTimers()
+    }
+    const pick = (group: string, name: string) =>
+      fireEvent.click(within(criterion(group)).getByRole('radio', { name }))
+    const wait = (ms: number) => act(async () => { await vi.advanceTimersByTimeAsync(ms) })
+
+    it('saves a draft after 30 seconds without changes and shows the time', async () => {
+      loadForm.mockResolvedValue(formFixture())
+      save.mockResolvedValue(gradedForm({ evaluatedAt: '2026-11-24T10:15:00' }))
+      await renderWithFakeTimers()
+
+      pick('Problema', 'Alto 1,00')
+      await wait(29_999)
+      expect(save).not.toHaveBeenCalled()
+      await wait(1)
+
+      expect(save).toHaveBeenCalledTimes(1)
+      expect(save).toHaveBeenCalledWith(7, { levels: [{ criterionId: 20, levelId: 31 }], comment: '', adjustments: [] })
+      expect(screen.getByRole('status')).toHaveTextContent('Borrador guardado automáticamente a las 10:15')
+      expect(screen.queryByText('Tienes cambios sin guardar.')).not.toBeInTheDocument()
+      expect(screen.getByText('Borrador')).toBeInTheDocument()
+      await wait(120_000)
+      expect(save).toHaveBeenCalledTimes(1)
+    })
+
+    it('restarts the countdown with every change', async () => {
+      loadForm.mockResolvedValue(formFixture())
+      save.mockResolvedValue(gradedForm())
+      await renderWithFakeTimers()
+
+      pick('Problema', 'Alto 1,00')
+      await wait(20_000)
+      pick('Sustentación', 'Alto 2,00')
+      await wait(20_000)
+      expect(save).not.toHaveBeenCalled()
+      await wait(10_000)
+      expect(save).toHaveBeenCalledTimes(1)
+    })
+
+    it('never autosaves an evaluation that was already submitted', async () => {
+      loadForm.mockResolvedValue(gradedForm({ status: 'SUBMITTED' }))
+      await renderWithFakeTimers()
+
+      pick('Problema', 'Bajo 0,00')
+      await wait(120_000)
+
+      expect(save).not.toHaveBeenCalled()
+      expect(screen.getByText('Tienes cambios sin guardar.')).toBeInTheDocument()
+    })
+
+    it('does not remount the editor: what is typed while saving is kept and still pending', async () => {
+      loadForm.mockResolvedValue(formFixture())
+      let finish: (value: EvaluationForm) => void = () => {}
+      save.mockReturnValueOnce(new Promise<EvaluationForm>((resolve) => { finish = resolve }))
+      await renderWithFakeTimers()
+
+      pick('Problema', 'Alto 1,00')
+      await wait(30_000)
+      expect(screen.getByRole('status')).toHaveTextContent('Guardando borrador…')
+
+      fireEvent.change(screen.getByLabelText('Comentario para el grupo'), { target: { value: 'Sigo escribiendo' } })
+      await act(async () => finish(gradedForm({ evaluatedAt: '2026-11-24T10:15:00' })))
+
+      expect(screen.getByLabelText('Comentario para el grupo')).toHaveValue('Sigo escribiendo')
+      expect(screen.getByRole('status')).toHaveTextContent('a las 10:15')
+      expect(screen.getByText('Tienes cambios sin guardar.')).toBeInTheDocument()
+
+      save.mockResolvedValueOnce(gradedForm({ evaluatedAt: '2026-11-24T10:16:00' }))
+      await wait(30_000)
+      expect(save).toHaveBeenCalledTimes(2)
+      expect(save).toHaveBeenLastCalledWith(7, expect.objectContaining({ comment: 'Sigo escribiendo' }))
+      expect(screen.queryByText('Tienes cambios sin guardar.')).not.toBeInTheDocument()
+    })
+
+    it('shows the error, keeps the changes and retries on the next change', async () => {
+      loadForm.mockResolvedValue(formFixture())
+      save.mockRejectedValueOnce(apiError(500, 'Servidor caído'))
+      await renderWithFakeTimers()
+
+      pick('Problema', 'Alto 1,00')
+      await wait(30_000)
+
+      expect(screen.getByRole('status')).toHaveTextContent(
+        'No se pudo guardar automáticamente: Servidor caído. Tus cambios siguen aquí; intenta guardar.',
+      )
+      expect(within(criterion('Problema')).getByRole('radio', { name: 'Alto 1,00' })).toHaveAttribute('aria-checked', 'true')
+      expect(screen.getByText('Tienes cambios sin guardar.')).toBeInTheDocument()
+      await wait(120_000)
+      expect(save).toHaveBeenCalledTimes(1)
+
+      save.mockResolvedValueOnce(gradedForm({ evaluatedAt: '2026-11-24T10:20:00' }))
+      pick('Sustentación', 'Alto 2,00')
+      await wait(30_000)
+      expect(save).toHaveBeenCalledTimes(2)
+      expect(screen.getByRole('status')).toHaveTextContent('a las 10:20')
+    })
+  })
+
+  describe('presentation viewer', () => {
+    const createObjectURL = vi.fn(() => 'blob:presentacion')
+    const revokeObjectURL = vi.fn()
+
+    function historyWith(presentationFileName: string | null) {
+      const version = { id: 90, groupId: 7, versionNumber: 3, submittedAt: '2026-11-14T22:41:00', late: false,
+        zipFileName: 'sierap-v3.zip', zipSize: 1, presentationFileName, presentationSize: 1, toGrade: true }
+      history.mockResolvedValue({
+        versions: [version], currentPresentation: presentationFileName ? version : null, maxVersions: 20,
+      })
+    }
+
+    beforeEach(() => {
+      createObjectURL.mockClear()
+      revokeObjectURL.mockClear()
+      downloadPresentation.mockReset()
+      Object.assign(URL, { createObjectURL, revokeObjectURL })
+      loadForm.mockResolvedValue(formFixture())
+    })
+
+    it('opens the PDF in a dialog and releases the URL on close', async () => {
+      historyWith('sustentacion.pdf')
+      downloadPresentation.mockResolvedValue(new Blob(['%PDF'], { type: 'application/pdf' }))
+      renderEditor()
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Ver presentación' }))
+
+      const frame = await screen.findByTitle('Presentación del grupo')
+      expect(frame).toHaveAttribute('src', 'blob:presentacion')
+      expect(downloadPresentation).toHaveBeenCalledWith(90)
+
+      await userEvent.keyboard('{Escape}')
+      expect(screen.queryByTitle('Presentación del grupo')).not.toBeInTheDocument()
+      expect(revokeObjectURL).toHaveBeenCalledWith('blob:presentacion')
+    })
+
+    it('shows the message of the API when the presentation cannot be loaded', async () => {
+      historyWith('sustentacion.pdf')
+      downloadPresentation.mockRejectedValue(apiError(404, 'La presentación ya no existe.'))
+      renderEditor()
+
+      await userEvent.click(await screen.findByRole('button', { name: 'Ver presentación' }))
+
+      expect(await screen.findByRole('alert')).toHaveTextContent('La presentación ya no existe.')
+    })
+
+    it('offers the viewer only for PDF files', async () => {
+      historyWith('sustentacion.pptx')
+      renderEditor()
+
+      expect(await screen.findByRole('button', { name: 'Descargar la presentación' })).toBeInTheDocument()
+      expect(screen.queryByRole('button', { name: 'Ver presentación' })).not.toBeInTheDocument()
+    })
   })
 })
 

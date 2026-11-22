@@ -276,6 +276,13 @@ class ResultIntegrationTest {
                 .andExpect(jsonPath("$[1].groupGrade").value(2.75))
                 .andExpect(jsonPath("$[1].maxScore").value(3.0))
                 .andExpect(jsonPath("$[1].learningOutcomes[*].score", contains(0.75, 0.88)))
+                // Por criterio: el consolidado de Ana (con su ajuste), sin niveles por evaluador.
+                .andExpect(jsonPath("$[1].learningOutcomes[0].criteria[0].description").value("Criterio de RAP1"))
+                .andExpect(jsonPath("$[1].learningOutcomes[0].criteria[0].score").value(0.75))
+                .andExpect(jsonPath("$[1].learningOutcomes[0].criteria[0].maxScore").value(1.0))
+                .andExpect(jsonPath("$[1].learningOutcomes[1].criteria[0].score").value(0.88))
+                .andExpect(jsonPath("$[1].learningOutcomes[1].criteria[0].maxScore").value(2.0))
+                .andExpect(jsonPath("$[1].learningOutcomes[0].criteria[0].level").doesNotExist())
                 .andExpect(jsonPath("$[1].comments[*].evaluatorKind", contains("Docente", "Empresario")))
                 .andExpect(jsonPath("$[1].comments[*].comment",
                         contains("Buen trabajo en equipo.", "Mejoren la presentación.")));

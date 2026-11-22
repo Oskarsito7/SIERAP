@@ -1,5 +1,6 @@
 import { PercentBars } from '@/components/charts/PercentBars'
 import { StatTile } from '@/components/charts/StatTile'
+import { DownloadButton } from '@/components/DownloadButton'
 import { LoadStatus } from '@/components/LoadStatus'
 import { Badge } from '@/components/ui/badge'
 import { formatScore } from '@/lib/scores'
@@ -25,7 +26,12 @@ function GroupReport({ report }: { report: GroupReportData }) {
   const adjusted = report.members.filter((member) => member.adjusted).length
   return (
     <div className="flex flex-col gap-6">
-      <ReportMeta {...report} />
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <ReportMeta {...report} />
+        <div className="print:hidden">
+          <DownloadButton download={() => reportService.groupPdf(report.group.id)}>Acta en PDF</DownloadButton>
+        </div>
+      </div>
       <p className="text-sm">
         <span className="font-semibold">{report.group.name}</span>
         {report.group.projectTitle && <> · {report.group.projectTitle}</>}

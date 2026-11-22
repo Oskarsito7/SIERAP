@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { formatScore } from '@/lib/scores'
+import { useConfirm } from '@/lib/useConfirm'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
 import { rubricService } from '@/services/api/rubricService'
 import type { EvaluationCriterion, LearningOutcome, MomentDetail, MomentLevel } from '@/types/moment'
@@ -134,13 +135,21 @@ function OutcomeCard({
   const { error, busy, run } = useAction(onChange)
   const criteria = [...outcome.criteria].sort((a, b) => a.displayOrder - b.displayOrder)
 
-  const remove = () => {
-    if (!window.confirm(`¿Eliminar ${outcome.code} con sus criterios y niveles?`)) return
+  const [confirm, confirmDialog] = useConfirm()
+
+  const remove = async () => {
+    const confirmed = await confirm({
+      title: `¿Eliminar ${outcome.code}?`,
+      description: 'También se eliminan sus criterios y niveles.',
+      confirmLabel: 'Eliminar',
+    })
+    if (!confirmed) return
     void run(() => rubricService.deleteOutcome(outcome.id))
   }
 
   return (
     <Card className={expanded ? undefined : 'bg-muted/40'}>
+      {confirmDialog}
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
         <button
           type="button"
@@ -253,13 +262,21 @@ function CriterionBlock({
   const levels = [...criterion.levels].sort((a, b) => a.displayOrder - b.displayOrder)
   const title = `Criterio ${position} · ${criterion.description}`
 
-  const remove = () => {
-    if (!window.confirm(`¿Eliminar el criterio "${criterion.description}" con sus niveles?`)) return
+  const [confirm, confirmDialog] = useConfirm()
+
+  const remove = async () => {
+    const confirmed = await confirm({
+      title: `¿Eliminar el criterio "${criterion.description}"?`,
+      description: 'También se eliminan sus niveles.',
+      confirmLabel: 'Eliminar',
+    })
+    if (!confirmed) return
     void run(() => rubricService.deleteCriterion(criterion.id))
   }
 
   return (
     <section aria-label={title} className="flex flex-col gap-3 border-t pt-4">
+      {confirmDialog}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h3 className="font-semibold">{title}</h3>
         <div className="flex flex-wrap items-center gap-2">
@@ -324,6 +341,7 @@ function CriterionBlock({
 function LevelRow({ level, editable, onChange }: { level: MomentLevel; editable: boolean; onChange: Refresh }) {
   const [editing, setEditing] = useState(false)
   const { error, busy, run } = useAction(onChange)
+  const [confirm, confirmDialog] = useConfirm()
 
   if (editing) {
     return (
@@ -343,13 +361,19 @@ function LevelRow({ level, editable, onChange }: { level: MomentLevel; editable:
     )
   }
 
-  const remove = () => {
-    if (!window.confirm(`¿Quitar el nivel ${level.name}?`)) return
+  const remove = async () => {
+    const confirmed = await confirm({
+      title: `¿Quitar el nivel ${level.name}?`,
+      description: 'El criterio deja de ofrecer este nivel.',
+      confirmLabel: 'Quitar',
+    })
+    if (!confirmed) return
     void run(() => rubricService.deleteLevel(level.id))
   }
 
   return (
     <li className="flex flex-col gap-2 py-3 text-sm">
+      {confirmDialog}
       <div className="grid items-center gap-2 sm:grid-cols-[10rem_1fr_auto_auto]">
         <span className="font-semibold">{level.name}</span>
         <span className="text-muted-foreground">{level.description}</span>

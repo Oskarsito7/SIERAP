@@ -39,6 +39,7 @@ import co.edu.unicesar.sierap.repository.StudentRepository;
 import co.edu.unicesar.sierap.repository.TeacherRepository;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
 import co.edu.unicesar.sierap.service.GroupService;
+import co.edu.unicesar.sierap.service.NotificationService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -62,6 +63,7 @@ public class GroupServiceImpl implements GroupService {
     private final ExternalEvaluatorRepository externalEvaluatorRepository;
     private final EvaluationRepository evaluationRepository;
     private final AccessScope accessScope;
+    private final NotificationService notificationService;
     private final Clock clock;
 
     /**
@@ -74,12 +76,14 @@ public class GroupServiceImpl implements GroupService {
      * @param externalEvaluatorRepository evaluadores externos
      * @param evaluationRepository        evaluaciones
      * @param accessScope                 reglas de alcance de las cuentas
+     * @param notificationService         avisos por correo
      * @param clock                       reloj de la aplicación
      */
     public GroupServiceImpl(ProjectGroupRepository projectGroupRepository, MomentRepository momentRepository,
                             StudentRepository studentRepository, TeacherRepository teacherRepository,
                             ExternalEvaluatorRepository externalEvaluatorRepository,
-                            EvaluationRepository evaluationRepository, AccessScope accessScope, Clock clock) {
+                            EvaluationRepository evaluationRepository, AccessScope accessScope,
+                            NotificationService notificationService, Clock clock) {
         this.projectGroupRepository = projectGroupRepository;
         this.momentRepository = momentRepository;
         this.studentRepository = studentRepository;
@@ -87,6 +91,7 @@ public class GroupServiceImpl implements GroupService {
         this.externalEvaluatorRepository = externalEvaluatorRepository;
         this.evaluationRepository = evaluationRepository;
         this.accessScope = accessScope;
+        this.notificationService = notificationService;
         this.clock = clock;
     }
 
@@ -295,6 +300,7 @@ public class GroupServiceImpl implements GroupService {
                     + ".");
         });
         group.addMember(student);
+        notificationService.notifyMemberAdded(student, group);
         return GroupMapper.toResponse(group, teacher);
     }
 
@@ -376,6 +382,7 @@ public class GroupServiceImpl implements GroupService {
             throw new BusinessRuleException("El evaluador ya está asignado a este grupo.");
         }
         group.addEvaluator(evaluator);
+        notificationService.notifyEvaluatorAssigned(evaluator, group);
         return GroupMapper.toResponse(group, teacher);
     }
 

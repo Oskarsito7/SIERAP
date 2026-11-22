@@ -6,8 +6,10 @@ import co.edu.unicesar.sierap.dto.request.NewAdminRequest;
 import co.edu.unicesar.sierap.dto.request.NewExternalEvaluatorRequest;
 import co.edu.unicesar.sierap.dto.request.NewStudentRequest;
 import co.edu.unicesar.sierap.dto.request.NewTeacherRequest;
+import co.edu.unicesar.sierap.dto.request.SetSemesterRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateUserRequest;
 import co.edu.unicesar.sierap.dto.response.StudentResponse;
+import co.edu.unicesar.sierap.dto.response.UpdatedCountResponse;
 import co.edu.unicesar.sierap.dto.response.UserSummaryResponse;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
 import co.edu.unicesar.sierap.service.AccountService;
@@ -175,11 +177,11 @@ public class AccountController {
     }
 
     /**
-     * Activa o desactiva una cuenta.
+     * Edita los datos de una cuenta o la activa o desactiva.
      *
      * @param actor   usuario autenticado
      * @param id      cuenta destino
-     * @param request nuevo estado
+     * @param request cambios (todos los campos son opcionales)
      * @return usuario actualizado
      */
     @PatchMapping("/users/{id}")
@@ -187,5 +189,19 @@ public class AccountController {
     public UserSummaryResponse updateUser(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id,
                                           @Valid @RequestBody UpdateUserRequest request) {
         return accountService.updateUser(actor, id, request);
+    }
+
+    /**
+     * Fija el mismo semestre a varios estudiantes (todo o nada).
+     *
+     * @param actor   usuario autenticado
+     * @param request estudiantes y semestre
+     * @return cantidad de estudiantes actualizados
+     */
+    @PatchMapping("/students/semester")
+    @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'TEACHER')")
+    public UpdatedCountResponse setSemester(@AuthenticationPrincipal AuthenticatedUser actor,
+                                            @Valid @RequestBody SetSemesterRequest request) {
+        return accountService.setSemester(actor, request);
     }
 }

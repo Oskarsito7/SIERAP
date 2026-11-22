@@ -3,7 +3,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import type { TokenResponse } from '@/types/auth'
 
-import { httpClient, onSessionChange, refreshSession, setSession } from './httpClient'
+import {
+  fileNameFrom,
+  getDownloadErrorMessage,
+  httpClient,
+  onSessionChange,
+  refreshSession,
+  setSession,
+} from './httpClient'
 
 function session(accessToken: string): TokenResponse {
   return {
@@ -123,5 +130,23 @@ describe('httpClient', () => {
     ).rejects.toBeInstanceOf(AxiosError)
 
     expect(requests).toHaveLength(1)
+  })
+})
+
+describe('downloads', () => {
+  it('takes the file name from Content-Disposition, preferring the UTF-8 one', () => {
+    expect(fileNameFrom('attachment; filename="acta.pdf"', 'x.pdf')).toBe('acta.pdf')
+    expect(
+      fileNameFrom(`attachment; filename="bolet_n.pdf"; filename*=UTF-8''bolet%C3%ADn-2026.pdf`, 'x.pdf'),
+    ).toBe('boletín-2026.pdf')
+    expect(fileNameFrom(undefined, 'sabana.xlsx')).toBe('sabana.xlsx')
+  })
+
+  it('reads the API message of a failed download, whose body arrives as a Blob', async () => {
+    const data = new Blob([JSON.stringify({ message: 'Los resultados de este momento aún no están disponibles.' })])
+    const error = new AxiosError('error', 'ERR_BAD_REQUEST', undefined, null, { status: 422, data } as AxiosResponse)
+
+    expect(await getDownloadErrorMessage(error)).toBe('Los resultados de este momento aún no están disponibles.')
+    expect(await getDownloadErrorMessage(new Error('red'))).toBe('No fue posible comunicarse con el servidor')
   })
 })

@@ -6,7 +6,13 @@ import type {
   MomentReportData,
 } from '@/types/report'
 
-import { httpClient } from './httpClient'
+import { fileNameFrom, httpClient, type DownloadedFile } from './httpClient'
+
+/** Pide un reporte como archivo; el nombre lo propone el servidor. */
+async function download(url: string, fallback: string, params?: Record<string, number>): Promise<DownloadedFile> {
+  const response = await httpClient.get<Blob>(url, { params, responseType: 'blob', timeout: 0 })
+  return { blob: response.data, fileName: fileNameFrom(response.headers['content-disposition'], fallback) }
+}
 
 /** Reportes de la Etapa 7 (`docs/07-contrato-api.md`, "Stage 7 — Reporting"). */
 export const reportService = {
@@ -28,6 +34,28 @@ export const reportService = {
   async moment(momentId: number): Promise<MomentReportData> {
     const { data } = await httpClient.get<MomentReportData>(`/reports/moments/${momentId}`)
     return data
+  },
+
+  /** Sábana de notas del momento en Excel (ADR-020). */
+  momentWorkbook(momentId: number): Promise<DownloadedFile> {
+    return download(`/reports/moments/${momentId}/xlsx`, 'sabana-notas.xlsx')
+  },
+
+  /** Informe del momento en PDF. */
+  momentPdf(momentId: number): Promise<DownloadedFile> {
+    return download(`/reports/moments/${momentId}/pdf`, 'informe-momento.pdf')
+  },
+
+  /** Acta de evaluación del grupo en PDF. */
+  groupPdf(groupId: number): Promise<DownloadedFile> {
+    return download(`/reports/groups/${groupId}/pdf`, 'acta-grupo.pdf')
+  },
+
+  /** Boletín individual en PDF; un estudiante omite `studentId` para pedir el suyo. */
+  individualPdf(momentId: number, studentId?: number): Promise<DownloadedFile> {
+    const params: Record<string, number> = { momentId }
+    if (studentId !== undefined) params.studentId = studentId
+    return download('/reports/individual/pdf', 'boletin.pdf', params)
   },
 
   /** Un periodo frente a otro, para el mismo programa y número de momento; solo cifras agregadas. */

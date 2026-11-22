@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { formatDate } from '@/lib/dates'
 import { useLoad } from '@/lib/useLoad'
+import { useConfirm } from '@/lib/useConfirm'
 import { catalogService } from '@/services/api/catalogService'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
 import type { AcademicPeriod, PeriodRequest, PeriodStatus } from '@/types/catalog'
@@ -33,8 +34,15 @@ export function PeriodsPage() {
 
   const sortNewestFirst = (list: AcademicPeriod[]) => [...list].sort((a, b) => b.startDate.localeCompare(a.startDate))
 
+  const [confirm, confirmDialog] = useConfirm()
+
   const remove = async (period: AcademicPeriod) => {
-    if (!window.confirm(`¿Eliminar el periodo ${period.code}?`)) return
+    const confirmed = await confirm({
+      title: `¿Eliminar el periodo ${period.code}?`,
+      description: 'Esta acción no se puede deshacer.',
+      confirmLabel: 'Eliminar',
+    })
+    if (!confirmed) return
     setError(null)
     try {
       await catalogService.deletePeriod(period.id)
@@ -46,6 +54,7 @@ export function PeriodsPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      {confirmDialog}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold tracking-tight">Periodos académicos</h1>

@@ -31,6 +31,14 @@ export interface GroupResults {
   pendingEvaluations: number
 }
 
+/** Puntaje consolidado del estudiante en un criterio; nunca los niveles por evaluador. */
+export interface StudentCriterionScore {
+  description: string
+  /** `null` si no hay evaluaciones enviadas que cuenten. */
+  score: number | null
+  maxScore: number
+}
+
 /** Desempeño del estudiante en un RAP. */
 export interface StudentOutcomeScore {
   code: string
@@ -38,6 +46,8 @@ export interface StudentOutcomeScore {
   /** `null` si no hay evaluaciones enviadas que cuenten. */
   score: number | null
   maxScore: number
+  /** Su puntaje consolidado en cada criterio del RAP, en orden. */
+  criteria: StudentCriterionScore[]
 }
 
 /** Comentario de un evaluador: se muestra su tipo, nunca su nombre. */

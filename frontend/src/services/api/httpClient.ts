@@ -105,6 +105,47 @@ export function getErrorMessage(error: unknown): string {
   return 'No fue posible comunicarse con el servidor'
 }
 
+/** Archivo descargado de la API con el nombre que propone el servidor. */
+export interface DownloadedFile {
+  blob: Blob
+  fileName: string
+}
+
+/**
+ * Nombre del archivo según la cabecera `Content-Disposition` (prefiere `filename*`, que
+ * admite tildes); si no viene, usa `fallback`.
+ */
+export function fileNameFrom(disposition: string | undefined, fallback: string): string {
+  if (!disposition) return fallback
+  const encoded = /filename\*=UTF-8''([^;]+)/i.exec(disposition)
+  if (encoded) {
+    try {
+      return decodeURIComponent(encoded[1].trim())
+    } catch {
+      // Si viene mal codificado, se intenta con `filename`.
+    }
+  }
+  const plain = /filename="?([^";]+)"?/i.exec(disposition)
+  return plain ? plain[1].trim() : fallback
+}
+
+/**
+ * Mensaje de error de una descarga. Con `responseType: 'blob'` el cuerpo del error
+ * también llega como `Blob`, así que hay que leerlo para mostrar el `message` de la API
+ * (p. ej. "Los resultados de este momento aún no están disponibles.").
+ */
+export async function getDownloadErrorMessage(error: unknown): Promise<string> {
+  if (axios.isAxiosError(error) && error.response?.data instanceof Blob) {
+    try {
+      const body = JSON.parse(await error.response.data.text()) as Partial<ApiError>
+      if (body.message) return body.message
+    } catch {
+      // El cuerpo no era JSON: se usa el mensaje genérico.
+    }
+  }
+  return getErrorMessage(error)
+}
+
 /** Indica si el error viene de una petición cancelada a propósito (`AbortController`). */
 export function isCanceled(error: unknown): boolean {
   return axios.isCancel(error)

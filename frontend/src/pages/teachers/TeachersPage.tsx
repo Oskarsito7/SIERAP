@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { UserPlus } from 'lucide-react'
 
 import { LoadStatus } from '@/components/LoadStatus'
+import { EditUserForm } from '@/components/forms/EditUserForm'
 import { FormError, FormField } from '@/components/forms/FormField'
 import { SelectField } from '@/components/forms/SelectField'
 import { Badge } from '@/components/ui/badge'
@@ -9,6 +10,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { DOCUMENT_TYPES } from '@/lib/documentTypes'
 import { useLoad } from '@/lib/useLoad'
+import { useConfirm } from '@/lib/useConfirm'
 import { accountService } from '@/services/api/accountService'
 import { catalogService } from '@/services/api/catalogService'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
@@ -53,6 +55,7 @@ function FacultyTeachers({ faculty }: { faculty: Faculty }) {
   const teachers = useLoad(() => teacherService.list(faculty.id), [faculty.id])
   const [search, setSearch] = useState('')
   const [creating, setCreating] = useState(false)
+  const [editing, setEditing] = useState<UserSummary | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -78,9 +81,17 @@ function FacultyTeachers({ faculty }: { faculty: Faculty }) {
     }
   }
 
+  const [confirm, confirmDialog] = useConfirm()
+
   const toggleActive = async (teacher: UserSummary) => {
-    const question = `¿Desactivar la cuenta de ${teacher.fullName}? No podrá iniciar sesión.`
-    if (teacher.active && !window.confirm(question)) return
+    if (teacher.active) {
+      const confirmed = await confirm({
+        title: `¿Desactivar la cuenta de ${teacher.fullName}?`,
+        description: 'No podrá iniciar sesión hasta que se vuelva a activar.',
+        confirmLabel: 'Desactivar',
+      })
+      if (!confirmed) return
+    }
     setNotice(null)
     setError(null)
     try {
@@ -94,6 +105,7 @@ function FacultyTeachers({ faculty }: { faculty: Faculty }) {
 
   return (
     <div className="flex flex-col gap-6">
+      {confirmDialog}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="flex flex-col gap-1">
           <h1 className="text-2xl font-bold tracking-tight">Docentes</h1>
@@ -101,11 +113,33 @@ function FacultyTeachers({ faculty }: { faculty: Faculty }) {
             Los docentes de la {faculty.name}. Cada docente nuevo recibe un correo para crear su contraseña.
           </p>
         </div>
-        <Button onClick={() => setCreating((open) => !open)}>
+        <Button
+          onClick={() => {
+            setEditing(null)
+            setCreating((open) => !open)
+          }}
+        >
           <UserPlus aria-hidden />
           Nuevo docente
         </Button>
       </div>
+
+      {editing && (
+        <EditUserForm
+          key={editing.id}
+          user={editing}
+          onCancel={() => setEditing(null)}
+          onSaved={(updated, emailChanged) => {
+    setEditing(null)
+    setError(null)
+    setNotice(
+      `Se actualizaron los datos de ${updated.fullName}.` +
+        (emailChanged ? ' Se cerraron sus sesiones: deberá iniciar sesión con el correo nuevo.' : ''),
+    )
+    teachers.reload()
+          }}
+        />
+      )}
 
       {creating && (
         <NewTeacherForm
@@ -167,6 +201,17 @@ function FacultyTeachers({ faculty }: { faculty: Faculty }) {
                       </Badge>
                     </td>
                     <td className="py-3 text-right whitespace-nowrap">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setCreating(false)
+                          setEditing(teacher)
+                        }}
+                        aria-label={`Editar a ${teacher.fullName}`}
+                      >
+                        Editar
+                      </Button>
                       <Button
                         variant="ghost"
                         size="sm"

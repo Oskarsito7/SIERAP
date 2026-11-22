@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { catalogService } from '@/services/api/catalogService'
+import { answerConfirm } from '@/test/confirm'
 
 import { periodFixture } from '../moments/testData'
 import { PeriodsPage } from './PeriodsPage'
@@ -62,7 +63,6 @@ describe('PeriodsPage', () => {
   it('edits a period sending its four fields and explains why it cannot be deleted', async () => {
     service.updatePeriod.mockResolvedValue(periodFixture({ upcEvaluationDeadline: '2026-11-30' }))
     service.deletePeriod.mockRejectedValue(apiError(409, 'El periodo tiene momentos.'))
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     render(<PeriodsPage />)
 
     await userEvent.click(await screen.findByRole('button', { name: 'Editar 2026-2' }))
@@ -75,6 +75,7 @@ describe('PeriodsPage', () => {
     }))
 
     await userEvent.click(await screen.findByRole('button', { name: 'Eliminar 2026-2' }))
+    await answerConfirm('Eliminar')
     expect(await screen.findByRole('alert'))
       .toHaveTextContent('No se puede eliminar 2026-2: El periodo tiene momentos.')
   })

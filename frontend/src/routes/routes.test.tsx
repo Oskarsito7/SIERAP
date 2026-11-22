@@ -10,6 +10,17 @@ import { routes } from './routes'
 vi.mock('@/services/api/systemStatusService', () => ({
   systemStatusService: { getStatus: vi.fn(() => new Promise(() => {})) },
 }))
+vi.mock('@/services/api/catalogService', () => ({
+  catalogService: { faculties: vi.fn(() => new Promise(() => {})), periods: vi.fn(() => new Promise(() => {})) },
+}))
+// El inicio de cada rol pide sus datos; aquí se dejan cargando porque solo se prueba el layout.
+vi.mock('@/services/api/momentService', () => ({ momentService: { list: vi.fn(() => new Promise(() => {})) } }))
+vi.mock('@/services/api/groupService', () => ({
+  groupService: { list: vi.fn(() => new Promise(() => {})), myGroups: vi.fn(() => new Promise(() => {})) },
+}))
+vi.mock('@/services/api/evaluationService', () => ({
+  evaluationService: { mine: vi.fn(() => new Promise(() => {})) },
+}))
 
 const user: UserSummary = {
   id: 1,
@@ -41,7 +52,7 @@ describe('routes', () => {
   it('shows the home page inside the role layout when there is a session', () => {
     renderAt('/', { status: 'authenticated', user })
 
-    expect(screen.getByRole('heading', { name: 'Bienvenido a SIERAP' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Hola, Administrador' })).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Menú principal' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /cerrar sesión/i })).toBeInTheDocument()
   })

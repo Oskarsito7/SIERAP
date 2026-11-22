@@ -85,6 +85,25 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Exportación de reportes (ADR-020): Excel .xlsx con Apache POI y PDF con OpenPDF -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.5.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+            <version>3.0.5</version>
+            <exclusions>
+                <!-- Solo sirve para leer PDF comprimidos con Brotli; aquí solo se generan PDF. -->
+                <exclusion>
+                    <groupId>com.aayushatharva.brotli4j</groupId>
+                    <artifactId>brotli4j</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
         <!-- Desarrollo: reinicio automático al recompilar (no se empaqueta en producción) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

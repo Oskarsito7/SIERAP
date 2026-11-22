@@ -6,6 +6,7 @@ import { accountService } from '@/services/api/accountService'
 import { adminService } from '@/services/api/adminService'
 import { catalogService } from '@/services/api/catalogService'
 import type { UserSummary } from '@/types/auth'
+import { answerConfirm } from '@/test/confirm'
 
 import { apiError } from '../catalogs/testHelpers'
 import { AdminsPage } from './AdminsPage'
@@ -88,7 +89,6 @@ describe('AdminsPage', () => {
   })
 
   it('deactivates an admin after confirming and resends the link', async () => {
-    vi.spyOn(window, 'confirm').mockReturnValue(true)
     service.setActive.mockResolvedValue(admin({ active: false }))
     vi.mocked(accountService.resendPasswordLink).mockResolvedValue()
     render(<AdminsPage />)
@@ -99,6 +99,7 @@ describe('AdminsPage', () => {
       .toHaveTextContent('Se envió de nuevo el enlace a laura.mendoza@unicesar.edu.co.')
 
     await userEvent.click(screen.getByRole('button', { name: 'Desactivar a Laura Mendoza' }))
+    await answerConfirm('Desactivar')
     expect(service.setActive).toHaveBeenCalledWith(1, false)
     const laura = screen.getByRole('row', { name: /Laura Mendoza/ })
     expect(within(laura).getByText('Desactivado')).toBeInTheDocument()
