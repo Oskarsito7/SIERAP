@@ -11,7 +11,15 @@ vi.mock('@/services/api/systemStatusService', () => ({
   systemStatusService: { getStatus: vi.fn(() => new Promise(() => {})) },
 }))
 vi.mock('@/services/api/catalogService', () => ({
-  catalogService: { faculties: vi.fn(() => new Promise(() => {})) },
+  catalogService: { faculties: vi.fn(() => new Promise(() => {})), periods: vi.fn(() => new Promise(() => {})) },
+}))
+// El inicio de cada rol pide sus datos; aquí se dejan cargando porque solo se prueba el layout.
+vi.mock('@/services/api/momentService', () => ({ momentService: { list: vi.fn(() => new Promise(() => {})) } }))
+vi.mock('@/services/api/groupService', () => ({
+  groupService: { list: vi.fn(() => new Promise(() => {})), myGroups: vi.fn(() => new Promise(() => {})) },
+}))
+vi.mock('@/services/api/evaluationService', () => ({
+  evaluationService: { mine: vi.fn(() => new Promise(() => {})) },
 }))
 
 function userWith(role: UserRole, overrides: Partial<UserSummary> = {}): UserSummary {
@@ -73,8 +81,9 @@ describe('AppLayout', () => {
   it('shows the user name and role in the top bar', () => {
     renderAt('/', userWith('TEACHER'))
 
-    expect(screen.getByText('Marta Díaz')).toBeInTheDocument()
-    expect(screen.getByText('Docente')).toBeInTheDocument()
+    const topBar = screen.getByRole('banner')
+    expect(within(topBar).getByText('Marta Díaz')).toBeInTheDocument()
+    expect(within(topBar).getByText('Docente')).toBeInTheDocument()
   })
 
   it('opens the page of a menu option and marks it as current', async () => {
