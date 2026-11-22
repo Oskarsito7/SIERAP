@@ -80,6 +80,15 @@ describe('MomentDetailPage', () => {
     expect(screen.getByLabelText('Nombre')).toBeDisabled()
     expect(screen.queryByRole('button', { name: 'Guardar cambios' })).not.toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Eliminar momento' })).not.toBeInTheDocument()
+    expect(screen.getByRole('region', { name: 'Prórroga excepcional' })).toBeInTheDocument()
+  })
+
+  it('only offers the exceptional extension once the moment was launched', async () => {
+    get.mockResolvedValue(momentDetailFixture())
+    renderPage()
+
+    await screen.findByRole('heading', { name: 'Momento 1 · Ingeniería de Sistemas' })
+    expect(screen.queryByRole('region', { name: 'Prórroga excepcional' })).not.toBeInTheDocument()
   })
 
   it('deletes a moment without groups after confirming', async () => {

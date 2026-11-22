@@ -161,3 +161,10 @@ export interface LaunchCheck {
   /** Tipos asignados en sus grupos pero sin peso: su evaluación no contará. */
   evaluatorTypesWithoutWeight: { evaluatorTypeId: number; evaluatorTypeName: string; evaluatorCount: number }[]
 }
+
+/** Prórroga excepcional de un momento lanzado: al menos una fecha y el motivo (10 a 500 caracteres). */
+export interface ExtendMomentRequest {
+  submissionEnd?: string
+  gradingEnd?: string
+  reason: string
+}
