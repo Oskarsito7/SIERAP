@@ -11,7 +11,7 @@ import { momentService } from '@/services/api/momentService'
 import { reportService } from '@/services/api/reportService'
 import { resultsService } from '@/services/api/resultsService'
 import type { MomentSummary } from '@/types/moment'
-import type { StudentOutcomeScore, StudentResult } from '@/types/results'
+import type { StudentCriterionScore, StudentOutcomeScore, StudentResult } from '@/types/results'
 
 /**
  * "Mis notas" del estudiante (wireframes ES-04 y ES-05): su nota final, la del grupo,
@@ -147,7 +147,8 @@ function ResultView({ result }: { result: StudentResult }) {
           <CardContent>
             <ul className="divide-y">
               {result.learningOutcomes.map((outcome) => (
-                <li key={outcome.code} className="grid grid-cols-[4rem_1fr_auto] items-center gap-4 py-3 text-sm">
+                <li key={outcome.code} className="py-3 text-sm">
+                  <div className="grid grid-cols-[4rem_1fr_auto] items-center gap-4">
                   <span className="font-semibold" title={outcome.description}>
                     {outcome.code}
                   </span>
@@ -167,6 +168,8 @@ function ResultView({ result }: { result: StudentResult }) {
                   <span className="whitespace-nowrap">
                     {outcome.score === null ? '—' : formatScore(outcome.score)} / {formatScore(outcome.maxScore)}
                   </span>
+                  </div>
+                  <CriteriaDetail outcome={outcome} />
                 </li>
               ))}
             </ul>
@@ -192,6 +195,50 @@ function ResultView({ result }: { result: StudentResult }) {
       </div>
     </div>
   )
+}
+
+/** Detalle plegable de un RAP: su puntaje consolidado en cada criterio (sin niveles por evaluador). */
+function CriteriaDetail({ outcome }: { outcome: StudentOutcomeScore }) {
+  if (outcome.criteria.length === 0) return null
+  return (
+    <details className="mt-2 pl-[5rem]">
+      <summary className="text-primary cursor-pointer text-sm font-medium">Ver criterios</summary>
+      <p className="text-muted-foreground mt-2 text-xs">
+        Es el puntaje que cuenta en tu nota, combinando a todos tus evaluadores.
+      </p>
+      <ul className="mt-2 flex flex-col gap-3">
+        {outcome.criteria.map((criterion, index) => (
+          <li key={index} className="flex flex-col gap-1">
+            <div className="flex items-baseline justify-between gap-4">
+              <span>{criterion.description}</span>
+              <span className="whitespace-nowrap">
+                {criterion.score === null ? '—' : formatScore(criterion.score)} / {formatScore(criterion.maxScore)}
+              </span>
+            </div>
+            <div
+              role="meter"
+              aria-label={`Criterio: ${criterion.description}`}
+              aria-valuemin={0}
+              aria-valuemax={criterion.maxScore}
+              aria-valuenow={criterion.score ?? undefined}
+              className="bg-muted h-1.5 overflow-hidden rounded-full"
+            >
+              <div
+                className="bg-primary h-full rounded-full"
+                style={{ width: `${criterionAchievement(criterion)}%` }}
+              />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </details>
+  )
+}
+
+/** Ancho de la barra de un criterio: su puntaje sobre el máximo, o 0 si todavía no hay nota. */
+function criterionAchievement(criterion: StudentCriterionScore): number {
+  if (criterion.score === null || criterion.maxScore <= 0) return 0
+  return (criterion.score / criterion.maxScore) * 100
 }
 
 /** Ancho de la barra de un RAP: su puntaje sobre el máximo, o 0 si todavía no hay nota. */

@@ -658,7 +658,10 @@ evaluation per group. They grade the group once and may adjust single students
   "finalGrade": 4.40,               // their individual grade; null while not available
   "groupGrade": 4.52,
   "maxScore": 5.0,
-  "learningOutcomes": [ { "code": "RAP1", "description": "...", "score": 0.6, "maxScore": 0.6 } ],
+  "learningOutcomes": [ {
+    "code": "RAP1", "description": "...", "score": 0.6, "maxScore": 0.6,
+    "criteria": [ { "description": "...", "score": 0.4, "maxScore": 0.6 } ]   // ordered by displayOrder
+  } ],
   "comments": [ { "evaluatorKind": "Empresario", "comment": "Buen trabajo en equipo." } ]
 }
 ```
@@ -667,6 +670,12 @@ evaluation per group. They grade the group once and may adjust single students
 |---|---|---|
 | `GET /api/groups/{id}/results` | the group's teacher, admin of the faculty, super_admin | `200 GroupResults`, at any time (while the window is open it is a preview with the submitted evaluations so far) |
 | `GET /api/students/me/results` | student | `200 StudentResult[]`, newest first. Before the grading window ends, `available` is `false` and grades and comments are `null`/empty. Comments show the kind of evaluator, not their name, and never the levels each evaluator picked |
+
+`criteria` is the student's **consolidated** score in each criterion of the RAP: the one
+that counts in their grade (same formula as the RAP, with their own adjustments). `score`
+is `null` when no submitted evaluation counts. The student never receives the level each
+evaluator picked, the level names, or per-evaluator scores. Each criterion is rounded to 2
+decimals on its own, so the sum of the criteria can differ by 0.01 from the RAP `score`.
 
 **Formula** (`docs/03`, ADR-018): only submitted evaluations count. For each kind of
 evaluator (the teacher, and each evaluator type), average the scores of its evaluators;

@@ -13,9 +13,11 @@ import co.edu.unicesar.sierap.dto.response.GroupResultsResponse.MemberResultResp
 import co.edu.unicesar.sierap.dto.response.GroupResultsResponse.OutcomeScoreResponse;
 import co.edu.unicesar.sierap.dto.response.StudentResultResponse;
 import co.edu.unicesar.sierap.dto.response.StudentResultResponse.EvaluatorCommentResponse;
+import co.edu.unicesar.sierap.dto.response.StudentResultResponse.StudentCriterionScoreResponse;
 import co.edu.unicesar.sierap.dto.response.StudentResultResponse.StudentOutcomeScoreResponse;
 import co.edu.unicesar.sierap.entity.Admin;
 import co.edu.unicesar.sierap.entity.Evaluation;
+import co.edu.unicesar.sierap.entity.EvaluationCriterion;
 import co.edu.unicesar.sierap.entity.LearningOutcome;
 import co.edu.unicesar.sierap.entity.Moment;
 import co.edu.unicesar.sierap.entity.ProjectGroup;
@@ -143,7 +145,8 @@ public class ResultServiceImpl implements ResultService {
             groupGrade = group.getGroupGrade().orElse(null);
             outcomes = moment.getLearningOutcomes().stream()
                     .map(outcome -> new StudentOutcomeScoreResponse(outcome.getCode(), outcome.getDescription(),
-                            group.getIndividualScoreFor(outcome, student).orElse(null), outcome.getMaxScore()))
+                            group.getIndividualScoreFor(outcome, student).orElse(null), outcome.getMaxScore(),
+                            criteriaOf(outcome, group, student)))
                     .toList();
             // Incluye los comentarios de los tipos sin peso: su nota no cuenta, pero el
             // comentario sí le sirve al estudiante (decisión del 2026-10-16).
@@ -152,6 +155,16 @@ public class ResultServiceImpl implements ResultService {
         return new StudentResultResponse(moment.getId(), moment.getName(), moment.getPeriod().getCode(),
                 group.getId(), group.getName(), group.getProjectTitle(), available, finalGrade, groupGrade,
                 moment.getMaxScore(), outcomes, comments);
+    }
+
+    /** Puntaje consolidado del estudiante en cada criterio del RAP, por orden de aparición; sin niveles por evaluador. */
+    private static List<StudentCriterionScoreResponse> criteriaOf(LearningOutcome outcome, ProjectGroup group,
+                                                                  Student student) {
+        return outcome.getCriteria().stream()
+                .sorted(Comparator.comparingInt(EvaluationCriterion::getDisplayOrder))
+                .map(criterion -> new StudentCriterionScoreResponse(criterion.getDescription(),
+                        group.getIndividualScoreFor(criterion, student).orElse(null), criterion.getMaxScore()))
+                .toList();
     }
 
     /** Comentarios de las evaluaciones enviadas: primero el del docente, luego por tipo de evaluador. */

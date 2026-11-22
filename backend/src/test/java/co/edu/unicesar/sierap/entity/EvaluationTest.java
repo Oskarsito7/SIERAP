@@ -143,6 +143,25 @@ class EvaluationTest {
     }
 
     @Test
+    void theScorePerCriterionIsTheGroupOneWithoutAdjustmentAndTheAdjustedOneWithIt() {
+        gradeGroup("Alto", "Alto", "Alto");
+        evaluation.adjust(ana, level(defense, "Sobresaliente"));
+
+        assertThat(evaluation.getScoreFor(problem, ana)).isEqualByComparingTo("0.48");
+        assertThat(evaluation.getScoreFor(defense, ana)).isEqualByComparingTo("0.80");
+        assertThat(evaluation.getScoreFor(defense, luis)).isEqualByComparingTo("0.64");
+        assertThat(evaluation.getScoreFor(problem, ana).add(evaluation.getScoreFor(description, ana))
+                .add(evaluation.getScoreFor(defense, ana))).isEqualByComparingTo(evaluation.getTotalScoreFor(ana));
+    }
+
+    @Test
+    void theScorePerCriterionIsZeroWhenTheCriterionIsNotGraded() {
+        evaluation.grade(level(problem, "Alto"));
+
+        assertThat(evaluation.getScoreFor(defense, ana)).isEqualByComparingTo("0");
+    }
+
+    @Test
     void anAdjustmentReplacesTheGroupLevelOnlyForThatStudentAndCriterion() {
         gradeGroup("Alto", "Alto", "Alto");
 
