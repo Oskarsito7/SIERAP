@@ -124,9 +124,10 @@ public class NotificationServiceImpl implements NotificationService {
         return date == null ? "por fijar" : date.format(DATE);
     }
 
+    /** Tamaño legible con coma decimal, como en la pantalla de entregas: "2,5 MB" o "300 KB". */
     private static String formatSize(long bytes) {
         if (bytes >= 1024L * 1024L) {
-            return String.format(Locale.ROOT, "%.1f MB", bytes / (1024.0 * 1024.0));
+            return String.format(Locale.ROOT, "%.1f MB", bytes / (1024.0 * 1024.0)).replace('.', ',');
         }
         return Math.max(1, Math.round(bytes / 1024.0)) + " KB";
     }

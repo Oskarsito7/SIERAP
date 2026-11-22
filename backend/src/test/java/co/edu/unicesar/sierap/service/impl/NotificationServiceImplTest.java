@@ -121,7 +121,7 @@ class NotificationServiceImplTest {
         verify(emailService, never()).send(org.mockito.ArgumentMatchers.eq("tres@unicesar.edu.co"), anyString(),
                 anyString());
         assertThat(body).contains("Grupo A", "Momento 1", "Versión: 3", "Subida por: Uno Estudiante",
-                "22/11/2026 14:35", "Entrega tardía: sí", "entrega.zip (2.5 MB)", "slides.pptx (300 KB)",
+                "22/11/2026 14:35", "Entrega tardía: sí", "entrega.zip (2,5 MB)", "slides.pptx (300 KB)",
                 FRONTEND + "/my-group?groupId=7");
     }
 
