@@ -33,4 +33,22 @@ public interface UserRepository extends JpaRepository<User, Long> {
      * @return {@code true} si el documento ya está registrado
      */
     boolean existsByDocumentNumber(String documentNumber);
+
+    /**
+     * Indica si otro usuario (distinto del indicado) ya tiene ese correo.
+     *
+     * @param email correo en minúsculas y sin espacios
+     * @param id    usuario que se excluye de la búsqueda
+     * @return {@code true} si otro usuario tiene el correo
+     */
+    boolean existsByEmailAndIdNot(String email, Long id);
+
+    /**
+     * Indica si otro usuario (distinto del indicado) ya tiene ese número de documento.
+     *
+     * @param documentNumber número de documento de identidad
+     * @param id             usuario que se excluye de la búsqueda
+     * @return {@code true} si otro usuario tiene el documento
+     */
+    boolean existsByDocumentNumberAndIdNot(String documentNumber, Long id);
 }

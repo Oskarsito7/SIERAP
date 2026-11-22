@@ -2,15 +2,19 @@ package co.edu.unicesar.sierap.service.impl;
 
 import java.time.Clock;
 import java.time.LocalDateTime;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import co.edu.unicesar.sierap.dto.request.NewAdminRequest;
 import co.edu.unicesar.sierap.dto.request.NewExternalEvaluatorRequest;
 import co.edu.unicesar.sierap.dto.request.NewStudentRequest;
 import co.edu.unicesar.sierap.dto.request.NewTeacherRequest;
+import co.edu.unicesar.sierap.dto.request.SetSemesterRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateUserRequest;
 import co.edu.unicesar.sierap.dto.response.StudentResponse;
+import co.edu.unicesar.sierap.dto.response.UpdatedCountResponse;
 import co.edu.unicesar.sierap.dto.response.UserSummaryResponse;
 import co.edu.unicesar.sierap.entity.Admin;
 import co.edu.unicesar.sierap.entity.EvaluatorType;
@@ -219,15 +223,82 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public UserSummaryResponse updateUser(AuthenticatedUser actor, Long userId, UpdateUserRequest request) {
-        if (Objects.equals(actor.id(), userId) && !request.active()) {
+        if (request.isEmpty()) {
+            throw new BusinessRuleException("No hay cambios para guardar.");
+        }
+        if (Objects.equals(actor.id(), userId) && Boolean.FALSE.equals(request.active())) {
             throw new BusinessRuleException("No puede desactivar su propia cuenta.");
         }
         User target = findManageableUser(actor, userId);
-        target.setActive(request.active());
-        if (!request.active()) {
+        boolean studentFields = request.studentCode() != null || request.currentSemester() != null;
+        if (studentFields && !(target instanceof Student)) {
+            throw new BusinessRuleException("El código estudiantil y el semestre solo aplican a estudiantes.");
+        }
+        accountValidator.requireAvailableForUser(userId, request.email(), request.documentNumber());
+        if (request.studentCode() != null) {
+            accountValidator.requireAvailableStudentCode(userId, request.studentCode());
+        }
+
+        boolean emailChanged = request.email() != null
+                && !AccountValidator.normalizeEmail(request.email()).equals(target.getEmail());
+        if (request.firstNames() != null) {
+            target.setFirstNames(request.firstNames().trim());
+        }
+        if (request.lastNames() != null) {
+            target.setLastNames(request.lastNames().trim());
+        }
+        if (request.documentType() != null) {
+            target.setDocumentType(request.documentType());
+        }
+        if (request.documentNumber() != null) {
+            target.setDocumentNumber(request.documentNumber().trim());
+        }
+        if (request.email() != null) {
+            target.setEmail(request.email());
+        }
+        if (target instanceof Student student) {
+            if (request.studentCode() != null) {
+                student.setStudentCode(request.studentCode().trim());
+            }
+            if (request.currentSemester() != null) {
+                student.setCurrentSemester(request.currentSemester());
+            }
+        }
+        if (request.active() != null) {
+            target.setActive(request.active());
+        }
+        if (emailChanged || Boolean.FALSE.equals(request.active())) {
             refreshTokenRepository.deleteAllByUserId(target.getId());
         }
         return UserMapper.toSummary(target);
+    }
+
+    @Override
+    public UpdatedCountResponse setSemester(AuthenticatedUser actor, SetSemesterRequest request) {
+        if (new HashSet<>(request.studentIds()).size() != request.studentIds().size()) {
+            throw new BusinessRuleException("La lista de estudiantes tiene ids repetidos.");
+        }
+        User manager = accessScope.loadActor(actor);
+        List<User> users = userRepository.findAllById(request.studentIds());
+        if (users.size() != request.studentIds().size()) {
+            var found = users.stream().map(User::getId).collect(Collectors.toSet());
+            Long missing = request.studentIds().stream().filter(id -> !found.contains(id)).findFirst().orElseThrow();
+            throw new ResourceNotFoundException("Estudiante", missing);
+        }
+        List<Student> students = users.stream().map(user -> {
+            if (user instanceof Student student) {
+                return student;
+            }
+            throw new BusinessRuleException("La cuenta " + user.getFullName() + " no es de un estudiante.");
+        }).toList();
+        for (Student student : students) {
+            if (!accessScope.canManage(manager, student)) {
+                throw new ForbiddenAccessException("El estudiante " + student.getFullName()
+                        + " está fuera de su alcance.");
+            }
+        }
+        students.forEach(student -> student.setCurrentSemester(request.currentSemester()));
+        return new UpdatedCountResponse(students.size());
     }
 
     private <T extends User> T register(T user, User creator) {
