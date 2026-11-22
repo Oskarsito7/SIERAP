@@ -170,6 +170,21 @@ public class EvaluationServiceImpl implements EvaluationService {
                 .toList();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<EvaluationSummaryResponse> mine(AuthenticatedUser actor) {
+        User viewer = accessScope.loadActor(actor);
+        if (!(viewer instanceof Evaluator evaluator)) {
+            throw new ForbiddenAccessException("Solo los evaluadores tienen evaluaciones propias.");
+        }
+        // Si al evaluador externo lo quitaron de un grupo, su evaluación ya no se muestra
+        // (igual que en GET /api/groups/{id}/evaluations).
+        return evaluationRepository.findByEvaluatorId(viewer.getId()).stream()
+                .filter(evaluation -> evaluator.canEvaluate(evaluation.getProjectGroup()))
+                .map(EvaluationMapper::toSummary)
+                .toList();
+    }
+
     // ---------------------------------------------------------------- reglas comunes
 
     /** Solo califica el docente del grupo o un evaluador externo asignado (polimorfismo). */

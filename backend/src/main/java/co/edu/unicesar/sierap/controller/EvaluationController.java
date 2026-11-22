@@ -20,13 +20,14 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * Calificación de los grupos (Etapa 6, {@code docs/07} "Evaluation"): la evaluación
- * propia de cada evaluador y la lista de evaluaciones del grupo.
+ * propia de cada evaluador, la lista de evaluaciones del grupo y las evaluaciones
+ * propias de todos sus grupos.
  *
  * <p>Aquí solo se traduce HTTP: quién califica, cuándo y con qué niveles lo valida
  * {@link EvaluationService}.</p>
  */
 @RestController
-@RequestMapping("/api/groups/{id}")
+@RequestMapping("/api")
 public class EvaluationController {
 
     private final EvaluationService evaluationService;
@@ -47,7 +48,7 @@ public class EvaluationController {
      * @param id    grupo
      * @return la evaluación con la estructura del momento
      */
-    @GetMapping("/evaluation")
+    @GetMapping("/groups/{id}/evaluation")
     @PreAuthorize("hasAnyRole('TEACHER', 'EXTERNAL_EVALUATOR')")
     public EvaluationFormResponse form(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) {
         return evaluationService.form(actor, id);
@@ -61,7 +62,7 @@ public class EvaluationController {
      * @param request niveles, observación y ajustes individuales
      * @return la evaluación actualizada
      */
-    @PutMapping("/evaluation")
+    @PutMapping("/groups/{id}/evaluation")
     @PreAuthorize("hasAnyRole('TEACHER', 'EXTERNAL_EVALUATOR')")
     public EvaluationFormResponse save(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id,
                                        @Valid @RequestBody SaveEvaluationRequest request) {
@@ -75,7 +76,7 @@ public class EvaluationController {
      * @param id    grupo
      * @return la evaluación enviada
      */
-    @PostMapping("/evaluation/submit")
+    @PostMapping("/groups/{id}/evaluation/submit")
     @PreAuthorize("hasAnyRole('TEACHER', 'EXTERNAL_EVALUATOR')")
     public EvaluationFormResponse submit(@AuthenticationPrincipal AuthenticatedUser actor, @PathVariable Long id) {
         return evaluationService.submit(actor, id);
@@ -89,10 +90,23 @@ public class EvaluationController {
      * @param id    grupo
      * @return evaluaciones, la del docente primero
      */
-    @GetMapping("/evaluations")
+    @GetMapping("/groups/{id}/evaluations")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'TEACHER', 'EXTERNAL_EVALUATOR')")
     public List<EvaluationSummaryResponse> list(@AuthenticationPrincipal AuthenticatedUser actor,
                                                 @PathVariable Long id) {
         return evaluationService.list(actor, id);
+    }
+
+    /**
+     * Evaluaciones propias del evaluador en todos sus grupos, para la lista de grupos
+     * asignados sin pedir las evaluaciones grupo por grupo.
+     *
+     * @param actor docente o evaluador externo
+     * @return sus evaluaciones (borradores y enviadas), cada una con su grupo
+     */
+    @GetMapping("/evaluations/mine")
+    @PreAuthorize("hasAnyRole('TEACHER', 'EXTERNAL_EVALUATOR')")
+    public List<EvaluationSummaryResponse> mine(@AuthenticationPrincipal AuthenticatedUser actor) {
+        return evaluationService.mine(actor);
     }
 }

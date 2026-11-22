@@ -37,9 +37,9 @@ describe('GroupResultsTab', () => {
   beforeEach(() => {
     vi.mocked(resultsService.group).mockReset()
     vi.mocked(evaluationService.list).mockResolvedValue([
-      { id: 1, evaluator: { id: 12, fullName: 'Marta Díaz', kind: 'Docente' }, status: 'SUBMITTED',
+      { id: 1, groupId: 7, evaluator: { id: 12, fullName: 'Marta Díaz', kind: 'Docente' }, status: 'SUBMITTED',
         evaluatedAt: '2026-11-24T10:00:00', totalScore: 2.5, comment: null },
-      { id: 2, evaluator: { id: 70, fullName: 'Carlos Pérez', kind: 'Egresado' }, status: 'DRAFT',
+      { id: 2, groupId: 7, evaluator: { id: 70, fullName: 'Carlos Pérez', kind: 'Egresado' }, status: 'DRAFT',
         evaluatedAt: '2026-11-24T11:00:00', totalScore: 1, comment: null },
     ])
   })
