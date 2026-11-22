@@ -808,6 +808,8 @@ restart, still tied to the request thread); a message broker such as RabbitMQ or
 framework such as Quartz/ShedLock (too heavy for a single-instance deployment); Spring
 `@Async` (no persistence, no retries).
 
+**Sensitive content:** password emails carry a one-use token in their link, while the database only stores token hashes. The body of an outbox row is therefore replaced with a placeholder as soon as it is sent or given up (`FAILED`); only the recipient, subject, status and dates stay for auditing.
+
 **Consequences:** migration V12 adds two tables; delivery is now asynchronous (up to
 ~15 s late) and survives SMTP outages and restarts; with several backend instances the
 dispatcher would need row locking (`SELECT … FOR UPDATE SKIP LOCKED`) or a lock like

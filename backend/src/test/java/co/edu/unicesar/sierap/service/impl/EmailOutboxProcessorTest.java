@@ -60,6 +60,8 @@ class EmailOutboxProcessorTest {
         assertThat(email.getStatus()).isEqualTo(EmailStatus.SENT);
         assertThat(email.getSentAt()).isEqualTo(NOW);
         assertThat(email.getAttempts()).isZero();
+        // El cuerpo puede llevar un enlace con token de un solo uso: no se conserva.
+        assertThat(email.getBody()).isEqualTo(EmailOutbox.REDACTED_BODY);
         verify(outboxRepository).save(email);
     }
 
@@ -74,6 +76,8 @@ class EmailOutboxProcessorTest {
         assertThat(email.getLastError()).contains("SMTP caído");
         assertThat(email.getNextAttemptAt()).isEqualTo(NOW.plusMinutes(1));
         assertThat(email.getSentAt()).isNull();
+        // Mientras quede un reintento, el cuerpo se conserva para poder enviarlo.
+        assertThat(email.getBody()).isNotEqualTo(EmailOutbox.REDACTED_BODY);
     }
 
     @Test
@@ -101,6 +105,7 @@ class EmailOutboxProcessorTest {
 
         assertThat(email.getAttempts()).isEqualTo(5);
         assertThat(email.getStatus()).isEqualTo(EmailStatus.FAILED);
+        assertThat(email.getBody()).isEqualTo(EmailOutbox.REDACTED_BODY);
         // Ya no se reintenta: un sexto intento no toca el servidor SMTP.
         processor.deliver(1L);
         verify(mailSender, org.mockito.Mockito.times(5)).send(anyString(), anyString(), anyString());

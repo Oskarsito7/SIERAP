@@ -101,8 +101,13 @@ public class EmailOutbox {
         return Duration.ofMinutes(1L << exponent);
     }
 
+    /** Texto que reemplaza el cuerpo cuando ya no hace falta guardarlo. */
+    public static final String REDACTED_BODY = "[Contenido eliminado: el correo ya no está pendiente]";
+
     /**
-     * Marca el correo como enviado.
+     * Marca el correo como enviado y borra su cuerpo: algunos correos llevan enlaces con
+     * tokens de un solo uso (crear o recuperar la contraseña) que no deben quedar guardados
+     * en claro. Quedan el destinatario, el asunto y las fechas para auditar el envío.
      *
      * @param now momento del envío
      */
@@ -110,6 +115,7 @@ public class EmailOutbox {
         this.status = EmailStatus.SENT;
         this.sentAt = now;
         this.lastError = null;
+        this.body = REDACTED_BODY;
     }
 
     /**
@@ -126,6 +132,8 @@ public class EmailOutbox {
                 : error.substring(0, Math.min(error.length(), MAX_ERROR_LENGTH));
         if (attempts >= maxAttempts) {
             this.status = EmailStatus.FAILED;
+            // Ya no se reintentará: el cuerpo (con posibles tokens) no se conserva.
+            this.body = REDACTED_BODY;
         } else {
             this.nextAttemptAt = now.plus(backoffFor(attempts));
         }
