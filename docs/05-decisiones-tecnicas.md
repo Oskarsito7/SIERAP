@@ -874,6 +874,23 @@ deployment.
 
 ---
 
+## ADR-024 — Personal data consent (Law 1581) and optional server-side pagination
+
+**Date:** 2026-11-22
+**Status:** Accepted (approved by the project lead)
+
+**Context:** Colombian Law 1581 of 2012 (Habeas Data) requires the prior authorization of the owner of the data before processing it, and the system keeps names, documents and emails of students, teachers and external evaluators. Besides, the lists of students, registration codes and external evaluators were returned complete and filtered in the browser, which does not scale to a program with thousands of students.
+
+**Decision:**
+- **Consent:** the column `app_user.privacy_accepted_at` (nullable, migration V14) stores when the person authorized the processing. A student who registers with a code must send `privacyAccepted: true` (`@AssertTrue`, `400` otherwise) and the date is saved at registration. Accounts created by others are asked when they set their password for the first time (`POST /api/auth/password/set` with `privacyAccepted`): if the account has no date yet the value must be `true` (`422` otherwise, the link keeps working) and the date is stored; if it already has one, the field is ignored. The reset-password link of an account that never authorized is treated the same way. The policy link is the optional global parameter `privacy.policy-url` (not seeded: the super_admin creates it), exposed without authentication by `GET /api/auth/privacy-policy` as `{ "url": string | null }`.
+- **Pagination:** `page` (from 0) and `size` (1 to 200) are **optional** query parameters on `GET /api/students`, `GET /api/registration-codes` and `GET /api/external-evaluators`. Without them the answer is exactly the complete list as before; with them the body is still an array (the requested page, same order, with `id` as tie-breaker) and `X-Total-Count` carries the total. The pagination is done in the query with Spring Data `Pageable`, not by cutting a list in memory. `GET /api/students` also accepts `q`, a search in names, last names, student code and email, case- and accent-insensitive (`translate(lower(column), ...)` against a normalized pattern; wildcards are escaped). The filter `withoutGroupInMoment` is not paginated.
+
+**Alternatives considered:** asking for the consent on first login instead of when setting the password (needs a new blocking screen and an authenticated endpoint); making pagination mandatory with a `{ items, total }` envelope (breaks the selectors and components that use these lists); the PostgreSQL `unaccent` extension (needs superuser rights to create it); keyset pagination (not needed for these sizes).
+
+**Consequences:** the registration request and the set-password request have a new field (the frontend always shows the box in both pages, because the email link does not say whether the account already authorized). Accounts that existed before V14 are asked once, the first time they set or reset a password. `X-Total-Count` must be exposed by CORS when the frontend is served from another origin. In the registration codes screen the filter by teacher applies to the current page only.
+
+---
+
 ## Template for new entries
 
 ```
