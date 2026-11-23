@@ -33,6 +33,7 @@ moment" and "Team decisions" sections) and in ADR-009 to ADR-014 of
 | Programa | `Program` | `program` |
 | PeriodoAcademico | `AcademicPeriod` | `academic_period` |
 | ParametroGlobal | `GlobalParameter` | `global_parameter` |
+| RegistroDeAuditoria | `AuditLog` | `audit_log` |
 | Momento | `Moment` | `moment` |
 | EstadoMomento (CONFIGURACION, LANZADO) | `MomentStatus` (`CONFIGURATION`, `LAUNCHED`) | column `moment.status` |
 | PesoEvaluador | `EvaluatorWeight` | `evaluator_weight` (the teacher's weight is the column `moment.teacher_weight`) |
@@ -135,6 +136,12 @@ opened, the configuration of the previous period is copied as a starting point.
 | `PerformanceLevel` | Nivel de desempeño | criterion, name, description, score (`BigDecimal`, ADR-013), displayOrder | Level the evaluator can pick in a criterion (e.g. Bajo 0 · Básico 0.36 · Alto 0.48 · Sobresaliente 0.6). Names, number of levels and scores are defined by the admin for each criterion. |
 | `GlobalParameter` | Parámetro global | key, value, description | Institutional key/value parameter defined by the `SuperAdmin` (RF 11), so general rules are not hard-coded. |
 
+## Audit log (ADR-023)
+
+| Class | Spanish name | Attributes | Description |
+|---|---|---|---|
+| `AuditLog` | Registro de auditoría | createdAt, actorId, actorName, action (`AuditAction`), entityType, entityId, facultyId, summary, ip | Immutable record of who did what and when. It has no setters, its columns are not updatable and a database trigger rejects `UPDATE` and `DELETE`. The actor is kept as an id plus a copy of the name; `facultyId` (no foreign key) scopes the admin's query. Written by `AuditService` in the transaction of the audited operation. |
+
 ## Operations · D3
 
 | Class | Spanish name | Attributes | Description |
@@ -179,6 +186,7 @@ version, or the last late one if there is none on time.
 | `DocumentType` | `CC`, `TI`, `CE`, `PASSPORT` | Identity document type of the user (citizenship ID, identity card, foreigner ID, passport). |
 | `MomentStatus` | `CONFIGURATION`, `LAUNCHED` | Lifecycle status of the moment (ADR-012). It is system flow, not an assessment business value. |
 | `EvaluationStatus` | `DRAFT`, `SUBMITTED` | Status of an evaluation: saved half done or submitted. System flow, like `MomentStatus`. |
+| `AuditAction` | `ACCOUNT_CREATED`, `ACCOUNTS_IMPORTED`, `ACCOUNT_UPDATED`, `ACCOUNT_ACTIVATED`, `ACCOUNT_DEACTIVATED`, `SEMESTER_BULK_UPDATED`, `REGISTRATION_CODE_DEACTIVATED`, `MOMENT_LAUNCHED`, `MOMENT_EXTENDED`, `GLOBAL_PARAMETER_CREATED`, `GLOBAL_PARAMETER_CHANGED`, `EVALUATION_CORRECTED`, `GROUP_DELETED`, `GROUP_MEMBER_REMOVED`, `GROUP_EVALUATOR_ASSIGNED`, `GROUP_EVALUATOR_REMOVED` | Kind of event recorded by the audit log (ADR-023). |
 | `PasswordTokenPurpose` | `ACCOUNT_SETUP`, `PASSWORD_RESET` | Why a password link was sent: to create the password of a new account or to recover a forgotten one. |
 | `EmailStatus` | `PENDING`, `SENT`, `FAILED` | State of an email in the outbox: waiting for its first send or a retry, sent, or given up after the maximum attempts (ADR-022). |
 | `ReminderKind` | `SUBMISSION_CLOSING`, `EVALUATION_PENDING`, `GRADES_PUBLISHED` | Kind of date-based reminder (ADR-022). |
@@ -210,7 +218,7 @@ configurable `PerformanceLevel` entity, ADR-010), and so were the `EMPRESARIO` a
   `IndividualGrade`—`PerformanceLevel`;
   `User`—`User` (`createdBy`); `RegistrationCode`—`Teacher`; `RegistrationCode`—`Program`;
   `Student`—`RegistrationCode` (optional).
-- **Dependency:** `Report` depends on `ProjectGroup` (the report reads the grades of its
+- **Dependency:** `AuditLog` is written by the services that audit and read by the admins (no association: it keeps `actorId` and `facultyId` as plain ids so history survives changes); `Report` depends on `ProjectGroup` (the report reads the grades of its
   groups without owning them); `MomentReport` and `ComparativeReport` use `GradeScale`,
   built from the global parameters `report.passing-percentage` and `report.grade-bands`.
 

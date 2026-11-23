@@ -7,6 +7,7 @@ import {
   GraduationCap,
   KeyRound,
   Layers,
+  ScrollText,
   ShieldCheck,
   SlidersHorizontal,
   Tags,
@@ -54,6 +55,13 @@ const reports: Omit<MenuItem, 'description'> = {
   stage: 7,
 }
 
+const auditLog: Omit<MenuItem, 'description'> = {
+  path: '/audit-log',
+  label: 'Bitácora',
+  icon: ScrollText,
+  stage: 8,
+}
+
 /**
  * Menú de cada rol, aprobado por el líder el 2026-09-27 (`docs/06`, Etapa 2). "Mi
  * cuenta" y "Cerrar sesión" son comunes a todos y los agrega el layout.
@@ -99,6 +107,10 @@ export const ROLE_MENUS: Record<UserRole, MenuItem[]> = {
       ...reports,
       description: 'Los reportes de todas las facultades',
     },
+    {
+      ...auditLog,
+      description: 'La bitácora de auditoría de todo el sistema',
+    },
   ],
   ADMIN: [
     {
@@ -122,6 +134,10 @@ export const ROLE_MENUS: Record<UserRole, MenuItem[]> = {
     {
       ...reports,
       description: 'Los reportes individuales, grupales y comparativos',
+    },
+    {
+      ...auditLog,
+      description: 'La bitácora de auditoría de los hechos de tu facultad',
     },
   ],
   TEACHER: [

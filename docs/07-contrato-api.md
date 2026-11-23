@@ -407,6 +407,45 @@ are, `docs/04` 2026-09-25), and evaluator types without weight (only a warning).
 can launch before the group formation window ends: launching closes group formation
 (`docs/04`, 2026-09-27). After the launch, groups and configuration are locked.
 
+### Exceptional extension of a launched moment (ADR-023)
+
+```jsonc
+// ExtendMomentRequest: at least one date; reason between 10 and 500 characters
+{ "submissionEnd": "2026-11-05", "gradingEnd": "2026-11-25", "reason": "Paro estudiantil de dos semanas" }
+```
+
+| Method and route | Who | Body | Answer |
+|---|---|---|---|
+| `PATCH /api/moments/{id}/extension` | super_admin, admin of the moment's faculty | `ExtendMomentRequest` | `200 MomentDetail` with the new dates. `400` if `reason` is missing or outside 10 to 500 characters. `403` for an admin of another faculty. `404` if the moment does not exist. `422` (message in Spanish) if the moment is not `LAUNCHED`, no date is sent, a date is not later than the current one (dates only grow), the grading end passes the period's UPC deadline, or the new submission end would leave the grading window inverted ("amplíe también el fin de calificación"). If grading has already started, the end of submissions cannot reach the grading start (`422`), since moving it would close the grading in progress. |
+
+If the new submission end is on or after the grading start, the grading start moves to the
+day after it (the windows never overlap). Every extension is written to the audit log
+(`MOMENT_EXTENDED`) with the old and new dates and the reason. This is the only change
+allowed on a launched moment (exception to ADR-012).
+
+### Audit log (ADR-023)
+
+```jsonc
+// AuditLogResponse
+{ "id": 1, "createdAt": "2026-11-22T14:30:00", "actorId": 5, "actorName": "Carlos Ramos",
+  "action": "ACCOUNT_UPDATED", "entityType": "User", "entityId": 9, "facultyId": 1,
+  "summary": "Cambió el correo (de a@unicesar.edu.co a b@unicesar.edu.co) de la cuenta de Ana Pérez.",
+  "ip": "10.0.0.1" }
+```
+
+| Method and route | Who | Body | Answer |
+|---|---|---|---|
+| `GET /api/audit-log?page=&size=&action=&from=&to=&q=` | super_admin (everything), admin (only the records of their faculty) | — | `200 { "items": AuditLogResponse[], "total": n, "page": p, "size": s }`, newest first. `page` starts at 0; `size` defaults to 50 and is capped at 200. `action` is an `AuditAction`; `from` and `to` are `YYYY-MM-DD` and inclusive; `q` searches the summary and the actor name, ignoring case. `422` if `to` is before `from`; `403` for other roles |
+
+`AuditAction`: `ACCOUNT_CREATED`, `ACCOUNTS_IMPORTED`, `ACCOUNT_UPDATED`, `ACCOUNT_ACTIVATED`,
+`ACCOUNT_DEACTIVATED`, `SEMESTER_BULK_UPDATED`, `REGISTRATION_CODE_DEACTIVATED`,
+`MOMENT_LAUNCHED`, `MOMENT_EXTENDED`, `GLOBAL_PARAMETER_CREATED`, `GLOBAL_PARAMETER_CHANGED`,
+`EVALUATION_CORRECTED`, `GROUP_DELETED`, `GROUP_MEMBER_REMOVED`, `GROUP_EVALUATOR_ASSIGNED`,
+`GROUP_EVALUATOR_REMOVED`.
+
+The log is read-only: there is no route to edit or delete records, and the database
+rejects `UPDATE` and `DELETE` on `audit_log`.
+
 ### Copy the configuration of a period
 
 ```jsonc

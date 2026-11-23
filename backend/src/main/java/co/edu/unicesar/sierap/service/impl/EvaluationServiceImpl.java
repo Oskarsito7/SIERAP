@@ -30,6 +30,7 @@ import co.edu.unicesar.sierap.entity.Student;
 import co.edu.unicesar.sierap.entity.SuperAdmin;
 import co.edu.unicesar.sierap.entity.Teacher;
 import co.edu.unicesar.sierap.entity.User;
+import co.edu.unicesar.sierap.entity.enums.AuditAction;
 import co.edu.unicesar.sierap.entity.enums.MomentStatus;
 import co.edu.unicesar.sierap.exception.BusinessRuleException;
 import co.edu.unicesar.sierap.exception.ForbiddenAccessException;
@@ -38,6 +39,7 @@ import co.edu.unicesar.sierap.mapper.EvaluationMapper;
 import co.edu.unicesar.sierap.repository.EvaluationRepository;
 import co.edu.unicesar.sierap.repository.ProjectGroupRepository;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
+import co.edu.unicesar.sierap.service.AuditService;
 import co.edu.unicesar.sierap.service.EvaluationService;
 import org.hibernate.Hibernate;
 import org.springframework.stereotype.Service;
@@ -60,6 +62,7 @@ public class EvaluationServiceImpl implements EvaluationService {
     private final ProjectGroupRepository projectGroupRepository;
     private final EvaluationRepository evaluationRepository;
     private final AccessScope accessScope;
+    private final AuditService auditService;
     private final Clock clock;
 
     /**
@@ -68,13 +71,16 @@ public class EvaluationServiceImpl implements EvaluationService {
      * @param projectGroupRepository grupos
      * @param evaluationRepository   evaluaciones
      * @param accessScope            carga del usuario autenticado
+     * @param auditService           bitácora de auditoría
      * @param clock                  reloj de la aplicación
      */
     public EvaluationServiceImpl(ProjectGroupRepository projectGroupRepository,
-                                 EvaluationRepository evaluationRepository, AccessScope accessScope, Clock clock) {
+                                 EvaluationRepository evaluationRepository, AccessScope accessScope,
+                                 AuditService auditService, Clock clock) {
         this.projectGroupRepository = projectGroupRepository;
         this.evaluationRepository = evaluationRepository;
         this.accessScope = accessScope;
+        this.auditService = auditService;
         this.clock = clock;
     }
 
@@ -113,6 +119,7 @@ public class EvaluationServiceImpl implements EvaluationService {
                     group.addEvaluation(created);
                     return evaluationRepository.save(created);
                 });
+        boolean wasSubmitted = evaluation.isSubmitted();
         levels.forEach(evaluation::grade);
         if (request.comment() != null) {
             evaluation.setComment(request.comment().isBlank() ? null : request.comment().strip());
@@ -124,6 +131,12 @@ public class EvaluationServiceImpl implements EvaluationService {
             throw new BusinessRuleException("La evaluación ya fue enviada: todos los criterios deben tener nivel.");
         }
         evaluation.setEvaluatedAt(now);
+        if (wasSubmitted) {
+            auditService.record(AuditAction.EVALUATION_CORRECTED, "Evaluation", evaluation.getId(),
+                    group.getMoment().getProgram().getFaculty().getId(),
+                    "Corrigió su evaluación ya enviada del grupo " + group.getName() + " ("
+                            + group.getMoment().getName() + ").");
+        }
         return EvaluationMapper.toForm(group, evaluation, true);
     }
 
