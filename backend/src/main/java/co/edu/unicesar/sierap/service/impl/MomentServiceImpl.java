@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import co.edu.unicesar.sierap.dto.request.CopyMomentsRequest;
+import co.edu.unicesar.sierap.dto.request.ExtendMomentRequest;
 import co.edu.unicesar.sierap.dto.request.LaunchMomentRequest;
 import co.edu.unicesar.sierap.dto.request.MomentWeightsRequest;
 import co.edu.unicesar.sierap.dto.request.NewMomentRequest;
@@ -37,6 +38,7 @@ import co.edu.unicesar.sierap.entity.Student;
 import co.edu.unicesar.sierap.entity.SuperAdmin;
 import co.edu.unicesar.sierap.entity.Teacher;
 import co.edu.unicesar.sierap.entity.User;
+import co.edu.unicesar.sierap.entity.enums.AuditAction;
 import co.edu.unicesar.sierap.entity.enums.MomentStatus;
 import co.edu.unicesar.sierap.exception.BusinessRuleException;
 import co.edu.unicesar.sierap.exception.ForbiddenAccessException;
@@ -48,6 +50,7 @@ import co.edu.unicesar.sierap.repository.MomentRepository;
 import co.edu.unicesar.sierap.repository.ProgramRepository;
 import co.edu.unicesar.sierap.repository.ProjectGroupRepository;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
+import co.edu.unicesar.sierap.service.AuditService;
 import co.edu.unicesar.sierap.service.MomentService;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -70,6 +73,7 @@ public class MomentServiceImpl implements MomentService {
     private final EvaluatorTypeRepository evaluatorTypeRepository;
     private final ProjectGroupRepository projectGroupRepository;
     private final AccessScope accessScope;
+    private final AuditService auditService;
     private final Clock clock;
 
     /**
@@ -81,6 +85,7 @@ public class MomentServiceImpl implements MomentService {
      * @param evaluatorTypeRepository  repositorio de tipos de evaluador
      * @param projectGroupRepository   repositorio de grupos de proyecto
      * @param accessScope              reglas de alcance
+     * @param auditService             bitácora de auditoría
      * @param clock                    reloj de la aplicación
      */
     public MomentServiceImpl(MomentRepository momentRepository,
@@ -89,6 +94,7 @@ public class MomentServiceImpl implements MomentService {
                              EvaluatorTypeRepository evaluatorTypeRepository,
                              ProjectGroupRepository projectGroupRepository,
                              AccessScope accessScope,
+                             AuditService auditService,
                              Clock clock) {
         this.momentRepository = momentRepository;
         this.academicPeriodRepository = academicPeriodRepository;
@@ -96,6 +102,7 @@ public class MomentServiceImpl implements MomentService {
         this.evaluatorTypeRepository = evaluatorTypeRepository;
         this.projectGroupRepository = projectGroupRepository;
         this.accessScope = accessScope;
+        this.auditService = auditService;
         this.clock = clock;
     }
 
@@ -404,7 +411,50 @@ public class MomentServiceImpl implements MomentService {
 
         moment.launch();
         Moment saved = momentRepository.save(moment);
+        auditService.record(AuditAction.MOMENT_LAUNCHED, "Moment", saved.getId(),
+                saved.getProgram().getFaculty().getId(),
+                "Lanzó el " + describe(saved) + " con " + groups.size() + (groups.size() == 1 ? " grupo." : " grupos."));
         return MomentMapper.toDetail(saved, LocalDate.now(clock), groups.size());
+    }
+
+    @Override
+    @Transactional
+    public MomentDetailResponse extend(AuthenticatedUser actor, Long id, ExtendMomentRequest request) {
+        Moment moment = momentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Momento", id));
+        accessScope.requireFaculty(accessScope.loadActor(actor), moment.getProgram().getFaculty().getId());
+
+        String reason = request.reason() == null ? "" : request.reason().strip();
+        if (reason.length() < 10 || reason.length() > 500) {
+            throw new BusinessRuleException("El motivo debe tener entre 10 y 500 caracteres.");
+        }
+        LocalDate previousSubmissionEnd = moment.getSubmissionEnd();
+        LocalDate previousGradingStart = moment.getGradingStart();
+        LocalDate previousGradingEnd = moment.getGradingEnd();
+
+        moment.extend(request.submissionEnd(), request.gradingEnd(), LocalDate.now(clock));
+
+        List<String> changes = new ArrayList<>();
+        if (!Objects.equals(previousSubmissionEnd, moment.getSubmissionEnd())) {
+            changes.add("fin de entregas " + previousSubmissionEnd + " a " + moment.getSubmissionEnd());
+        }
+        if (!Objects.equals(previousGradingStart, moment.getGradingStart())) {
+            changes.add("inicio de calificación " + previousGradingStart + " a " + moment.getGradingStart());
+        }
+        if (!Objects.equals(previousGradingEnd, moment.getGradingEnd())) {
+            changes.add("fin de calificación " + previousGradingEnd + " a " + moment.getGradingEnd());
+        }
+        auditService.record(AuditAction.MOMENT_EXTENDED, "Moment", moment.getId(),
+                moment.getProgram().getFaculty().getId(),
+                "Prorrogó el " + describe(moment) + ": " + String.join("; ", changes) + ". Motivo: " + reason);
+
+        int groupCount = projectGroupRepository.countByMomentId(moment.getId());
+        return MomentMapper.toDetail(moment, LocalDate.now(clock), groupCount);
+    }
+
+    /** Nombre del momento para la bitácora: "Momento 1 de Ingeniería de Sistemas (2026-2)". */
+    private static String describe(Moment moment) {
+        return moment.getName() + " de " + moment.getProgram().getName() + " (" + moment.getPeriod().getCode() + ")";
     }
 
     @Override

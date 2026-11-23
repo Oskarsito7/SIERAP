@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react'
 import { Link, useSearchParams } from 'react-router'
 
 import { FormError, FormField } from '@/components/forms/FormField'
+import { PrivacyConsent } from '@/components/forms/PrivacyConsent'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { PASSWORD_RULES_MESSAGE, validateNewPassword } from '@/lib/passwordRules'
@@ -11,12 +12,17 @@ import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
 /**
  * Creación o recuperación de la contraseña con el enlace recibido por correo
  * (`/set-password?token=...`), tanto para cuentas nuevas como para "olvidé mi contraseña".
+ *
+ * Pide siempre la casilla de autorización de datos personales (Ley 1581): el enlace no dice
+ * si es de creación o de recuperación ni si la cuenta ya autorizó, así que se pide siempre
+ * y el backend la ignora si la cuenta ya la dio.
  */
 export function SetPasswordPage() {
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token') ?? ''
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -26,12 +32,15 @@ export function SetPasswordPage() {
     event.preventDefault()
     setError(null)
     const errors = validateNewPassword(newPassword, confirmPassword)
+    if (!privacyAccepted) {
+      errors.privacyAccepted = 'Debes autorizar el tratamiento de tus datos personales para crear tu contraseña.'
+    }
     setFieldErrors(errors)
     if (Object.keys(errors).length > 0) return
 
     setSubmitting(true)
     try {
-      await authService.setPassword({ token, newPassword })
+      await authService.setPassword({ token, newPassword, privacyAccepted })
       setDone(true)
     } catch (saveError) {
       setFieldErrors(getFieldErrors(saveError))
@@ -78,6 +87,11 @@ export function SetPasswordPage() {
               value={confirmPassword}
               error={fieldErrors.confirmPassword}
               onChange={(event) => setConfirmPassword(event.target.value)}
+            />
+            <PrivacyConsent
+              checked={privacyAccepted}
+              onChange={setPrivacyAccepted}
+              error={fieldErrors.privacyAccepted}
             />
             <Button type="submit" disabled={submitting}>
               {submitting ? 'Guardando…' : 'Guardar contraseña'}

@@ -12,8 +12,11 @@ import { DOCUMENT_TYPES } from '@/lib/documentTypes'
 import { useLoad } from '@/lib/useLoad'
 import { accountService } from '@/services/api/accountService'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
+import { PAGE_SIZE } from '@/services/api/pagination'
 import type { NewExternalEvaluatorRequest } from '@/types/account'
+import type { Page } from '@/types/api'
 import type { DocumentType, UserSummary } from '@/types/auth'
+import { PaginationBar } from '@/components/ui/pagination-bar'
 import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 /**
@@ -22,14 +25,19 @@ import { ResponsiveTable } from '@/components/ui/responsive-table'
  * uno conviene buscarlo desde el grupo (DO-03): si otro docente ya lo creó, se reutiliza.
  */
 export function ExternalEvaluatorsPage() {
-  const evaluators = useLoad(() => accountService.listExternalEvaluators(), [])
+  const [page, setPage] = useState(0)
+  const evaluators = useLoad<Page<UserSummary>>(
+    () => accountService.listExternalEvaluatorsPage({ page, size: PAGE_SIZE }),
+    [page],
+  )
   const [search, setSearch] = useState('')
   const [creating, setCreating] = useState(false)
   const [editing, setEditing] = useState<UserSummary | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const list = evaluators.state.kind === 'success' ? evaluators.state.data : []
+  const list = evaluators.state.kind === 'success' ? evaluators.state.data.items : []
+  const total = evaluators.state.kind === 'success' ? evaluators.state.data.total : 0
   const term = search.trim().toLowerCase()
   const visible = term
     ? list.filter((evaluator) => `${evaluator.fullName} ${evaluator.email}`.toLowerCase().includes(term))
@@ -91,9 +99,14 @@ export function ExternalEvaluatorsPage() {
             setCreating(false)
             setError(null)
             setNotice(`Se creó a ${evaluator.fullName}. Recibirá un correo para crear su contraseña.`)
-            evaluators.setData((current) =>
-              [...current, evaluator].sort((a, b) => a.lastNames.localeCompare(b.lastNames, 'es')),
-            )
+            // El nuevo entra en la página actual si cabe; en otra página aparecerá al navegar a ella.
+            evaluators.setData((current) => ({
+              items:
+                current.items.length < PAGE_SIZE
+                  ? [...current.items, evaluator].sort((a, b) => a.lastNames.localeCompare(b.lastNames, 'es'))
+                  : current.items,
+              total: current.total + 1,
+            }))
           }}
         />
       )}
@@ -117,7 +130,7 @@ export function ExternalEvaluatorsPage() {
           <LoadStatus state={evaluators.state} onRetry={evaluators.reload} label="Cargando los evaluadores…" />
           {evaluators.state.kind === 'success' && visible.length === 0 && (
             <p className="text-muted-foreground text-sm">
-              {list.length === 0 ? 'Todavía no has creado evaluadores externos.' : 'Ningún evaluador coincide.'}
+              {total === 0 ? 'Todavía no has creado evaluadores externos.' : 'Ningún evaluador coincide.'}
             </p>
           )}
           {visible.length > 0 && (
@@ -168,6 +181,9 @@ export function ExternalEvaluatorsPage() {
                 ))}
               </tbody>
             </ResponsiveTable>
+          )}
+          {evaluators.state.kind === 'success' && (
+            <PaginationBar page={page} size={PAGE_SIZE} total={total} onPageChange={setPage} />
           )}
         </CardContent>
       </Card>

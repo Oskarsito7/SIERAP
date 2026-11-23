@@ -5,9 +5,11 @@ import type {
   StudentImportPreview,
   StudentImportResult,
 } from '@/types/account'
+import type { Page } from '@/types/api'
 import type { UserSummary } from '@/types/auth'
 
 import { httpClient } from './httpClient'
+import { toPage } from './pagination'
 
 /** Estudiantes de los programas de la facultad (`docs/07-contrato-api.md`, "Stage 2 — Accounts"). */
 export const studentService = {
@@ -19,6 +21,16 @@ export const studentService = {
   async list(programId: number, withoutGroupInMoment?: number): Promise<Student[]> {
     const { data } = await httpClient.get<Student[]>('/students', { params: { programId, withoutGroupInMoment } })
     return data
+  },
+
+  /**
+   * Una página de los estudiantes de un programa, por apellidos, con búsqueda opcional `q`
+   * (nombres, apellidos, código y correo; sin distinguir mayúsculas ni tildes). `page`
+   * empieza en 0; el total sin paginar viene en `X-Total-Count`.
+   */
+  async listPage(programId: number, params: { q?: string; page: number; size: number }): Promise<Page<Student>> {
+    const response = await httpClient.get<Student[]>('/students', { params: { programId, ...params } })
+    return toPage(response)
   },
 
   /** Crea un estudiante en un programa; le llega un correo para crear su contraseña. */

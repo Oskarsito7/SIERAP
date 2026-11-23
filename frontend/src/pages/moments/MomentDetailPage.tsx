@@ -20,6 +20,7 @@ import { toMomentData, toMomentForm } from './momentFormValues'
 import { momentSteps } from './momentPhase'
 import { MomentStatusBadge } from './MomentStatusBadge'
 import { GroupsTab } from './GroupsTab'
+import { ExtensionSection } from './ExtensionSection'
 import { LaunchPanel } from './LaunchPanel'
 import { RubricTab } from './RubricTab'
 import { WeightsTab } from './WeightsTab'
@@ -128,6 +129,10 @@ export function MomentDetailPage({ tab = 'data' }: { tab?: MomentTab }) {
         <p role="note" className="bg-muted rounded-md px-3 py-2 text-sm">
           El momento ya fue lanzado: su configuración no se puede modificar.
         </p>
+      )}
+
+      {launched && tab === 'data' && (
+        <ExtensionSection moment={moment} periods={periods} onExtended={replace} />
       )}
 
       {tab === 'data' && <DataTab moment={moment} periods={periods} onChange={replace} />}

@@ -49,6 +49,8 @@ export interface ForgotPasswordRequest {
 export interface SetPasswordRequest {
   token: string
   newPassword: string
+  /** Autorización de datos personales (Ley 1581); el backend la exige si la cuenta aún no la dio. */
+  privacyAccepted: boolean
 }
 
 /** Cuerpo de `POST /api/auth/register` (registro de estudiante con código). */
@@ -61,4 +63,6 @@ export interface RegisterStudentRequest {
   email: string
   studentCode: string
   currentSemester: number
+  /** Autorización del tratamiento de datos personales (Ley 1581); debe ser `true`. */
+  privacyAccepted: boolean
 }

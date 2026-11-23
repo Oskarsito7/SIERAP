@@ -1,5 +1,6 @@
 import type {
   CopyMomentsRequest,
+  ExtendMomentRequest,
   LaunchCheck,
   MomentData,
   MomentDetail,
@@ -75,6 +76,15 @@ export const momentService = {
    */
   async launch(id: number, confirmUnderMinimum: boolean): Promise<MomentDetail> {
     const { data } = await httpClient.post<MomentDetail>(`/moments/${id}/launch`, { confirmUnderMinimum })
+    return data
+  },
+
+  /**
+   * Prórroga excepcional de un momento lanzado (ADR-023): solo amplía el fin de
+   * entregas y/o el de calificación y queda en la bitácora con el motivo.
+   */
+  async extend(id: number, request: ExtendMomentRequest): Promise<MomentDetail> {
+    const { data } = await httpClient.patch<MomentDetail>(`/moments/${id}/extension`, request)
     return data
   },
 }

@@ -5,6 +5,7 @@ import co.edu.unicesar.sierap.dto.request.ForgotPasswordRequest;
 import co.edu.unicesar.sierap.dto.request.LoginRequest;
 import co.edu.unicesar.sierap.dto.request.RegisterStudentRequest;
 import co.edu.unicesar.sierap.dto.request.SetPasswordRequest;
+import co.edu.unicesar.sierap.dto.response.PrivacyPolicyResponse;
 import co.edu.unicesar.sierap.dto.response.UserSummaryResponse;
 
 /**
@@ -67,9 +68,21 @@ public interface AuthService {
     void forgotPassword(ForgotPasswordRequest request);
 
     /**
-     * Crea o recupera la contraseña con el enlace enviado por correo.
+     * Devuelve el enlace a la política de tratamiento de datos personales, tomado del
+     * parámetro global {@code privacy.policy-url}.
      *
-     * @param request valor del enlace y nueva contraseña
+     * @return la URL, o {@code null} dentro de la respuesta si el parámetro no existe o está vacío
+     */
+    PrivacyPolicyResponse getPrivacyPolicy();
+
+    /**
+     * Crea o recupera la contraseña con el enlace enviado por correo. Si la cuenta aún no
+     * autorizó el tratamiento de sus datos personales, la solicitud debe traer la
+     * autorización y se guarda su fecha.
+     *
+     * @param request valor del enlace, nueva contraseña y autorización de datos
+     * @throws co.edu.unicesar.sierap.exception.BusinessRuleException si falta la
+     *         autorización de una cuenta que aún no la ha dado
      */
     void setPassword(SetPasswordRequest request);
 

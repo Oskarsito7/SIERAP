@@ -60,8 +60,18 @@
 | `GET /api/auth/me` | authenticated | — | `200 UserSummary` |
 | `POST /api/auth/password/change` | authenticated | `{ "currentPassword", "newPassword" }` | `200 TokenResponse` + new refresh cookie, with `mustChangePassword: false`; the user's other sessions are closed and every pending password link (setup or reset) stops working. `403` if the account was deactivated (no new session is issued). `422` "La contraseña actual no es correcta." |
 | `POST /api/auth/password/forgot` | anyone | `{ "email" }` | Always `204`; if the account exists and is active, an email with a link is sent, unless a reset link sent less than `sierap.auth.reset-link-cooldown-minutes` (5) ago is still pending. The email is sent after the transaction commits |
-| `POST /api/auth/password/set` | anyone with a link token | `{ "token", "newPassword" }` | `204`; sets the password of a new account or resets a forgotten one, closes every session of the user and invalidates the user's other pending links, of either kind. `422` if the token expired or was already used. The user then logs in normally |
-| `POST /api/auth/register` | anyone with a registration code | `{ "registrationCode", "firstNames", "lastNames", "documentType", "documentNumber", "email", "studentCode", "currentSemester" }` | `202`; creates the student in the program of the code and sends the link to set the password. The code is case-insensitive. `422` if the code does not exist, expired or was deactivated, if the email is not institutional (`@unicesar.edu.co`), or if the email, document or student code is already registered |
+| `POST /api/auth/password/set` | anyone with a link token | `{ "token", "newPassword", "privacyAccepted" }` — `privacyAccepted` (Boolean) is required to be `true` only if the account has no `privacy_accepted_at` yet; otherwise it is ignored | `204`; sets the password of a new account or resets a forgotten one, closes every session of the user and invalidates the user's other pending links, of either kind. If the account has not authorized the processing of its personal data (Law 1581) it is stored with the date. `422` if the token expired or was already used, or if the account has not authorized yet and `privacyAccepted` is not `true` ("Debes autorizar el tratamiento de tus datos personales para crear tu contraseña."; the link keeps working). The user then logs in normally |
+| `GET /api/auth/privacy-policy` | anyone | — | `200 { "url": string \| null }`: the value of the global parameter `privacy.policy-url`, `null` if it does not exist or is empty |
+| `POST /api/auth/register` | anyone with a registration code | `{ "registrationCode", "firstNames", "lastNames", "documentType", "documentNumber", "email", "studentCode", "currentSemester", "privacyAccepted" }` — `privacyAccepted` must be `true` | `202`; creates the student in the program of the code and sends the link to set the password. The code is case-insensitive. `422` if the code does not exist, expired or was deactivated, if the email is not institutional (`@unicesar.edu.co`), or if the email, document or student code is already registered. `400` with `fieldErrors.privacyAccepted` ("Debes autorizar el tratamiento de tus datos personales para registrarte.") if `privacyAccepted` is missing or `false`; on success the authorization date is stored |
+
+**Rate limit (ADR-021):** `POST /api/auth/login`, `/register`, `/password/forgot` and
+`/password/set` answer `429` "Demasiados intentos. Espera un momento e inténtalo de nuevo."
+with a `Retry-After` header (seconds) when one IP exceeds the limit of the route in 60
+seconds (login 10, register 5, forgot 5, set 10).
+
+**Health probes (ADR-021):** `GET /actuator/health/liveness` and
+`GET /actuator/health/readiness` are public (`200` `{ "status": "UP" }`, no details).
+Any other `/actuator/**` route is denied.
 
 **Temporary password:** while `user.mustChangePassword` is `true`, only the
 `/api/auth/*` calls (and `/api/status`) work; any other answers `403` "Debe cambiar su
@@ -117,8 +127,8 @@ the link sent by email.
 | `PATCH /api/students/semester` | super_admin, admin, teacher | `{ "studentIds": [1, 2], "currentSemester": 3 }` (1 to 500 distinct ids; semester ≥ 1) | `200 { "updated": n }`. All or nothing: `404` if an id does not exist, `422` if one is not a student, `403` if one is out of scope; then nothing changes |
 | `POST /api/external-evaluators` | super_admin, admin, teacher | `evaluatorTypeId`; optional `organization`, `position`, `graduationYear`, `graduationProgramId` | `201 UserSummary` |
 | `GET /api/teachers?facultyId=` | super_admin, admin of the faculty | — | `200 UserSummary[]` |
-| `GET /api/students?programId=` | super_admin, admin or teacher of the faculty | — | `200 Student[]` ordered by last and first names (DO-08). Optional `withoutGroupInMoment={momentId}`: only the active students of the program with their semester in the range of that moment and no group in it, the same rule as `students-without-group`; `404` if the moment does not exist, `422` if it belongs to another program |
-| `GET /api/external-evaluators` | super_admin (all), admin and teacher (the ones they created) | — | `200 UserSummary[]` |
+| `GET /api/students?programId=` | super_admin, admin or teacher of the faculty | — | `200 Student[]` ordered by last and first names (DO-08). Optional `q`: search in names, last names, student code and email, case- and accent-insensitive (`q` blank = no filter). Optional `page` (from 0) and `size` (1 to 200): without them the whole list, as always; with them the body is the requested page and the header `X-Total-Count` has the total (after `q`); `400` if `page < 0` or `size` is outside 1–200 (ADR-024). `withoutGroupInMoment` is never paginated or searched. Optional `withoutGroupInMoment={momentId}`: only the active students of the program with their semester in the range of that moment and no group in it, the same rule as `students-without-group`; `404` if the moment does not exist, `422` if it belongs to another program |
+| `GET /api/external-evaluators` | super_admin (all), admin and teacher (the ones they created) | — | `200 UserSummary[]` ordered by last name. Optional `page` / `size` and `X-Total-Count` as in `GET /api/students` (ADR-024) |
 | `POST /api/users/{id}/password-link` | whoever manages that user (see below) | — | `204`; sends a new link: to create the password if the account has none yet, otherwise to reset it |
 | `PATCH /api/users/{id}` | whoever manages that user (see below) | every field is optional: `active`, `firstNames`, `lastNames`, `documentType`, `documentNumber`, `email` and, only for students, `studentCode`, `currentSemester` (≥ 1). Same format rules as on creation | `200 UserSummary`. `422` if the body has no field ("No hay cambios para guardar."), if the email, document or student code belongs to another account (same messages as on creation), if student fields are sent for a non-student or when deactivating your own account. Deactivating, or changing the email, also closes the user's sessions |
 | `GET /api/evaluator-types` | authenticated | — | `200 [ { "id", "name", "description", "active" } ]` |
@@ -166,7 +176,7 @@ answers `403`.
 | Method and route | Body | Answer |
 |---|---|---|
 | `POST /api/registration-codes` | `{ "programId", "expiresOn", "teacherId" }` — `teacherId` is omitted by a teacher (the code is theirs) and required for an admin or the super_admin | `201 RegistrationCode`. `422` if the program is not of the teacher's faculty or `expiresOn` is in the past |
-| `GET /api/registration-codes` | — | `200 RegistrationCode[]`, newest first: a teacher's own codes, the codes of the faculty for an admin, all for the super_admin |
+| `GET /api/registration-codes` | — | `200 RegistrationCode[]`, newest first: a teacher's own codes, the codes of the faculty for an admin, all for the super_admin. Optional `page` / `size` and `X-Total-Count` as in `GET /api/students` (ADR-024) |
 | `PATCH /api/registration-codes/{id}` | `{ "active": false }` | `200 RegistrationCode`; the code stops working immediately. A deactivated code cannot be reactivated (`422`): generate a new one |
 
 ## Stage 3 — Academic configuration — D2 (backend) and Vero (admin and super_admin screens)
@@ -397,6 +407,45 @@ up to exactly 100 %.
 are, `docs/04` 2026-09-25), and evaluator types without weight (only a warning). The admin
 can launch before the group formation window ends: launching closes group formation
 (`docs/04`, 2026-09-27). After the launch, groups and configuration are locked.
+
+### Exceptional extension of a launched moment (ADR-023)
+
+```jsonc
+// ExtendMomentRequest: at least one date; reason between 10 and 500 characters
+{ "submissionEnd": "2026-11-05", "gradingEnd": "2026-11-25", "reason": "Paro estudiantil de dos semanas" }
+```
+
+| Method and route | Who | Body | Answer |
+|---|---|---|---|
+| `PATCH /api/moments/{id}/extension` | super_admin, admin of the moment's faculty | `ExtendMomentRequest` | `200 MomentDetail` with the new dates. `400` if `reason` is missing or outside 10 to 500 characters. `403` for an admin of another faculty. `404` if the moment does not exist. `422` (message in Spanish) if the moment is not `LAUNCHED`, no date is sent, a date is not later than the current one (dates only grow), the grading end passes the period's UPC deadline, or the new submission end would leave the grading window inverted ("amplíe también el fin de calificación"). If grading has already started, the end of submissions cannot reach the grading start (`422`), since moving it would close the grading in progress. |
+
+If the new submission end is on or after the grading start, the grading start moves to the
+day after it (the windows never overlap). Every extension is written to the audit log
+(`MOMENT_EXTENDED`) with the old and new dates and the reason. This is the only change
+allowed on a launched moment (exception to ADR-012).
+
+### Audit log (ADR-023)
+
+```jsonc
+// AuditLogResponse
+{ "id": 1, "createdAt": "2026-11-22T14:30:00", "actorId": 5, "actorName": "Carlos Ramos",
+  "action": "ACCOUNT_UPDATED", "entityType": "User", "entityId": 9, "facultyId": 1,
+  "summary": "Cambió el correo (de a@unicesar.edu.co a b@unicesar.edu.co) de la cuenta de Ana Pérez.",
+  "ip": "10.0.0.1" }
+```
+
+| Method and route | Who | Body | Answer |
+|---|---|---|---|
+| `GET /api/audit-log?page=&size=&action=&from=&to=&q=` | super_admin (everything), admin (only the records of their faculty) | — | `200 { "items": AuditLogResponse[], "total": n, "page": p, "size": s }`, newest first. `page` starts at 0; `size` defaults to 50 and is capped at 200. `action` is an `AuditAction`; `from` and `to` are `YYYY-MM-DD` and inclusive; `q` searches the summary and the actor name, ignoring case. `422` if `to` is before `from`; `403` for other roles |
+
+`AuditAction`: `ACCOUNT_CREATED`, `ACCOUNTS_IMPORTED`, `ACCOUNT_UPDATED`, `ACCOUNT_ACTIVATED`,
+`ACCOUNT_DEACTIVATED`, `SEMESTER_BULK_UPDATED`, `REGISTRATION_CODE_DEACTIVATED`,
+`MOMENT_LAUNCHED`, `MOMENT_EXTENDED`, `GLOBAL_PARAMETER_CREATED`, `GLOBAL_PARAMETER_CHANGED`,
+`EVALUATION_CORRECTED`, `GROUP_DELETED`, `GROUP_MEMBER_REMOVED`, `GROUP_EVALUATOR_ASSIGNED`,
+`GROUP_EVALUATOR_REMOVED`.
+
+The log is read-only: there is no route to edit or delete records, and the database
+rejects `UPDATE` and `DELETE` on `audit_log`.
 
 ### Copy the configuration of a period
 

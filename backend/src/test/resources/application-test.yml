@@ -3,6 +3,17 @@ sierap:
   auth:
     jwt-secret: clave-de-pruebas-sierap-solo-para-tests-0123456789
     refresh-cookie-secure: false
+  # Las pruebas de integración hacen muchos inicios de sesión desde la misma IP; las
+  # pruebas del propio filtro lo activan por su cuenta.
+  security:
+    rate-limit:
+      enabled: false
   # Las entregas de las pruebas van a una carpeta temporal.
   storage:
     base-path: ${java.io.tmpdir}/sierap-test-files
+  # El programador no corre en las pruebas de integración: nada envía ni encola solo.
+  mail:
+    outbox:
+      enabled: false
+  reminders:
+    enabled: false

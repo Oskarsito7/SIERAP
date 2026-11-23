@@ -73,4 +73,15 @@ public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
      * @return {@code true} si hay al menos una
      */
     boolean existsByProjectGroupIdAndStatus(Long projectGroupId, EvaluationStatus status);
+
+    /**
+     * Indica si el evaluador tiene una evaluación del grupo en el estado dado.
+     *
+     * @param projectGroupId id del grupo
+     * @param evaluatorId    id del evaluador
+     * @param status         estado buscado
+     * @return {@code true} si existe
+     */
+    boolean existsByProjectGroupIdAndEvaluatorIdAndStatus(Long projectGroupId, Long evaluatorId,
+                                                          EvaluationStatus status);
 }

@@ -134,11 +134,78 @@ class PasswordTokenPurpose {
   PASSWORD_RESET
 }
 
+class EmailOutbox {
+  -id: Long
+  -recipient: String
+  -subject: String
+  -body: String
+  -status: EmailStatus
+  -attempts: int
+  -nextAttemptAt: LocalDateTime
+  -lastError: String
+  -createdAt: LocalDateTime
+  -sentAt: LocalDateTime
+  +backoffFor(failedAttempts: int)$ Duration
+  +markSent(now: LocalDateTime) void
+  +markFailedAttempt(now: LocalDateTime, error: String, maxAttempts: int) void
+}
+class EmailStatus {
+  <<enumeration>>
+  PENDING
+  SENT
+  FAILED
+}
+class ReminderSent {
+  -id: Long
+  -kind: ReminderKind
+  -referenceId: Long
+  -recipientId: Long
+  -sentOn: LocalDate
+}
+class ReminderKind {
+  <<enumeration>>
+  SUBMISSION_CLOSING
+  EVALUATION_PENDING
+  GRADES_PUBLISHED
+}
+
 %% ================= Academic structure and configuration (D2) =================
 class GlobalParameter {
   -key: String
   -value: String
   -description: String
+}
+class AuditLog {
+  <<immutable>>
+  -id: Long
+  -createdAt: LocalDateTime
+  -actorId: Long
+  -actorName: String
+  -action: AuditAction
+  -entityType: String
+  -entityId: Long
+  -facultyId: Long
+  -summary: String
+  -ip: String
+}
+class AuditAction {
+  <<enumeration>>
+  ACCOUNT_CREATED
+  ACCOUNTS_IMPORTED
+  ACCOUNT_UPDATED
+  ACCOUNT_ACTIVATED
+  ACCOUNT_DEACTIVATED
+  SEMESTER_BULK_UPDATED
+  REGISTRATION_CODE_DEACTIVATED
+  MOMENT_LAUNCHED
+  MOMENT_EXTENDED
+  GLOBAL_PARAMETER_CREATED
+  GLOBAL_PARAMETER_CHANGED
+  EVALUATION_CORRECTED
+  GROUP_DELETED
+  GROUP_MEMBER_REMOVED
+  GROUP_EVALUATOR_ASSIGNED
+  GROUP_EVALUATOR_REMOVED
 }
 class Faculty {
   -id: Long
@@ -360,11 +427,15 @@ User "0..1" -- "*" User : created by
 User "1" *-- "*" RefreshToken : sessions
 User "1" *-- "*" PasswordToken : password links
 PasswordToken ..> PasswordTokenPurpose : «use»
+EmailOutbox ..> EmailStatus : «use»
+ReminderSent ..> ReminderKind : «use»
 RegistrationCode "*" -- "1" Teacher : owned by
 RegistrationCode "*" -- "1" Program : registers into
 Student "*" -- "0..1" RegistrationCode : registered with
 
 SuperAdmin ..> GlobalParameter : «manages»
+AuditLog ..> AuditAction : «use»
+AuditLog ..> User : «actor id (no FK in the model)»
 SuperAdmin ..> AcademicPeriod : «manages»
 SuperAdmin ..> EvaluatorType : «manages»
 Admin "*" -- "1" Faculty : administers
@@ -441,6 +512,12 @@ ComparativeReport ..> GradeScale : «use»
 | The detailed `.drawio` is regenerated from this model | It was still the Phase 2 version, with the Spanish names. |
 | The legend of the detailed `.drawio` no longer marks `Moment.launch()` as designed only | It is built, with its validations and the V5 constraints (fixes from the PR #3 review). |
 
+## Email queue and reminders (2026-11-22)
+
+| Change | Reason |
+|---|---|
+| `EmailOutbox`, `EmailStatus`, `ReminderSent` and `ReminderKind` (new, infrastructure, no relationships) | Transactional email outbox and idempotent date-based reminders (ADR-022). The detailed `.drawio` has not been regenerated for them yet. |
+
 ## Changes of the contract of Stages 4 to 6 (2026-09-28 decisions)
 
 | Change | Reason |
@@ -474,6 +551,7 @@ ComparativeReport ..> GradeScale : «use»
 |---|---|
 | `AcademicPeriod` (new) | RF 9 requires validating that the evaluation date falls within the UPC range, and RF 12 compares results across semesters and years: both need the period as an entity. |
 | `GlobalParameter` (new) | RF 11: the super_admin defines global parameters without hard-coding them. |
+| `AuditLog` and `AuditAction` (new) | ADR-023: immutable audit log of sensitive operations. |
 | `Report` becomes abstract with 3 subclasses | Each report type implements its own `generate()`: polymorphism instead of a `switch` by type. Resolves the Phase 1 open item about reporting. |
 | Abstract `User.getRole()` | Each role overrides it; login leaves the domain and moves to `AuthService` (service layer). |
 | Multiplicity `min..max` on `ProjectGroup`—`Student` | The number of members is configured per moment (Moment 1: 3 to 5). |

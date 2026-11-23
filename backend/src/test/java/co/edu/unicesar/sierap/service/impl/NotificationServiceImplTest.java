@@ -22,19 +22,16 @@ import co.edu.unicesar.sierap.entity.Student;
 import co.edu.unicesar.sierap.entity.Submission;
 import co.edu.unicesar.sierap.entity.Teacher;
 import co.edu.unicesar.sierap.service.EmailService;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Pruebas unitarias de {@link NotificationServiceImpl}: destinatarios, asunto y datos
- * clave de cada correo, cuentas inactivas y momento del envío respecto al commit.
+ * clave de cada correo, cuentas inactivas y encolado inmediato.
  */
 @ExtendWith(MockitoExtension.class)
 class NotificationServiceImplTest {
@@ -67,13 +64,6 @@ class NotificationServiceImplTest {
         lenient().when(group.getMoment()).thenReturn(moment);
         lenient().when(group.getTeacher()).thenReturn(teacher);
         lenient().when(group.getEvaluationDate()).thenReturn(LocalDate.of(2026, 12, 3));
-    }
-
-    @AfterEach
-    void clearSynchronization() {
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.clearSynchronization();
-        }
     }
 
     @Test
@@ -154,26 +144,13 @@ class NotificationServiceImplTest {
     }
 
     @Test
-    void insideATransactionTheEmailIsSentOnlyAfterCommit() {
-        TransactionSynchronizationManager.initSynchronization();
-
+    void theEmailIsEnqueuedRightAwayWithoutWaitingForACommit() {
         service.notifyMemberAdded(student("uno@unicesar.edu.co", "Uno", true), group);
 
-        verifyNoInteractions(emailService);
-        TransactionSynchronizationManager.getSynchronizations().forEach(TransactionSynchronization::afterCommit);
+        // Encolar es insertar en la cola dentro de la transacción de la operación (ADR-022):
+        // si esta se deshace, la fila se deshace con ella, así que no hay que esperar al commit.
         verify(emailService, times(1)).send(org.mockito.ArgumentMatchers.eq("uno@unicesar.edu.co"), anyString(),
                 anyString());
-    }
-
-    @Test
-    void insideATransactionThatRollsBackNothingIsSent() {
-        TransactionSynchronizationManager.initSynchronization();
-
-        service.notifyMemberAdded(student("uno@unicesar.edu.co", "Uno", true), group);
-        TransactionSynchronizationManager.getSynchronizations()
-                .forEach(synchronization -> synchronization.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
-
-        verifyNoInteractions(emailService);
     }
 
     private String sentBody(String to, String subject) {

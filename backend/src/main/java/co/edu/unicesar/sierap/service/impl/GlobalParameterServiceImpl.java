@@ -6,8 +6,10 @@ import java.util.Optional;
 import co.edu.unicesar.sierap.dto.request.SetGlobalParameterRequest;
 import co.edu.unicesar.sierap.dto.response.GlobalParameterResponse;
 import co.edu.unicesar.sierap.entity.GlobalParameter;
+import co.edu.unicesar.sierap.entity.enums.AuditAction;
 import co.edu.unicesar.sierap.exception.BusinessRuleException;
 import co.edu.unicesar.sierap.repository.GlobalParameterRepository;
+import co.edu.unicesar.sierap.service.AuditService;
 import co.edu.unicesar.sierap.service.GlobalParameterService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,14 +22,18 @@ import org.springframework.transaction.annotation.Transactional;
 public class GlobalParameterServiceImpl implements GlobalParameterService {
 
     private final GlobalParameterRepository globalParameterRepository;
+    private final AuditService auditService;
 
     /**
      * Crea el servicio.
      *
      * @param globalParameterRepository repositorio de parámetros globales
+     * @param auditService              bitácora de auditoría
      */
-    public GlobalParameterServiceImpl(GlobalParameterRepository globalParameterRepository) {
+    public GlobalParameterServiceImpl(GlobalParameterRepository globalParameterRepository,
+                                      AuditService auditService) {
         this.globalParameterRepository = globalParameterRepository;
+        this.auditService = auditService;
     }
 
     @Override
@@ -53,7 +59,12 @@ public class GlobalParameterServiceImpl implements GlobalParameterService {
         Optional<GlobalParameter> existing = globalParameterRepository.findByKey(cleanKey);
         if (existing.isPresent()) {
             GlobalParameter param = existing.get();
+            String previous = param.getValue();
             param.setValue(value);
+            if (!previous.equals(value)) {
+                auditService.record(AuditAction.GLOBAL_PARAMETER_CHANGED, "GlobalParameter", param.getId(), null,
+                        "Cambió el parámetro " + cleanKey + " de \"" + previous + "\" a \"" + value + "\".");
+            }
             if (description != null) {
                 param.setDescription(description);
             }
@@ -62,6 +73,8 @@ public class GlobalParameterServiceImpl implements GlobalParameterService {
 
         GlobalParameter created = new GlobalParameter(cleanKey, value, description);
         GlobalParameter saved = globalParameterRepository.save(created);
+        auditService.record(AuditAction.GLOBAL_PARAMETER_CREATED, "GlobalParameter", saved.getId(), null,
+                "Creó el parámetro " + cleanKey + " con el valor \"" + value + "\".");
         return toResponse(saved);
     }
 

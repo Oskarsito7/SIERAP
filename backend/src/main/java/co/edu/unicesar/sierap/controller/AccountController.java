@@ -14,7 +14,10 @@ import co.edu.unicesar.sierap.dto.response.UserSummaryResponse;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
 import co.edu.unicesar.sierap.service.AccountService;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -125,15 +128,30 @@ public class AccountController {
      *
      * @param actor                usuario autenticado
      * @param programId            programa
-     * @param withoutGroupInMoment opcional: solo los que no tienen grupo en ese momento
-     * @return estudiantes, con la marca de los que puede gestionar
+     * @param withoutGroupInMoment opcional: solo los que no tienen grupo en ese momento (sin
+     *                             paginar ni buscar)
+     * @param q                    opcional: texto a buscar en nombres, apellidos, código y correo,
+     *                             sin distinguir mayúsculas ni tildes
+     * @param page                 página pedida, desde 0 (opcional, ADR-024)
+     * @param size                 tamaño de página de 1 a 200 (opcional)
+     * @return estudiantes, con la marca de los que puede gestionar; con {@code page} o
+     *         {@code size} es la página pedida y {@code X-Total-Count} trae el total
      */
     @GetMapping("/students")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'TEACHER')")
-    public List<StudentResponse> listStudents(@AuthenticationPrincipal AuthenticatedUser actor,
-                                              @RequestParam Long programId,
-                                              @RequestParam(required = false) Long withoutGroupInMoment) {
-        return accountService.listStudents(actor, programId, withoutGroupInMoment);
+    public ResponseEntity<List<StudentResponse>> listStudents(
+            @AuthenticationPrincipal AuthenticatedUser actor,
+            @RequestParam Long programId,
+            @RequestParam(required = false) Long withoutGroupInMoment,
+            @RequestParam(required = false) String q,
+            @RequestParam(required = false) @Min(0) Integer page,
+            @RequestParam(required = false) @Min(PagedResponses.MIN_SIZE) @Max(PagedResponses.MAX_SIZE) Integer size) {
+        if (withoutGroupInMoment != null) {
+            return ResponseEntity.ok(accountService.listStudents(actor, programId, withoutGroupInMoment));
+        }
+        return PagedResponses.respond(
+                accountService.searchStudents(actor, programId, q, PagedResponses.pageable(page, size)),
+                PagedResponses.isPaged(page, size));
     }
 
     /**
@@ -155,12 +173,20 @@ public class AccountController {
      * Lista los evaluadores externos dentro del alcance del usuario.
      *
      * @param actor usuario autenticado
-     * @return evaluadores externos
+     * @param page  página pedida, desde 0 (opcional, ADR-024)
+     * @param size  tamaño de página de 1 a 200 (opcional)
+     * @return evaluadores externos; con {@code page} o {@code size} es la página pedida y
+     *         {@code X-Total-Count} trae el total
      */
     @GetMapping("/external-evaluators")
     @PreAuthorize("hasAnyRole('SUPER_ADMIN', 'ADMIN', 'TEACHER')")
-    public List<UserSummaryResponse> listExternalEvaluators(@AuthenticationPrincipal AuthenticatedUser actor) {
-        return accountService.listExternalEvaluators(actor);
+    public ResponseEntity<List<UserSummaryResponse>> listExternalEvaluators(
+            @AuthenticationPrincipal AuthenticatedUser actor,
+            @RequestParam(required = false) @Min(0) Integer page,
+            @RequestParam(required = false) @Min(PagedResponses.MIN_SIZE) @Max(PagedResponses.MAX_SIZE) Integer size) {
+        return PagedResponses.respond(
+                accountService.listExternalEvaluators(actor, PagedResponses.pageable(page, size)),
+                PagedResponses.isPaged(page, size));
     }
 
     /**

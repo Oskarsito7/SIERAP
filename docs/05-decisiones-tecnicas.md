@@ -357,6 +357,10 @@ value, so it does not contradict ADR-010. Each operation validates status and da
 submitting only in `LAUNCHED` and within the submission window). What happens when
 launching with groups below the minimum number of members is still pending.
 
+> **Note (2026-11-22):** ADR-023 adds a narrow exception: an admin can extend the end
+> dates of a launched moment (only to widen them, up to the UPC deadline, with a reason
+> and a trace in the audit log). The configuration stays locked.
+
 ---
 
 ## ADR-013 — Scores as `BigDecimal`
@@ -715,6 +719,175 @@ OpenPDF because it is only used to read Brotli-compressed PDFs). `Report.generat
 still returns `ReportData`; exporting is a separate step, so the polymorphic hierarchy
 of reports does not change. Signed or verifiable certificates (hash, QR) are left for a
 later iteration.
+
+---
+
+## ADR-021 — Production hardening: rate limiting, security headers, CORS and health probes
+
+**Date:** 2026-11-22.
+**Status:** Accepted (approved by the project lead).
+
+**Context:** before going to production the API needs protection against brute force
+on the public authentication routes, standard browser security headers, an explicit
+cross-origin policy per environment, and health endpoints for the deployment platform.
+
+**Decision:**
+- **Rate limiting** with our own in-memory filter (`RateLimitFilter`, before
+  `JwtAuthFilter`): fixed window per (route, IP) on `POST /api/auth/login`,
+  `/register`, `/password/forgot` and `/password/set`. Defaults in
+  `sierap.security.rate-limit`: 10, 5, 5 and 10 per 60 s, with an `enabled` switch
+  (off only in the `test` profile). Exceeding it answers `429` with the uniform
+  `ErrorResponse` and a `Retry-After` header. The IP is `getRemoteAddr()`; behind a
+  proxy `server.forward-headers-strategy: native` is set in the `prod` profile.
+- **Headers:** Spring's defaults (nosniff, `X-Frame-Options: DENY`, cache-control) plus
+  `Referrer-Policy: no-referrer`, a restrictive `Permissions-Policy` (camera,
+  microphone and geolocation disabled) and HSTS (Spring sends it only over HTTPS). No
+  CSP on the API, which serves only JSON.
+- **CORS:** `sierap.security.allowed-origins` (env `SIERAP_ALLOWED_ORIGINS`,
+  comma-separated). Empty (default) means no CORS, as in dev with the Vite proxy. With
+  values: those origins, methods GET/POST/PUT/PATCH/DELETE/OPTIONS, credentials (the
+  refresh cookie) and exposed headers `Content-Disposition` and `X-Total-Count`.
+- **Actuator:** only `health`, with probes (`/actuator/health/liveness` and
+  `/readiness`) and no details. Only `GET /actuator/health/**` is public; any other
+  `/actuator/**` is denied.
+
+**Alternatives considered:** Bucket4j or Resilience4j (a new dependency for four
+routes); a rate limit at the reverse proxy only (not testable here and not available in
+every deployment); exposing more Actuator endpoints (information leak).
+
+**Consequences:** new dependency `spring-boot-starter-actuator`. The counters live in
+memory, so they reset on restart and each replica counts on its own; if the API is
+scaled out, move them to a shared store. Integration tests run with the limit disabled.
+
+---
+
+## ADR-022 — Transactional email outbox and scheduled reminders
+
+**Date:** 2026-11-22.
+**Status:** Accepted (approved by the project lead).
+
+**Context:** emails (ADR-017, ADR-021 notifications) were sent in the request thread,
+after commit, with `JavaMailSender` (10 s timeouts) and a failure was only logged: a
+mail server that was down meant a lost email with no retry, and a request could be slowed
+down by SMTP. The date-based reminders left out of wave 2 (`docs/04`, 2026-11-22) also
+need something that runs by itself.
+
+**Decision:**
+
+- **Transactional outbox.** `EmailService` now means "enqueue": its two methods insert a
+  row in `email_outbox` (`recipient`, `subject`, `body`, `status` `PENDING|SENT|FAILED`,
+  `attempts`, `next_attempt_at`, `last_error`, `created_at`, `sent_at`; index on
+  `status, next_attempt_at`) **inside the transaction of the operation**. If the operation
+  rolls back the email disappears with it, so `NotificationServiceImpl` and
+  `PasswordLinkServiceImpl` no longer use `afterCommit`. The new implementation is
+  `OutboxEmailService`; `SmtpEmailService` was removed and the real SMTP send lives in
+  `SmtpMailSender`, used only by the dispatcher.
+- **Dispatcher.** `EmailOutboxDispatcher` is a `@Scheduled(fixedDelay)` job
+  (`sierap.mail.outbox.dispatch-delay`, 15 s) that takes up to `batch-size` (20) `PENDING`
+  emails whose `next_attempt_at` has come and hands each one to `EmailOutboxProcessor`,
+  which delivers it in its own short transaction (a failure never affects the others).
+  Success: `SENT` + `sent_at`. Error: `attempts + 1`, `last_error` and a retry with
+  exponential wait (1, 2, 4, 8 minutes…); on reaching `max-attempts` (5) the email becomes
+  `FAILED` and is no longer retried. `MailOutboxProperties` (`sierap.mail.outbox.*`) holds
+  `enabled`, `dispatch-delay`, `max-attempts` and `batch-size`; `enabled` is `false` in the
+  test profile so the scheduler does not run in integration tests. `SchedulingConfig` turns
+  on `@EnableScheduling`.
+- **Date-based reminders.** `ReminderScheduler` runs `ReminderService` every day at 07:00
+  (`sierap.reminders.cron`, zone `America/Bogota`, disabled with
+  `sierap.reminders.enabled=false`), always with the injected `Clock`. For launched moments
+  only: (1) *submission closing in 2 days* — each active member of a group whose effective
+  deadline (`submissionDeadline`, or the moment's `submissionEnd`) is today + 2 and that has
+  no submission; (2) *pending evaluation* — each evaluator (teacher or assigned external)
+  of the groups of a moment whose `gradingEnd` is tomorrow and whose own evaluation is not
+  `SUBMITTED`, with the link to `/groups/{id}/evaluation` or `/assigned-groups/{id}`;
+  (3) *grades published* — the day after `gradingEnd`, each active student with a group in
+  the moment, linking to `/my-grades?momentId={id}`.
+- **Idempotency.** `reminder_sent` (`kind`, `reference_id`, `recipient_id`, `sent_on`,
+  unique by `kind + reference_id + recipient_id`) records each reminder; running the job
+  twice or restarting the server does not repeat it. The whole job is a single transaction,
+  so emails and records are enqueued together or not at all.
+
+**Alternatives considered:** keep sending after commit and add retries in memory (lost on
+restart, still tied to the request thread); a message broker such as RabbitMQ or a job
+framework such as Quartz/ShedLock (too heavy for a single-instance deployment); Spring
+`@Async` (no persistence, no retries).
+
+**Sensitive content:** password emails carry a one-use token in their link, while the database only stores token hashes. The body of an outbox row is therefore replaced with a placeholder as soon as it is sent or given up (`FAILED`); only the recipient, subject, status and dates stay for auditing.
+
+**Consequences:** migration V12 adds two tables; delivery is now asynchronous (up to
+~15 s late) and survives SMTP outages and restarts; with several backend instances the
+dispatcher would need row locking (`SELECT … FOR UPDATE SKIP LOCKED`) or a lock like
+ShedLock — not needed today. Emails stuck in `FAILED` stay in the table for inspection.
+
+---
+
+## ADR-023 — Audit log and exceptional extension of a launched moment
+
+**Date:** 2026-11-22.
+**Status:** Accepted (approved by the project lead).
+
+**Context:** sensitive operations (changing an email, deactivating an account, launching
+a moment, correcting a submitted evaluation, removing an evaluator...) left no trace of
+who did them or when, which makes disputes and audits hard. Separately, ADR-012 locks a
+launched moment, but real life needs it: a strike or a platform outage can force the
+submission or grading dates to move after the launch.
+
+**Decision:**
+
+- **Immutable audit log** (`audit_log`, entity `AuditLog`, migration V13): id, created_at,
+  actor (id and a copy of the name), `action` (enum `AuditAction`), entity type and id,
+  `faculty_id`, a short Spanish `summary` and the request IP. A PostgreSQL trigger
+  rejects `UPDATE` and `DELETE`, and there are no edit or delete endpoints.
+- `AuditService.record(...)` takes the authenticated actor and the IP when they exist and
+  writes in the **same transaction** as the audited operation (`Propagation.MANDATORY`):
+  if the operation rolls back, no record remains. Events: account creation, edition (which
+  fields; old and new email), activation and deactivation, bulk semester, CSV import (one
+  event with the count), registration code deactivation, moment launch and extension, global
+  parameter creation or change (old and new value), correction of an already submitted
+  evaluation, group deletion, member removal, and external evaluator assignment and removal.
+  The identity document number is never written in a summary (only that it changed).
+- **Query:** `GET /api/audit-log` (filters by action, date range and text; paginated).
+  The super_admin sees everything; an admin only the records of their faculty
+  (`faculty_id`). Events with no faculty (global parameters) are for the super_admin.
+- **Exceptional extension:** `PATCH /api/moments/{id}/extension` lets the admin of the
+  faculty (or the super_admin) widen `submissionEnd` and/or `gradingEnd` of a `LAUNCHED`
+  moment with a mandatory reason. Dates can only grow, the grading end cannot pass the
+  period's `upcEvaluationDeadline`, and the order between windows still holds: if the new
+  submission end reaches the grading start, the grading start moves to the next day, and if
+  that leaves the window inverted the request is rejected asking to extend the grading end
+  too. Every extension is audited with the old and new dates and the reason.
+
+**Alternatives considered:** auditing with a generic JPA listener or AOP (it hides what is
+recorded and the summaries would not be readable); writing the log asynchronously (it could
+lose records or record operations that rolled back); a PostgreSQL rule instead of a trigger
+(a rule silently ignores the change, the trigger fails loudly); letting the admin edit the
+dates of a launched moment freely (it breaks the guarantee of ADR-012).
+
+**Open grading window:** if grading has already started, its start is never moved; the end of submissions cannot reach it (`422`), because moving the start would close the grading in progress.
+
+**Consequences:** this is a **bounded exception to ADR-012**: only the two end dates of a
+launched moment can change, only to widen them, and always leaving a trace; the rubric,
+weights and groups stay locked. Services that audit now depend on `AuditService`. Reading
+the actor name costs one query per record. The IP is the one the servlet container sees
+(`getRemoteAddr`); behind a reverse proxy it needs forwarded-header support in the
+deployment.
+
+---
+
+## ADR-024 — Personal data consent (Law 1581) and optional server-side pagination
+
+**Date:** 2026-11-22
+**Status:** Accepted (approved by the project lead)
+
+**Context:** Colombian Law 1581 of 2012 (Habeas Data) requires the prior authorization of the owner of the data before processing it, and the system keeps names, documents and emails of students, teachers and external evaluators. Besides, the lists of students, registration codes and external evaluators were returned complete and filtered in the browser, which does not scale to a program with thousands of students.
+
+**Decision:**
+- **Consent:** the column `app_user.privacy_accepted_at` (nullable, migration V14) stores when the person authorized the processing. A student who registers with a code must send `privacyAccepted: true` (`@AssertTrue`, `400` otherwise) and the date is saved at registration. Accounts created by others are asked when they set their password for the first time (`POST /api/auth/password/set` with `privacyAccepted`): if the account has no date yet the value must be `true` (`422` otherwise, the link keeps working) and the date is stored; if it already has one, the field is ignored. The reset-password link of an account that never authorized is treated the same way. The policy link is the optional global parameter `privacy.policy-url` (not seeded: the super_admin creates it), exposed without authentication by `GET /api/auth/privacy-policy` as `{ "url": string | null }`.
+- **Pagination:** `page` (from 0) and `size` (1 to 200) are **optional** query parameters on `GET /api/students`, `GET /api/registration-codes` and `GET /api/external-evaluators`. Without them the answer is exactly the complete list as before; with them the body is still an array (the requested page, same order, with `id` as tie-breaker) and `X-Total-Count` carries the total. The pagination is done in the query with Spring Data `Pageable`, not by cutting a list in memory. `GET /api/students` also accepts `q`, a search in names, last names, student code and email, case- and accent-insensitive (`translate(lower(column), ...)` against a normalized pattern; wildcards are escaped). The filter `withoutGroupInMoment` is not paginated.
+
+**Alternatives considered:** asking for the consent on first login instead of when setting the password (needs a new blocking screen and an authenticated endpoint); making pagination mandatory with a `{ items, total }` envelope (breaks the selectors and components that use these lists); the PostgreSQL `unaccent` extension (needs superuser rights to create it); keyset pagination (not needed for these sizes).
+
+**Consequences:** the registration request and the set-password request have a new field (the frontend always shows the box in both pages, because the email link does not say whether the account already authorized). Accounts that existed before V14 are asked once, the first time they set or reset a password. `X-Total-Count` must be exposed by CORS when the frontend is served from another origin. In the registration codes screen the filter by teacher applies to the current page only.
 
 ---
 

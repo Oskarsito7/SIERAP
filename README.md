@@ -230,6 +230,7 @@ taken by another PostgreSQL: `DB_PORT=5433 docker compose up -d` and
 |---|---|
 | `SIERAP_JWT_SECRET` | Key that signs the access tokens: random, at least 32 characters, never committed. The API refuses to start without it. In `dev` there is a development default, accepted only when the `dev` profile is activated explicitly (`./mvnw spring-boot:run` does it; from an IDE, set the active profile to `dev`): started with no profile, the API stops instead of signing tokens with that public key. |
 | `SIERAP_FRONTEND_URL` | Public URL of the frontend; the links sent by email point to it. |
+| `SIERAP_ALLOWED_ORIGINS` | Origins allowed by CORS, comma-separated (e.g. `https://sierap.unicesar.edu.co`). Empty by default: no CORS, the frontend and the API share an origin (ADR-021). |
 | `MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD` | UPC SMTP server (in development, Mailpit on `localhost:1025` without credentials). |
 | `MAIL_FROM` | Sender of the emails (default `SIERAP <no-reply@unicesar.edu.co>`). |
 | `SIERAP_STORAGE_PATH` | Folder where the submission files are stored (ADR-015): outside the application folder, on persistent storage and backed up with the database. The API refuses to start without it. In `dev` it defaults to `~/sierap-files`. |

@@ -2,6 +2,7 @@ import { useId, useState, type ChangeEvent, type FormEvent } from 'react'
 import { Link } from 'react-router'
 
 import { FormError, FormField } from '@/components/forms/FormField'
+import { PrivacyConsent } from '@/components/forms/PrivacyConsent'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -20,6 +21,9 @@ interface RegisterForm {
   studentCode: string
   currentSemester: string
 }
+
+/** Mensaje cuando no se marca la autorización (el mismo que devuelve el backend). */
+const PRIVACY_REQUIRED = 'Debes autorizar el tratamiento de tus datos personales para registrarte.'
 
 const EMPTY_FORM: RegisterForm = {
   registrationCode: '',
@@ -42,6 +46,7 @@ export function RegisterPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [privacyAccepted, setPrivacyAccepted] = useState(false)
   const [registeredEmail, setRegisteredEmail] = useState<string | null>(null)
 
   const update =
@@ -51,6 +56,10 @@ export function RegisterPage() {
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setError(null)
+    if (!privacyAccepted) {
+      setFieldErrors({ privacyAccepted: PRIVACY_REQUIRED })
+      return
+    }
     setFieldErrors({})
     setSubmitting(true)
     const email = form.email.trim()
@@ -64,6 +73,7 @@ export function RegisterPage() {
         email,
         studentCode: form.studentCode.trim(),
         currentSemester: Number(form.currentSemester),
+        privacyAccepted,
       })
       setRegisteredEmail(email)
     } catch (registerError) {
@@ -188,6 +198,11 @@ export function RegisterPage() {
               onChange={update('currentSemester')}
             />
           </div>
+          <PrivacyConsent
+            checked={privacyAccepted}
+            onChange={setPrivacyAccepted}
+            error={fieldErrors.privacyAccepted}
+          />
           <Button type="submit" disabled={submitting}>
             {submitting ? 'Registrando…' : 'Registrarme'}
           </Button>

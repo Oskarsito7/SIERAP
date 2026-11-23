@@ -21,7 +21,7 @@ vi.mock('@/services/api/teacherService', () => ({
 }))
 vi.mock('@/services/api/accountService', () => ({
   accountService: {
-    listExternalEvaluators: vi.fn(),
+    listExternalEvaluatorsPage: vi.fn(),
     createExternalEvaluator: vi.fn(),
     resendPasswordLink: vi.fn(),
     listEvaluatorTypes: vi.fn(),
@@ -54,13 +54,13 @@ describe('editing accounts from the lists', () => {
     vi.mocked(catalogService.faculties).mockResolvedValue([faculty])
     vi.mocked(teacherService.list).mockReset().mockResolvedValue([user('TEACHER')])
     vi.mocked(adminService.list).mockReset().mockResolvedValue([user('ADMIN')])
-    vi.mocked(accountService.listExternalEvaluators).mockReset().mockResolvedValue([user('EXTERNAL_EVALUATOR')])
+    vi.mocked(accountService.listExternalEvaluatorsPage).mockReset().mockResolvedValue({ items: [user('EXTERNAL_EVALUATOR')], total: 1 })
   })
 
   it.each([
     ['teachers', <TeachersPage key="t" />, teacherService.list],
     ['admins', <AdminsPage key="a" />, adminService.list],
-    ['external evaluators', <ExternalEvaluatorsPage key="e" />, accountService.listExternalEvaluators],
+    ['external evaluators', <ExternalEvaluatorsPage key="e" />, accountService.listExternalEvaluatorsPage],
   ])('lets the user edit the data of an account in the list of %s', async (_name, page, list) => {
     vi.mocked(userService.update).mockResolvedValue(user('TEACHER', { firstNames: 'Laura Patricia' }))
     render(<MemoryRouter>{page}</MemoryRouter>)

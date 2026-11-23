@@ -33,6 +33,7 @@ moment" and "Team decisions" sections) and in ADR-009 to ADR-014 of
 | Programa | `Program` | `program` |
 | PeriodoAcademico | `AcademicPeriod` | `academic_period` |
 | ParametroGlobal | `GlobalParameter` | `global_parameter` |
+| RegistroDeAuditoria | `AuditLog` | `audit_log` |
 | Momento | `Moment` | `moment` |
 | EstadoMomento (CONFIGURACION, LANZADO) | `MomentStatus` (`CONFIGURATION`, `LAUNCHED`) | column `moment.status` |
 | PesoEvaluador | `EvaluatorWeight` | `evaluator_weight` (the teacher's weight is the column `moment.teacher_weight`) |
@@ -51,6 +52,10 @@ moment" and "Team decisions" sections) and in ADR-009 to ADR-014 of
 | TokenRenovacion (sesión) | `RefreshToken` | `refresh_token` |
 | EnlaceContrasena | `PasswordToken` | `password_token` |
 | PropositoEnlace (CREAR_CUENTA, RECUPERAR) | `PasswordTokenPurpose` (`ACCOUNT_SETUP`, `PASSWORD_RESET`) | column `password_token.purpose` |
+| CorreoPendiente (cola de correos) | `EmailOutbox` | `email_outbox` |
+| EstadoCorreo (PENDIENTE, ENVIADO, FALLIDO) | `EmailStatus` (`PENDING`, `SENT`, `FAILED`) | column `email_outbox.status` |
+| RecordatorioEnviado | `ReminderSent` | `reminder_sent` |
+| TipoRecordatorio | `ReminderKind` | column `reminder_sent.kind` |
 | TipoDocumento | `DocumentType` | — |
 | Grupo (= proyecto de aula) | `ProjectGroup` | `project_group` (`group` is reserved in SQL) |
 | Entrega | `Submission` | `submission` |
@@ -103,6 +108,13 @@ implement `Evaluator`: there is no self-assessment in SIERAP.
 | `RefreshToken` | Token de renovación (sesión) | user, tokenHash (unique), expiresAt, rotatedAt, createdAt | One login session. Only the SHA-256 hash of the cookie value is stored. Each renewal marks it as rotated and creates a new one; if a rotated token comes back, it was probably stolen and every session of the user is closed. Logging out, changing the password or deactivating the account delete the rows. |
 | `PasswordToken` | Enlace de contraseña | user, tokenHash (unique), purpose, expiresAt, usedAt, createdAt | Single-use link sent by email to create the password of a new account (72 h) or recover a forgotten one (1 h). Issuing a new link invalidates the pending ones of the same purpose. |
 
+## Email queue and reminders · D1 (ADR-022)
+
+| Class | Spanish name | Attributes | Description |
+|---|---|---|---|
+| `EmailOutbox` | Correo pendiente | recipient, subject, body, status (`EmailStatus`), attempts, nextAttemptAt, lastError, createdAt, sentAt | Email in the outbox. It is inserted inside the transaction of the operation that asks for it (it disappears if the operation rolls back) and a scheduled dispatcher sends it. A failure adds an attempt and schedules a retry with exponential wait (1, 2, 4, 8 min…); at the maximum attempts it becomes `FAILED`. Infrastructure entity: it has no relationships with the domain. |
+| `ReminderSent` | Recordatorio enviado | kind (`ReminderKind`), referenceId, recipientId, sentOn | Record of a date-based reminder already queued; unique by kind + reference + recipient, so the daily job never repeats one. The reference is a group id (submission closing, pending evaluation) or a moment id (grades published). Infrastructure entity. |
+
 The first `SuperAdmin` (`sierap@unicesar.edu.co`) is created by the migration with a
 temporary password that must be changed on the first login.
 
@@ -123,6 +135,12 @@ opened, the configuration of the previous period is copied as a starting point.
 | `EvaluationCriterion` | Criterio de evaluación | learningOutcome, description, displayOrder | Grading item within a RAP (e.g. "Identificación del problema" in the UPC rubric). |
 | `PerformanceLevel` | Nivel de desempeño | criterion, name, description, score (`BigDecimal`, ADR-013), displayOrder | Level the evaluator can pick in a criterion (e.g. Bajo 0 · Básico 0.36 · Alto 0.48 · Sobresaliente 0.6). Names, number of levels and scores are defined by the admin for each criterion. |
 | `GlobalParameter` | Parámetro global | key, value, description | Institutional key/value parameter defined by the `SuperAdmin` (RF 11), so general rules are not hard-coded. |
+
+## Audit log (ADR-023)
+
+| Class | Spanish name | Attributes | Description |
+|---|---|---|---|
+| `AuditLog` | Registro de auditoría | createdAt, actorId, actorName, action (`AuditAction`), entityType, entityId, facultyId, summary, ip | Immutable record of who did what and when. It has no setters, its columns are not updatable and a database trigger rejects `UPDATE` and `DELETE`. The actor is kept as an id plus a copy of the name; `facultyId` (no foreign key) scopes the admin's query. Written by `AuditService` in the transaction of the audited operation. |
 
 ## Operations · D3
 
@@ -168,7 +186,10 @@ version, or the last late one if there is none on time.
 | `DocumentType` | `CC`, `TI`, `CE`, `PASSPORT` | Identity document type of the user (citizenship ID, identity card, foreigner ID, passport). |
 | `MomentStatus` | `CONFIGURATION`, `LAUNCHED` | Lifecycle status of the moment (ADR-012). It is system flow, not an assessment business value. |
 | `EvaluationStatus` | `DRAFT`, `SUBMITTED` | Status of an evaluation: saved half done or submitted. System flow, like `MomentStatus`. |
+| `AuditAction` | `ACCOUNT_CREATED`, `ACCOUNTS_IMPORTED`, `ACCOUNT_UPDATED`, `ACCOUNT_ACTIVATED`, `ACCOUNT_DEACTIVATED`, `SEMESTER_BULK_UPDATED`, `REGISTRATION_CODE_DEACTIVATED`, `MOMENT_LAUNCHED`, `MOMENT_EXTENDED`, `GLOBAL_PARAMETER_CREATED`, `GLOBAL_PARAMETER_CHANGED`, `EVALUATION_CORRECTED`, `GROUP_DELETED`, `GROUP_MEMBER_REMOVED`, `GROUP_EVALUATOR_ASSIGNED`, `GROUP_EVALUATOR_REMOVED` | Kind of event recorded by the audit log (ADR-023). |
 | `PasswordTokenPurpose` | `ACCOUNT_SETUP`, `PASSWORD_RESET` | Why a password link was sent: to create the password of a new account or to recover a forgotten one. |
+| `EmailStatus` | `PENDING`, `SENT`, `FAILED` | State of an email in the outbox: waiting for its first send or a retry, sent, or given up after the maximum attempts (ADR-022). |
+| `ReminderKind` | `SUBMISSION_CLOSING`, `EVALUATION_PENDING`, `GRADES_PUBLISHED` | Kind of date-based reminder (ADR-022). |
 
 The Phase 2 enums `NivelExigencia` and `NivelDesempeno` **were removed** (the
 requirement level is free text in `Moment` and performance levels are the
@@ -197,7 +218,7 @@ configurable `PerformanceLevel` entity, ADR-010), and so were the `EMPRESARIO` a
   `IndividualGrade`—`PerformanceLevel`;
   `User`—`User` (`createdBy`); `RegistrationCode`—`Teacher`; `RegistrationCode`—`Program`;
   `Student`—`RegistrationCode` (optional).
-- **Dependency:** `Report` depends on `ProjectGroup` (the report reads the grades of its
+- **Dependency:** `AuditLog` is written by the services that audit and read by the admins (no association: it keeps `actorId` and `facultyId` as plain ids so history survives changes); `Report` depends on `ProjectGroup` (the report reads the grades of its
   groups without owning them); `MomentReport` and `ComparativeReport` use `GradeScale`,
   built from the global parameters `report.passing-percentage` and `report.grade-bands`.
 

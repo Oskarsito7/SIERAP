@@ -3,6 +3,7 @@ package co.edu.unicesar.sierap.service;
 import java.util.List;
 
 import co.edu.unicesar.sierap.dto.request.CopyMomentsRequest;
+import co.edu.unicesar.sierap.dto.request.ExtendMomentRequest;
 import co.edu.unicesar.sierap.dto.request.LaunchMomentRequest;
 import co.edu.unicesar.sierap.dto.request.MomentWeightsRequest;
 import co.edu.unicesar.sierap.dto.request.NewMomentRequest;
@@ -109,4 +110,16 @@ public interface MomentService {
      * @return lista de los nuevos momentos creados en el periodo destino
      */
     List<MomentSummaryResponse> copy(AuthenticatedUser actor, CopyMomentsRequest request);
+
+    /**
+     * Prórroga excepcional de las fechas de un momento ya lanzado (ADR-023): solo amplía
+     * el fin de entregas y/o el de calificación, hasta el límite de la UPC, y queda en la
+     * bitácora con las fechas anteriores, las nuevas y el motivo.
+     *
+     * @param actor   usuario que prorroga (super_admin o admin de la facultad del programa)
+     * @param id      identificador del momento
+     * @param request nuevas fechas y motivo
+     * @return detalle del momento con las fechas ampliadas
+     */
+    MomentDetailResponse extend(AuthenticatedUser actor, Long id, ExtendMomentRequest request);
 }

@@ -6,7 +6,9 @@ import java.util.Optional;
 import co.edu.unicesar.sierap.dto.request.SetGlobalParameterRequest;
 import co.edu.unicesar.sierap.dto.response.GlobalParameterResponse;
 import co.edu.unicesar.sierap.entity.GlobalParameter;
+import co.edu.unicesar.sierap.entity.enums.AuditAction;
 import co.edu.unicesar.sierap.repository.GlobalParameterRepository;
+import co.edu.unicesar.sierap.service.AuditService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +17,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -26,11 +31,14 @@ class GlobalParameterServiceImplTest {
     @Mock
     private GlobalParameterRepository globalParameterRepository;
 
+    @Mock
+    private AuditService auditService;
+
     private GlobalParameterServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new GlobalParameterServiceImpl(globalParameterRepository);
+        service = new GlobalParameterServiceImpl(globalParameterRepository, auditService);
     }
 
     @Test
@@ -57,5 +65,10 @@ class GlobalParameterServiceImplTest {
         assertThat(created.key()).isEqualTo("new_key");
         assertThat(created.value()).isEqualTo("10");
         assertThat(created.description()).isEqualTo("Nuevo parámetro");
+
+        verify(auditService).record(eq(AuditAction.GLOBAL_PARAMETER_CHANGED), eq("GlobalParameter"), any(), eq(null),
+                eq("Cambió el parámetro min_passing_grade de \"3.00\" a \"3.50\"."));
+        verify(auditService).record(eq(AuditAction.GLOBAL_PARAMETER_CREATED), eq("GlobalParameter"), any(), eq(null),
+                eq("Creó el parámetro new_key con el valor \"10\"."));
     }
 }

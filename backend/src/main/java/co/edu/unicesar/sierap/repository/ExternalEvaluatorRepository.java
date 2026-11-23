@@ -4,6 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 import co.edu.unicesar.sierap.entity.ExternalEvaluator;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -28,6 +30,16 @@ public interface ExternalEvaluatorRepository extends JpaRepository<ExternalEvalu
      * @return evaluadores externos creados por ese usuario
      */
     List<ExternalEvaluator> findByCreatedByIdOrderByLastNamesAsc(Long createdById);
+
+    /**
+     * Lista una página de los evaluadores externos que creó un usuario (ADR-024). El orden
+     * lo trae el {@code Pageable}; con {@code Pageable.unpaged(sort)} devuelve todos.
+     *
+     * @param createdById identificador de quien los creó
+     * @param pageable    página y orden pedidos
+     * @return página de evaluadores externos
+     */
+    Page<ExternalEvaluator> findByCreatedById(Long createdById, Pageable pageable);
 
     /**
      * Busca un evaluador externo activo por coincidencia exacta de correo o de número
