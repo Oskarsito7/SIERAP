@@ -63,6 +63,15 @@
 | `POST /api/auth/password/set` | anyone with a link token | `{ "token", "newPassword" }` | `204`; sets the password of a new account or resets a forgotten one, closes every session of the user and invalidates the user's other pending links, of either kind. `422` if the token expired or was already used. The user then logs in normally |
 | `POST /api/auth/register` | anyone with a registration code | `{ "registrationCode", "firstNames", "lastNames", "documentType", "documentNumber", "email", "studentCode", "currentSemester" }` | `202`; creates the student in the program of the code and sends the link to set the password. The code is case-insensitive. `422` if the code does not exist, expired or was deactivated, if the email is not institutional (`@unicesar.edu.co`), or if the email, document or student code is already registered |
 
+**Rate limit (ADR-021):** `POST /api/auth/login`, `/register`, `/password/forgot` and
+`/password/set` answer `429` "Demasiados intentos. Espera un momento e inténtalo de nuevo."
+with a `Retry-After` header (seconds) when one IP exceeds the limit of the route in 60
+seconds (login 10, register 5, forgot 5, set 10).
+
+**Health probes (ADR-021):** `GET /actuator/health/liveness` and
+`GET /actuator/health/readiness` are public (`200` `{ "status": "UP" }`, no details).
+Any other `/actuator/**` route is denied.
+
 **Temporary password:** while `user.mustChangePassword` is `true`, only the
 `/api/auth/*` calls (and `/api/status`) work; any other answers `403` "Debe cambiar su
 contraseña temporal antes de continuar." After `password/change`, use the new

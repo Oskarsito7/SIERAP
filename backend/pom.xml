@@ -60,6 +60,12 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- Sondas de salud para el despliegue (ADR-021): solo /actuator/health -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+
         <!-- Correo: enlaces para crear o recuperar la contraseña (ADR-017) -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

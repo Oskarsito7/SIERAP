@@ -34,6 +34,18 @@ spring:
 server:
   port: ${SERVER_PORT:8080}
 
+# Sondas de salud para el despliegue (ADR-021): /actuator/health/liveness y /readiness.
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      probes:
+        enabled: true
+      show-details: never
+
 sierap:
   version: '@project.version@'
   # Las reglas de fechas (entregas, ventana de evaluación) se evalúan en esta zona.
@@ -53,5 +65,17 @@ sierap:
     frontend-url: ${SIERAP_FRONTEND_URL:http://localhost:5173}
     institutional-email-domain: unicesar.edu.co
     mail-from: ${MAIL_FROM:SIERAP <no-reply@unicesar.edu.co>}
+  # Endurecimiento de producción (ADR-021).
+  security:
+    # Orígenes CORS separados por comas (SIERAP_ALLOWED_ORIGINS). Vacío = sin CORS.
+    allowed-origins: ${SIERAP_ALLOWED_ORIGINS:}
+    # Límite de intentos por IP y ruta, en ventana fija.
+    rate-limit:
+      enabled: true
+      window-seconds: 60
+      login: 10
+      register: 5
+      forgot: 5
+      set: 10
   # La carpeta base de los archivos de las entregas (sierap.storage.base-path,
   # ADR-015) la define cada perfil y debe quedar fuera de la carpeta de la aplicación.
