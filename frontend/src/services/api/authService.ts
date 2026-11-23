@@ -61,6 +61,14 @@ export const authService = {
     setSession(null)
   },
 
+  /** URL de la política de tratamiento de datos (pública), o `null` si no está configurada. */
+  async getPrivacyPolicyUrl(): Promise<string | null> {
+    const { data } = await httpClient.get<{ url: string | null }>('/auth/privacy-policy', {
+      skipAuthRefresh: true,
+    })
+    return data.url
+  },
+
   /** Registra a un estudiante con el código de su docente; el enlace llega por correo. */
   async register(request: RegisterStudentRequest): Promise<void> {
     await httpClient.post('/auth/register', request)

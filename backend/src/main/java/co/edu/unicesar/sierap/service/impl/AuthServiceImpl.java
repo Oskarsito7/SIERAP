@@ -12,8 +12,10 @@ import co.edu.unicesar.sierap.dto.request.ForgotPasswordRequest;
 import co.edu.unicesar.sierap.dto.request.LoginRequest;
 import co.edu.unicesar.sierap.dto.request.RegisterStudentRequest;
 import co.edu.unicesar.sierap.dto.request.SetPasswordRequest;
+import co.edu.unicesar.sierap.dto.response.PrivacyPolicyResponse;
 import co.edu.unicesar.sierap.dto.response.TokenResponse;
 import co.edu.unicesar.sierap.dto.response.UserSummaryResponse;
+import co.edu.unicesar.sierap.entity.GlobalParameter;
 import co.edu.unicesar.sierap.entity.RefreshToken;
 import co.edu.unicesar.sierap.entity.RegistrationCode;
 import co.edu.unicesar.sierap.entity.Student;
@@ -23,6 +25,7 @@ import co.edu.unicesar.sierap.exception.BusinessRuleException;
 import co.edu.unicesar.sierap.exception.ForbiddenAccessException;
 import co.edu.unicesar.sierap.exception.ResourceNotFoundException;
 import co.edu.unicesar.sierap.mapper.UserMapper;
+import co.edu.unicesar.sierap.repository.GlobalParameterRepository;
 import co.edu.unicesar.sierap.repository.RefreshTokenRepository;
 import co.edu.unicesar.sierap.repository.RegistrationCodeRepository;
 import co.edu.unicesar.sierap.repository.UserRepository;
@@ -50,11 +53,15 @@ public class AuthServiceImpl implements AuthService {
     /** Mismo mensaje exista o no el correo, para no revelar qué cuentas hay. */
     private static final String INVALID_CREDENTIALS = "Correo o contraseña incorrectos.";
 
+    /** Clave del parámetro global con la URL de la política de tratamiento de datos. */
+    static final String PRIVACY_POLICY_PARAM = "privacy.policy-url";
+
     private static final String SESSION_EXPIRED = "La sesión expiró. Inicie sesión de nuevo.";
 
     private final UserRepository userRepository;
     private final RefreshTokenRepository refreshTokenRepository;
     private final RegistrationCodeRepository registrationCodeRepository;
+    private final GlobalParameterRepository globalParameterRepository;
     private final PasswordLinkService passwordLinkService;
     private final AccountValidator accountValidator;
     private final PasswordEncoder passwordEncoder;
@@ -68,6 +75,7 @@ public class AuthServiceImpl implements AuthService {
      * @param userRepository             repositorio de usuarios
      * @param refreshTokenRepository     repositorio de sesiones
      * @param registrationCodeRepository repositorio de códigos de registro
+     * @param globalParameterRepository  repositorio de parámetros globales
      * @param passwordLinkService        enlaces por correo
      * @param accountValidator           validaciones de cuentas nuevas
      * @param passwordEncoder            codificador BCrypt
@@ -77,12 +85,13 @@ public class AuthServiceImpl implements AuthService {
      */
     public AuthServiceImpl(UserRepository userRepository, RefreshTokenRepository refreshTokenRepository,
                            RegistrationCodeRepository registrationCodeRepository,
-                           PasswordLinkService passwordLinkService, AccountValidator accountValidator,
+                           GlobalParameterRepository globalParameterRepository, PasswordLinkService passwordLinkService, AccountValidator accountValidator,
                            PasswordEncoder passwordEncoder, JwtService jwtService, AuthProperties properties,
                            Clock clock) {
         this.userRepository = userRepository;
         this.refreshTokenRepository = refreshTokenRepository;
         this.registrationCodeRepository = registrationCodeRepository;
+        this.globalParameterRepository = globalParameterRepository;
         this.passwordLinkService = passwordLinkService;
         this.accountValidator = accountValidator;
         this.passwordEncoder = passwordEncoder;
@@ -168,8 +177,28 @@ public class AuthServiceImpl implements AuthService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public PrivacyPolicyResponse getPrivacyPolicy() {
+        String url = globalParameterRepository.findByKey(PRIVACY_POLICY_PARAM)
+                .map(GlobalParameter::getValue)
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .orElse(null);
+        return new PrivacyPolicyResponse(url);
+    }
+
+    @Override
     public void setPassword(SetPasswordRequest request) {
         User user = passwordLinkService.consume(request.token());
+        if (user.getPrivacyAcceptedAt() == null) {
+            // La autorización de datos se pide la primera vez; si falta, la transacción se
+            // deshace y el enlace sigue sirviendo.
+            if (!Boolean.TRUE.equals(request.privacyAccepted())) {
+                throw new BusinessRuleException(
+                        "Debes autorizar el tratamiento de tus datos personales para crear tu contraseña.");
+            }
+            user.setPrivacyAcceptedAt(LocalDateTime.now(clock));
+        }
         user.changePassword(passwordEncoder.encode(request.newPassword()));
         // Ningún otro enlace pendiente (de cualquier tipo) puede volver a cambiar la contraseña.
         passwordLinkService.invalidateAllLinks(user);
@@ -197,6 +226,7 @@ public class AuthServiceImpl implements AuthService {
                 code.getProgram());
         student.setCreatedBy(code.getTeacher());
         student.setRegistrationCode(code);
+        student.setPrivacyAcceptedAt(LocalDateTime.now(clock));
         userRepository.save(student);
         passwordLinkService.sendAccountSetupLink(student);
     }

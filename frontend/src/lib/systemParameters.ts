@@ -21,6 +21,18 @@ function percentageError(text: string): string | null {
   return number < 0 || number > 100 ? 'debe estar entre 0 y 100' : null
 }
 
+/** Mensaje cuando la URL de la política de datos no es válida. */
+const POLICY_URL_MESSAGE = 'La URL de la política debe ser una dirección válida que empiece por https://.'
+
+function isHttpsUrl(text: string): boolean {
+  if (!/^https:\/\/\S+$/i.test(text)) return false
+  try {
+    return new URL(text).hostname.includes('.')
+  } catch {
+    return false
+  }
+}
+
 export const SYSTEM_PARAMETERS: Record<string, SystemParameter> = {
   'report.passing-percentage': {
     usage: 'Porcentaje del puntaje máximo del momento que se necesita para aprobar (reportes).',
@@ -49,6 +61,12 @@ export const SYSTEM_PARAMETERS: Record<string, SystemParameter> = {
       }
       return null
     },
+  },
+  'privacy.policy-url': {
+    usage:
+      'Enlace a la política de tratamiento de datos personales (Ley 1581 de 2012) que se muestra junto a la casilla de autorización en el registro y al crear la contraseña. Es opcional: sin él la casilla sale sin enlace.',
+    format: 'Una URL que empiece por https://, p. ej. https://www.unicesar.edu.co/politica-de-datos.',
+    validate: (value) => (isHttpsUrl(value.trim()) ? null : POLICY_URL_MESSAGE),
   },
   'submission.max-versions': {
     usage: 'Máximo de versiones de entrega que puede subir cada grupo en un momento.',

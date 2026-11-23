@@ -5,6 +5,7 @@ import co.edu.unicesar.sierap.dto.request.ForgotPasswordRequest;
 import co.edu.unicesar.sierap.dto.request.LoginRequest;
 import co.edu.unicesar.sierap.dto.request.RegisterStudentRequest;
 import co.edu.unicesar.sierap.dto.request.SetPasswordRequest;
+import co.edu.unicesar.sierap.dto.response.PrivacyPolicyResponse;
 import co.edu.unicesar.sierap.dto.response.TokenResponse;
 import co.edu.unicesar.sierap.dto.response.UserSummaryResponse;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
@@ -127,9 +128,20 @@ public class AuthController {
     }
 
     /**
+     * Devuelve el enlace a la política de tratamiento de datos personales. Es público:
+     * se muestra en el registro y al crear la contraseña, antes de iniciar sesión.
+     *
+     * @return {@code { "url": ... }}, con {@code null} si no está configurada
+     */
+    @GetMapping("/privacy-policy")
+    public PrivacyPolicyResponse privacyPolicy() {
+        return authService.getPrivacyPolicy();
+    }
+
+    /**
      * Crea o recupera la contraseña con el enlace recibido por correo.
      *
-     * @param request valor del enlace y nueva contraseña
+     * @param request valor del enlace, nueva contraseña y autorización de datos
      */
     @PostMapping("/password/set")
     @ResponseStatus(HttpStatus.NO_CONTENT)

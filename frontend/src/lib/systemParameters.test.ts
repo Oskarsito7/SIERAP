@@ -25,4 +25,16 @@ describe('SYSTEM_PARAMETERS', () => {
     expect(validate('submission.max-versions', '0')).toMatch(/mayor que cero/)
     expect(validate('submission.max-versions', '2.5')).toMatch(/entero/)
   })
+
+  it('accepts only an https URL for the privacy policy', () => {
+    expect(validate('privacy.policy-url', 'https://www.unicesar.edu.co/politica-de-datos')).toBeNull()
+    expect(validate('privacy.policy-url', ' https://unicesar.edu.co/datos.pdf ')).toBeNull()
+    const message = 'La URL de la política debe ser una dirección válida que empiece por https://.'
+    expect(validate('privacy.policy-url', 'http://www.unicesar.edu.co/datos')).toBe(message)
+    expect(validate('privacy.policy-url', 'www.unicesar.edu.co')).toBe(message)
+    expect(validate('privacy.policy-url', 'https://')).toBe(message)
+    expect(validate('privacy.policy-url', 'https://localhost')).toBe(message)
+    expect(validate('privacy.policy-url', 'https://a b.co')).toBe(message)
+    expect(validate('privacy.policy-url', '')).toBe(message)
+  })
 })

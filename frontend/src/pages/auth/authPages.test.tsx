@@ -13,9 +13,17 @@ import type { TokenResponse, UserSummary } from '@/types/auth'
 import { ChangePasswordPage } from './ChangePasswordPage'
 import { LoginPage } from './LoginPage'
 import { RegisterPage } from './RegisterPage'
+import { SetPasswordPage } from './SetPasswordPage'
 
 vi.mock('@/services/api/authService', () => ({
-  authService: { login: vi.fn(), changePassword: vi.fn(), register: vi.fn(), logout: vi.fn() },
+  authService: {
+    login: vi.fn(),
+    changePassword: vi.fn(),
+    register: vi.fn(),
+    logout: vi.fn(),
+    setPassword: vi.fn(),
+    getPrivacyPolicyUrl: vi.fn(),
+  },
 }))
 
 const user: UserSummary = {
@@ -35,13 +43,13 @@ function apiError(status: number, message: string, fieldErrors: Record<string, s
 }
 
 /** Renderiza la página en `path` con una ruta "/" de destino para ver la redirección. */
-function renderPage(path: string, page: ReactNode) {
+function renderPage(path: string, page: ReactNode, entry: string = path) {
   const router = createMemoryRouter(
     [
       { path, element: page },
       { path: '/', element: <p>Inicio</p> },
     ],
-    { initialEntries: [path] },
+    { initialEntries: [entry] },
   )
   render(
     <AuthContext value={{ state: { status: 'authenticated', user }, user, logout: vi.fn() }}>
@@ -135,9 +143,11 @@ describe('ChangePasswordPage', () => {
 describe('RegisterPage', () => {
   beforeEach(() => {
     vi.mocked(authService.register).mockReset()
+    vi.mocked(authService.getPrivacyPolicyUrl).mockReset()
+    vi.mocked(authService.getPrivacyPolicyUrl).mockResolvedValue(null)
   })
 
-  async function fillAndSubmit(email: string) {
+  async function fillAndSubmit(email: string, accept = true) {
     await userEvent.type(screen.getByLabelText('Código de registro'), 'ab12cd34')
     await userEvent.type(screen.getByLabelText('Nombres'), 'Ana')
     await userEvent.type(screen.getByLabelText('Apellidos'), 'Pérez')
@@ -146,6 +156,7 @@ describe('RegisterPage', () => {
     await userEvent.type(screen.getByLabelText('Correo institucional'), email)
     await userEvent.type(screen.getByLabelText('Código estudiantil'), '20261001')
     await userEvent.type(screen.getByLabelText('Semestre actual'), '3')
+    if (accept) await userEvent.click(screen.getByRole('checkbox', { name: /Autorizo a la Universidad Popular del Cesar/ }))
     await userEvent.click(screen.getByRole('button', { name: 'Registrarme' }))
   }
 
@@ -165,7 +176,38 @@ describe('RegisterPage', () => {
       email: 'ana@unicesar.edu.co',
       studentCode: '20261001',
       currentSemester: 3,
+      privacyAccepted: true,
     })
+  })
+
+  it('does not register without the data authorization and says why', async () => {
+    renderPage('/register', <RegisterPage />)
+
+    await fillAndSubmit('ana@unicesar.edu.co', false)
+
+    expect(
+      await screen.findByText('Debes autorizar el tratamiento de tus datos personales para registrarte.'),
+    ).toBeInTheDocument()
+    expect(authService.register).not.toHaveBeenCalled()
+  })
+
+  it('links the privacy policy in a new tab when the URL is configured', async () => {
+    vi.mocked(authService.getPrivacyPolicyUrl).mockResolvedValue('https://www.unicesar.edu.co/datos')
+    renderPage('/register', <RegisterPage />)
+
+    const link = await screen.findByRole('link', { name: 'Política de tratamiento de datos' })
+    expect(link).toHaveAttribute('href', 'https://www.unicesar.edu.co/datos')
+    expect(link).toHaveAttribute('target', '_blank')
+    expect(link).toHaveAttribute('rel', 'noopener noreferrer')
+  })
+
+  it('shows the authorization text without a link when there is no policy URL', async () => {
+    renderPage('/register', <RegisterPage />)
+
+    expect(
+      await screen.findByLabelText(/Autorizo a la Universidad Popular del Cesar el tratamiento de mis datos personales/),
+    ).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: 'Política de tratamiento de datos' })).not.toBeInTheDocument()
   })
 
   it('shows the 422 message of a non institutional email', async () => {
@@ -179,5 +221,60 @@ describe('RegisterPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(
       'Para registrarse debe usar su correo institucional (@unicesar.edu.co).',
     )
+  })
+})
+
+describe('SetPasswordPage', () => {
+  beforeEach(() => {
+    vi.mocked(authService.setPassword).mockReset()
+    vi.mocked(authService.getPrivacyPolicyUrl).mockReset()
+    vi.mocked(authService.getPrivacyPolicyUrl).mockResolvedValue('https://www.unicesar.edu.co/datos')
+  })
+
+  async function fill(accept: boolean) {
+    await userEvent.type(screen.getByLabelText('Contraseña nueva'), 'Clave-segura-1')
+    await userEvent.type(screen.getByLabelText('Confirmar contraseña nueva'), 'Clave-segura-1')
+    if (accept) await userEvent.click(screen.getByRole('checkbox', { name: /Autorizo a la Universidad Popular del Cesar/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Guardar contraseña' }))
+  }
+
+  it('requires the data authorization before saving the password', async () => {
+    renderPage('/set-password', <SetPasswordPage />, '/set-password?token=abc')
+
+    await fill(false)
+
+    expect(
+      await screen.findByText('Debes autorizar el tratamiento de tus datos personales para crear tu contraseña.'),
+    ).toBeInTheDocument()
+    expect(authService.setPassword).not.toHaveBeenCalled()
+  })
+
+  it('sends the authorization with the new password', async () => {
+    vi.mocked(authService.setPassword).mockResolvedValue()
+    renderPage('/set-password', <SetPasswordPage />, '/set-password?token=abc')
+
+    expect(await screen.findByRole('link', { name: 'Política de tratamiento de datos' })).toHaveAttribute(
+      'href',
+      'https://www.unicesar.edu.co/datos',
+    )
+    await fill(true)
+
+    expect(await screen.findByText('Tu contraseña quedó guardada. Ya puedes iniciar sesión.')).toBeInTheDocument()
+    expect(authService.setPassword).toHaveBeenCalledWith({
+      token: 'abc',
+      newPassword: 'Clave-segura-1',
+      privacyAccepted: true,
+    })
+  })
+
+  it('shows the 422 message of the API', async () => {
+    vi.mocked(authService.setPassword).mockRejectedValue(
+      apiError(422, 'El enlace no es válido o ya venció. Solicite uno nuevo.'),
+    )
+    renderPage('/set-password', <SetPasswordPage />, '/set-password?token=abc')
+
+    await fill(true)
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('El enlace no es válido o ya venció.')
   })
 })

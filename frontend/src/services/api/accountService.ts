@@ -1,7 +1,9 @@
 import type { EvaluatorType, NewExternalEvaluatorRequest } from '@/types/account'
+import type { Page } from '@/types/api'
 import type { UserSummary } from '@/types/auth'
 
 import { httpClient } from './httpClient'
+import { toPage } from './pagination'
 
 /** Cuentas que gestiona el usuario (`docs/07-contrato-api.md`, "Stage 2 — Accounts"). */
 export const accountService = {
@@ -9,6 +11,11 @@ export const accountService = {
   async listExternalEvaluators(): Promise<UserSummary[]> {
     const { data } = await httpClient.get<UserSummary[]>('/external-evaluators')
     return data
+  },
+
+  /** Una página de los evaluadores externos (`page` desde 0); el total viene en `X-Total-Count`. */
+  async listExternalEvaluatorsPage(params: { page: number; size: number }): Promise<Page<UserSummary>> {
+    return toPage(await httpClient.get<UserSummary[]>('/external-evaluators', { params }))
   },
 
   /** Crea un evaluador externo; le llega un correo para crear su contraseña. */

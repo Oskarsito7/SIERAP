@@ -3,6 +3,7 @@ package co.edu.unicesar.sierap.controller;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.nullValue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.argThat;
@@ -26,14 +27,18 @@ import java.util.concurrent.atomic.AtomicInteger;
 import co.edu.unicesar.sierap.TestcontainersConfiguration;
 import co.edu.unicesar.sierap.entity.Admin;
 import co.edu.unicesar.sierap.entity.Faculty;
+import co.edu.unicesar.sierap.entity.GlobalParameter;
 import co.edu.unicesar.sierap.entity.Program;
+import co.edu.unicesar.sierap.entity.RegistrationCode;
 import co.edu.unicesar.sierap.entity.SuperAdmin;
 import co.edu.unicesar.sierap.entity.Teacher;
 import co.edu.unicesar.sierap.entity.User;
 import co.edu.unicesar.sierap.entity.enums.DocumentType;
 import co.edu.unicesar.sierap.entity.enums.PasswordTokenPurpose;
 import co.edu.unicesar.sierap.repository.FacultyRepository;
+import co.edu.unicesar.sierap.repository.GlobalParameterRepository;
 import co.edu.unicesar.sierap.repository.ProgramRepository;
+import co.edu.unicesar.sierap.repository.RegistrationCodeRepository;
 import co.edu.unicesar.sierap.repository.UserRepository;
 import co.edu.unicesar.sierap.security.RefreshCookie;
 import co.edu.unicesar.sierap.service.EmailService;
@@ -93,6 +98,12 @@ class AuthIntegrationTest {
 
     @Autowired
     private PasswordEncoder passwordEncoder;
+
+    @Autowired
+    private RegistrationCodeRepository registrationCodeRepository;
+
+    @Autowired
+    private GlobalParameterRepository globalParameterRepository;
 
     @Autowired
     private Clock clock;
@@ -439,6 +450,100 @@ class AuthIntegrationTest {
                 .andExpect(status().isUnprocessableEntity());
     }
 
+    @Test
+    void registrationRequiresThePrivacyAuthorizationAndStoresItsDate() throws Exception {
+        String code = newRegistrationCode();
+        String missing = "estudiante" + SEQUENCE.incrementAndGet() + "@unicesar.edu.co";
+
+        register(code, missing, false)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.privacyAccepted")
+                        .value("Debes autorizar el tratamiento de tus datos personales para registrarte."));
+        register(code, missing, null)
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.privacyAccepted")
+                        .value("Debes autorizar el tratamiento de tus datos personales para registrarte."));
+        assertThat(userRepository.findByEmail(missing)).isEmpty();
+
+        LocalDateTime before = LocalDateTime.now(clock);
+        String email = "estudiante" + SEQUENCE.incrementAndGet() + "@unicesar.edu.co";
+        register(code, email, true).andExpect(status().isAccepted());
+        User student = userRepository.findByEmail(email).orElseThrow();
+        assertThat(student.getPrivacyAcceptedAt()).isNotNull().isAfterOrEqualTo(before.minusSeconds(1));
+    }
+
+    @Test
+    void settingTheFirstPasswordOfAnAccountCreatedByOthersRequiresThePrivacyAuthorization() throws Exception {
+        User admin = persistAdmin(engineering);
+        String adminToken = loginToken(admin.getEmail());
+        String email = "nuevo.docente" + SEQUENCE.incrementAndGet() + "@unicesar.edu.co";
+        mockMvc.perform(post("/api/teachers")
+                        .header(HttpHeaders.AUTHORIZATION, bearer(adminToken))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(newUser(email, "facultyId", engineering.getId())))
+                .andExpect(status().isCreated());
+        String linkToken = capturedLinkToken(email, PasswordTokenPurpose.ACCOUNT_SETUP);
+        assertThat(userRepository.findByEmail(email).orElseThrow().getPrivacyAcceptedAt()).isNull();
+
+        // Sin la casilla (ausente o falsa) no se crea la contraseña y el enlace sigue sirviendo.
+        String message = "Debes autorizar el tratamiento de tus datos personales para crear tu contraseña.";
+        setPassword(linkToken, PASSWORD, null)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value(message));
+        setPassword(linkToken, PASSWORD, false)
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.message").value(message));
+        login(email, PASSWORD).andExpect(status().isUnauthorized());
+        assertThat(userRepository.findByEmail(email).orElseThrow().getPrivacyAcceptedAt()).isNull();
+
+        setPassword(linkToken, PASSWORD, true).andExpect(status().isNoContent());
+        User created = userRepository.findByEmail(email).orElseThrow();
+        assertThat(created.getPrivacyAcceptedAt()).isNotNull();
+        login(email, PASSWORD).andExpect(status().isOk());
+    }
+
+    @Test
+    void anAccountThatAlreadyAuthorizedIsNotAskedAgainOnRecovery() throws Exception {
+        User teacher = persistTeacher(engineering);
+        LocalDateTime accepted = LocalDateTime.now(clock).minusDays(3).withNano(0);
+        teacher.setPrivacyAcceptedAt(accepted);
+        userRepository.save(teacher);
+
+        mockMvc.perform(post("/api/auth/password/forgot")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json("email", teacher.getEmail())))
+                .andExpect(status().isNoContent());
+        String resetLink = capturedLinkToken(teacher.getEmail(), PasswordTokenPurpose.PASSWORD_RESET);
+
+        setPassword(resetLink, "Clave-nueva-2", null).andExpect(status().isNoContent());
+        assertThat(userRepository.findByEmail(teacher.getEmail()).orElseThrow().getPrivacyAcceptedAt())
+                .isEqualTo(accepted);
+    }
+
+    @Test
+    void privacyPolicyIsPublicAndReturnsNullUntilTheParameterIsSet() throws Exception {
+        mockMvc.perform(get("/api/auth/privacy-policy"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.url").value(nullValue()));
+
+        GlobalParameter parameter = globalParameterRepository.save(
+                new GlobalParameter("privacy.policy-url", "   ", "Política de datos (prueba)"));
+        try {
+            // Vacío (solo espacios) cuenta como no configurado.
+            mockMvc.perform(get("/api/auth/privacy-policy"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.url").value(nullValue()));
+
+            parameter.setValue("https://www.unicesar.edu.co/politica-datos");
+            globalParameterRepository.save(parameter);
+            mockMvc.perform(get("/api/auth/privacy-policy"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.url").value("https://www.unicesar.edu.co/politica-datos"));
+        } finally {
+            globalParameterRepository.delete(parameter);
+        }
+    }
+
     // ----------------------------------------------------------------- utilidades
 
     private User persistTeacher(Faculty faculty) {
@@ -469,19 +574,38 @@ class AuthIntegrationTest {
         return mockMvc.perform(post("/api/auth/refresh").cookie(cookie));
     }
 
+    /** Crea o recupera la contraseña aceptando el tratamiento de datos (Ley 1581). */
     private ResultActions setPassword(String token, String newPassword) throws Exception {
+        return setPassword(token, newPassword, true);
+    }
+
+    private ResultActions setPassword(String token, String newPassword, Boolean privacyAccepted) throws Exception {
         return mockMvc.perform(post("/api/auth/password/set")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(json("token", token, "newPassword", newPassword)));
+                .content(json("token", token, "newPassword", newPassword, "privacyAccepted", privacyAccepted)));
     }
 
     private ResultActions register(String code, String email) throws Exception {
+        return register(code, email, true);
+    }
+
+    private ResultActions register(String code, String email, Boolean privacyAccepted) throws Exception {
         int n = SEQUENCE.incrementAndGet();
         return mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(json("registrationCode", code, "firstNames", "Estudiante", "lastNames", "Prueba " + n,
                         "documentType", "TI", "documentNumber", "90" + n, "email", email,
-                        "studentCode", "2026" + n, "currentSemester", 2)));
+                        "studentCode", "2026" + n, "currentSemester", 2, "privacyAccepted", privacyAccepted)));
+    }
+
+    /** Código de registro vigente de un docente nuevo, para probar el registro. */
+    private String newRegistrationCode() {
+        int n = SEQUENCE.incrementAndGet();
+        Teacher teacher = (Teacher) persistTeacher(engineering);
+        String code = "HD" + n;
+        registrationCodeRepository.save(new RegistrationCode(code, teacher, systems,
+                LocalDate.now(clock).plusDays(10), LocalDateTime.now(clock)));
+        return code;
     }
 
     /** Valor del enlace que se envió por correo a esa cuenta con ese propósito. */

@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -18,7 +18,7 @@ import { answerConfirm } from '@/test/confirm'
 import { StudentsPage } from './StudentsPage'
 
 vi.mock('@/services/api/studentService', () => ({
-  studentService: { list: vi.fn(), create: vi.fn(), setActive: vi.fn() },
+  studentService: { list: vi.fn(), listPage: vi.fn(), create: vi.fn(), setActive: vi.fn() },
 }))
 vi.mock('@/services/api/accountService', () => ({ accountService: { resendPasswordLink: vi.fn() } }))
 vi.mock('@/services/api/catalogService', () => ({ catalogService: { programs: vi.fn() } }))
@@ -104,6 +104,7 @@ describe('StudentsPage', () => {
       momentFixture({ id: 1, name: 'Momento 1', programId: 1 }),
       momentFixture({ id: 9, name: 'Momento 1', programId: 2, programName: 'Ingeniería Electrónica' }),
     ])
+    service.listPage.mockResolvedValue({ items: [camila, andres, luis], total: 3 })
     service.list.mockResolvedValue([camila, andres, luis])
   })
   afterEach(() => vi.restoreAllMocks())
@@ -112,7 +113,7 @@ describe('StudentsPage', () => {
     renderPage()
 
     const camilaRow = await screen.findByRole('row', { name: /Camila Torres/ })
-    expect(service.list).toHaveBeenCalledWith(1, undefined)
+    expect(service.listPage).toHaveBeenCalledWith(1, { q: undefined, page: 0, size: 50 })
     expect(camilaRow).toHaveTextContent('20261053')
     expect(within(camilaRow).getByText('Código K7MQ4TZP')).toBeInTheDocument()
     const andresRow = screen.getByRole('row', { name: /Andrés Molina/ })
@@ -134,19 +135,49 @@ describe('StudentsPage', () => {
     expect(screen.getByRole('button', { name: 'Desactivar a Camila Torres' })).toBeInTheDocument()
   })
 
-  it('searches by name, code or email and changes program', async () => {
+  it('searches on the server by name, code or email and changes program', async () => {
     renderPage()
 
     await screen.findByRole('row', { name: /Camila Torres/ })
+    service.listPage.mockResolvedValue({ items: [andres], total: 1 })
     await userEvent.type(screen.getByLabelText('Buscar por nombre, código o correo'), '20252210')
+    expect(await screen.findByText('Mostrando 1–1 de 1')).toBeInTheDocument()
+    expect(service.listPage).toHaveBeenLastCalledWith(1, { q: '20252210', page: 0, size: 50 })
     expect(screen.queryByRole('row', { name: /Camila Torres/ })).not.toBeInTheDocument()
     expect(screen.getByRole('row', { name: /Andrés Molina/ })).toBeInTheDocument()
 
-    service.list.mockResolvedValue([])
+    service.listPage.mockResolvedValue({ items: [], total: 0 })
     await userEvent.clear(screen.getByLabelText('Buscar por nombre, código o correo'))
     await userEvent.selectOptions(screen.getByLabelText('Programa'), 'Ingeniería Electrónica')
-    expect(service.list).toHaveBeenLastCalledWith(2, undefined)
+    await waitFor(() =>
+      expect(service.listPage).toHaveBeenLastCalledWith(2, { q: undefined, page: 0, size: 50 }),
+    )
     expect(await screen.findByText('Ingeniería Electrónica todavía no tiene estudiantes.')).toBeInTheDocument()
+  })
+
+  it('pages through the students and goes back to the first page when searching', async () => {
+    const many = (from: number, to: number) =>
+      Array.from({ length: to - from + 1 }, (_, i) => student(100 + from + i, 'Est', `Apellido${from + i}`))
+    service.listPage.mockResolvedValue({ items: many(1, 50), total: 120 })
+    renderPage()
+
+    expect(await screen.findByText('Mostrando 1–50 de 120')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Anterior' })).toBeDisabled()
+
+    service.listPage.mockResolvedValue({ items: many(51, 100), total: 120 })
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    expect(await screen.findByText('Mostrando 51–100 de 120')).toBeInTheDocument()
+    expect(service.listPage).toHaveBeenLastCalledWith(1, { q: undefined, page: 1, size: 50 })
+
+    service.listPage.mockResolvedValue({ items: many(101, 120), total: 120 })
+    await userEvent.click(screen.getByRole('button', { name: 'Siguiente' }))
+    expect(await screen.findByText('Mostrando 101–120 de 120')).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Siguiente' })).toBeDisabled()
+
+    service.listPage.mockResolvedValue({ items: many(1, 3), total: 3 })
+    await userEvent.type(screen.getByLabelText('Buscar por nombre, código o correo'), 'Apellido')
+    expect(await screen.findByText('Mostrando 1–3 de 3')).toBeInTheDocument()
+    expect(service.listPage).toHaveBeenLastCalledWith(1, { q: 'Apellido', page: 0, size: 50 })
   })
 
   it('shows only the students without a group in a moment of the program', async () => {

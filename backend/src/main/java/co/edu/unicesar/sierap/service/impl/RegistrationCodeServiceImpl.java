@@ -9,6 +9,7 @@ import java.util.Objects;
 
 import co.edu.unicesar.sierap.dto.request.NewRegistrationCodeRequest;
 import co.edu.unicesar.sierap.dto.request.UpdateRegistrationCodeRequest;
+import co.edu.unicesar.sierap.dto.response.PagedResult;
 import co.edu.unicesar.sierap.dto.response.RegistrationCodeResponse;
 import co.edu.unicesar.sierap.entity.Admin;
 import co.edu.unicesar.sierap.entity.Program;
@@ -27,6 +28,10 @@ import co.edu.unicesar.sierap.repository.TeacherRepository;
 import co.edu.unicesar.sierap.security.AuthenticatedUser;
 import co.edu.unicesar.sierap.service.AuditService;
 import co.edu.unicesar.sierap.service.RegistrationCodeService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -43,6 +48,9 @@ public class RegistrationCodeServiceImpl implements RegistrationCodeService {
     private static final String ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private static final int CODE_LENGTH = 8;
     private static final int MAX_ATTEMPTS = 20;
+
+    /** Orden de la lista: del más reciente al más antiguo (el id desempata para paginar estable). */
+    private static final Sort NEWEST_FIRST = Sort.by(Sort.Order.desc("createdAt"), Sort.Order.desc("id"));
 
     private final SecureRandom random = new SecureRandom();
 
@@ -98,16 +106,26 @@ public class RegistrationCodeServiceImpl implements RegistrationCodeService {
     @Override
     @Transactional(readOnly = true)
     public List<RegistrationCodeResponse> list(AuthenticatedUser actor) {
+        return list(actor, Pageable.unpaged()).items();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PagedResult<RegistrationCodeResponse> list(AuthenticatedUser actor, Pageable pageable) {
         User viewer = accessScope.loadActor(actor);
-        List<RegistrationCode> codes;
+        Pageable sorted = pageable.isPaged()
+                ? PageRequest.of(pageable.getPageNumber(), pageable.getPageSize(), NEWEST_FIRST)
+                : Pageable.unpaged(NEWEST_FIRST);
+        Page<RegistrationCode> codes;
         if (viewer instanceof Teacher teacher) {
-            codes = registrationCodeRepository.findByTeacherIdOrderByCreatedAtDesc(teacher.getId());
+            codes = registrationCodeRepository.findByTeacherId(teacher.getId(), sorted);
         } else if (viewer instanceof Admin admin) {
-            codes = registrationCodeRepository.findByTeacherFacultyIdOrderByCreatedAtDesc(admin.getFaculty().getId());
+            codes = registrationCodeRepository.findByTeacherFacultyId(admin.getFaculty().getId(), sorted);
         } else {
-            codes = registrationCodeRepository.findAllByOrderByCreatedAtDesc();
+            codes = registrationCodeRepository.findAll(sorted);
         }
-        return codes.stream().map(this::toResponse).toList();
+        return new PagedResult<>(codes.getContent().stream().map(this::toResponse).toList(),
+                codes.getTotalElements());
     }
 
     @Override
