@@ -14,8 +14,6 @@ import co.edu.unicesar.sierap.service.EmailService;
 import co.edu.unicesar.sierap.service.PasswordLinkService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Implementación de {@link PasswordLinkService}.
@@ -88,25 +86,7 @@ public class PasswordLinkServiceImpl implements PasswordLinkService {
         passwordTokenRepository.save(new PasswordToken(user, OpaqueTokens.hash(token), purpose,
                 now.plusHours(validHours), now));
         String link = properties.frontendUrl() + "/set-password?token=" + token;
-        afterCommit(() -> emailService.sendPasswordLink(user, purpose, link, validHours));
-    }
-
-    /**
-     * Ejecuta la acción cuando la transacción actual se confirma (o de inmediato si no
-     * hay transacción). El correo se envía así fuera de la transacción: la conexión a la
-     * base de datos no queda retenida mientras responde el servidor SMTP, y no se envía
-     * un enlace que luego se deshaga.
-     */
-    private static void afterCommit(Runnable action) {
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            action.run();
-            return;
-        }
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                action.run();
-            }
-        });
+        // Se encola en la misma transacción: si se deshace, el enlace y el correo desaparecen juntos.
+        emailService.sendPasswordLink(user, purpose, link, validHours);
     }
 }

@@ -8,9 +8,10 @@ import co.edu.unicesar.sierap.entity.Submission;
 /**
  * Notificaciones por correo de los eventos del flujo de un momento.
  *
- * <p>Los correos se envían solo cuando la transacción que los pide hace commit (si no hay
- * transacción, de inmediato), nunca si la operación falla, y solo a cuentas activas.
- * Un fallo del servidor de correo se registra y no deshace la operación.</p>
+ * <p>Los correos se encolan en la cola de correos (ADR-022) dentro de la transacción que
+ * los pide: si la operación se deshace, no sale ninguno. Solo se avisa a cuentas activas.
+ * El envío real lo hace después el despachador, con reintentos; un fallo del servidor de
+ * correo nunca deshace la operación.</p>
  */
 public interface NotificationService {
 

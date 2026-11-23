@@ -20,18 +20,15 @@ import co.edu.unicesar.sierap.entity.enums.DocumentType;
 import co.edu.unicesar.sierap.entity.enums.PasswordTokenPurpose;
 import co.edu.unicesar.sierap.repository.PasswordTokenRepository;
 import co.edu.unicesar.sierap.service.EmailService;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Pruebas unitarias de {@link PasswordLinkServiceImpl} (auditoría de seguridad, run-1):
- * el correo se envía solo cuando la transacción se confirma, y una recuperación pedida
+ * el correo se encola en la misma transacción que el token (ADR-022), y una recuperación pedida
  * de nuevo mientras el último enlace sigue pendiente y es reciente no envía otro.
  */
 @ExtendWith(MockitoExtension.class)
@@ -57,21 +54,11 @@ class PasswordLinkServiceImplTest {
                 LocalDateTime.now(CLOCK), null);
     }
 
-    @AfterEach
-    void clearSynchronization() {
-        if (TransactionSynchronizationManager.isSynchronizationActive()) {
-            TransactionSynchronizationManager.clearSynchronization();
-        }
-    }
-
     @Test
-    void theEmailIsSentOnlyAfterTheTransactionCommits() {
-        TransactionSynchronizationManager.initSynchronization();
-
+    void theEmailIsEnqueuedInTheSameTransactionAsTheToken() {
         service.sendAccountSetupLink(user);
 
-        verify(emailService, never()).sendPasswordLink(any(), any(), anyString(), anyInt());
-        TransactionSynchronizationManager.getSynchronizations().forEach(TransactionSynchronization::afterCommit);
+        verify(passwordTokenRepository).save(any());
         verify(emailService).sendPasswordLink(eq(user), eq(PasswordTokenPurpose.ACCOUNT_SETUP), anyString(), eq(72));
     }
 

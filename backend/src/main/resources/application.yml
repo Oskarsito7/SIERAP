@@ -79,3 +79,17 @@ sierap:
       set: 10
   # La carpeta base de los archivos de las entregas (sierap.storage.base-path,
   # ADR-015) la define cada perfil y debe quedar fuera de la carpeta de la aplicación.
+
+  # Cola de correos (outbox transaccional, ADR-022): un despachador programado envía los
+  # correos pendientes por SMTP con reintentos y espera exponencial (1, 2, 4, 8 min…).
+  mail:
+    outbox:
+      enabled: true
+      dispatch-delay: PT15S
+      max-attempts: 5
+      batch-size: 20
+  # Recordatorios por fecha (ADR-022): cierre de entregas, evaluación pendiente y notas
+  # publicadas. El trabajo corre una vez al día, a las 7:00 hora de Bogotá.
+  reminders:
+    enabled: true
+    cron: "0 0 7 * * *"

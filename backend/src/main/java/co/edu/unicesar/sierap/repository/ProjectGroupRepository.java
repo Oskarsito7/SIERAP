@@ -1,10 +1,12 @@
 package co.edu.unicesar.sierap.repository;
 
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 
 import co.edu.unicesar.sierap.entity.ProjectGroup;
+import co.edu.unicesar.sierap.entity.enums.MomentStatus;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -176,4 +178,30 @@ public interface ProjectGroupRepository extends JpaRepository<ProjectGroup, Long
      * @return {@code true} si hay al menos un grupo en ese programa
      */
     boolean existsByMomentProgramId(Long programId);
+
+    /**
+     * Grupos de momentos en el estado dado cuya fecha límite de entrega efectiva (la del
+     * grupo o, si no tiene, la de cierre de entregas del momento) es la indicada.
+     *
+     * @param status   estado del momento (normalmente {@code LAUNCHED})
+     * @param deadline fecha límite efectiva buscada
+     * @return grupos con esa fecha límite
+     */
+    @Query("""
+            select g from ProjectGroup g
+            where g.moment.status = :status
+              and coalesce(g.submissionDeadline, g.moment.submissionEnd) = :deadline
+            order by g.id""")
+    List<ProjectGroup> findBySubmissionDeadline(@Param("status") MomentStatus status,
+                                                @Param("deadline") LocalDate deadline);
+
+    /**
+     * Grupos de momentos en el estado dado cuya ventana de calificación termina en la fecha
+     * indicada.
+     *
+     * @param status     estado del momento
+     * @param gradingEnd fecha de fin de calificación
+     * @return grupos de esos momentos
+     */
+    List<ProjectGroup> findByMomentStatusAndMomentGradingEndOrderById(MomentStatus status, LocalDate gradingEnd);
 }

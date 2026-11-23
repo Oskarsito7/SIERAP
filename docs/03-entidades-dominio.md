@@ -51,6 +51,10 @@ moment" and "Team decisions" sections) and in ADR-009 to ADR-014 of
 | TokenRenovacion (sesión) | `RefreshToken` | `refresh_token` |
 | EnlaceContrasena | `PasswordToken` | `password_token` |
 | PropositoEnlace (CREAR_CUENTA, RECUPERAR) | `PasswordTokenPurpose` (`ACCOUNT_SETUP`, `PASSWORD_RESET`) | column `password_token.purpose` |
+| CorreoPendiente (cola de correos) | `EmailOutbox` | `email_outbox` |
+| EstadoCorreo (PENDIENTE, ENVIADO, FALLIDO) | `EmailStatus` (`PENDING`, `SENT`, `FAILED`) | column `email_outbox.status` |
+| RecordatorioEnviado | `ReminderSent` | `reminder_sent` |
+| TipoRecordatorio | `ReminderKind` | column `reminder_sent.kind` |
 | TipoDocumento | `DocumentType` | — |
 | Grupo (= proyecto de aula) | `ProjectGroup` | `project_group` (`group` is reserved in SQL) |
 | Entrega | `Submission` | `submission` |
@@ -102,6 +106,13 @@ implement `Evaluator`: there is no self-assessment in SIERAP.
 | `RegistrationCode` | Código de registro | code (unique, 8 characters), teacher, program, expiresOn, active, createdAt | Code a teacher shares with their students so they register themselves in a `Program` of the teacher's faculty. Reusable until it expires or is deactivated; a deactivated code cannot be reactivated. |
 | `RefreshToken` | Token de renovación (sesión) | user, tokenHash (unique), expiresAt, rotatedAt, createdAt | One login session. Only the SHA-256 hash of the cookie value is stored. Each renewal marks it as rotated and creates a new one; if a rotated token comes back, it was probably stolen and every session of the user is closed. Logging out, changing the password or deactivating the account delete the rows. |
 | `PasswordToken` | Enlace de contraseña | user, tokenHash (unique), purpose, expiresAt, usedAt, createdAt | Single-use link sent by email to create the password of a new account (72 h) or recover a forgotten one (1 h). Issuing a new link invalidates the pending ones of the same purpose. |
+
+## Email queue and reminders · D1 (ADR-022)
+
+| Class | Spanish name | Attributes | Description |
+|---|---|---|---|
+| `EmailOutbox` | Correo pendiente | recipient, subject, body, status (`EmailStatus`), attempts, nextAttemptAt, lastError, createdAt, sentAt | Email in the outbox. It is inserted inside the transaction of the operation that asks for it (it disappears if the operation rolls back) and a scheduled dispatcher sends it. A failure adds an attempt and schedules a retry with exponential wait (1, 2, 4, 8 min…); at the maximum attempts it becomes `FAILED`. Infrastructure entity: it has no relationships with the domain. |
+| `ReminderSent` | Recordatorio enviado | kind (`ReminderKind`), referenceId, recipientId, sentOn | Record of a date-based reminder already queued; unique by kind + reference + recipient, so the daily job never repeats one. The reference is a group id (submission closing, pending evaluation) or a moment id (grades published). Infrastructure entity. |
 
 The first `SuperAdmin` (`sierap@unicesar.edu.co`) is created by the migration with a
 temporary password that must be changed on the first login.
@@ -169,6 +180,8 @@ version, or the last late one if there is none on time.
 | `MomentStatus` | `CONFIGURATION`, `LAUNCHED` | Lifecycle status of the moment (ADR-012). It is system flow, not an assessment business value. |
 | `EvaluationStatus` | `DRAFT`, `SUBMITTED` | Status of an evaluation: saved half done or submitted. System flow, like `MomentStatus`. |
 | `PasswordTokenPurpose` | `ACCOUNT_SETUP`, `PASSWORD_RESET` | Why a password link was sent: to create the password of a new account or to recover a forgotten one. |
+| `EmailStatus` | `PENDING`, `SENT`, `FAILED` | State of an email in the outbox: waiting for its first send or a retry, sent, or given up after the maximum attempts (ADR-022). |
+| `ReminderKind` | `SUBMISSION_CLOSING`, `EVALUATION_PENDING`, `GRADES_PUBLISHED` | Kind of date-based reminder (ADR-022). |
 
 The Phase 2 enums `NivelExigencia` and `NivelDesempeno` **were removed** (the
 requirement level is free text in `Moment` and performance levels are the

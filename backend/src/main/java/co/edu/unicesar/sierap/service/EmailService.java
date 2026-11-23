@@ -4,15 +4,17 @@ import co.edu.unicesar.sierap.entity.User;
 import co.edu.unicesar.sierap.entity.enums.PasswordTokenPurpose;
 
 /**
- * Envío de correos de SIERAP (ADR-017).
+ * Correos de SIERAP (ADR-017, ADR-022). Enviar es encolar: cada método inserta una fila
+ * en la cola de correos dentro de la transacción de quien llama, y un despachador
+ * programado hace el envío real por SMTP con reintentos.
  */
 public interface EmailService {
 
     /**
-     * Envía el enlace para crear o recuperar la contraseña.
+     * Encola el enlace para crear o recuperar la contraseña.
      *
-     * <p>Si el servidor de correo falla, el error se registra en el log y la operación
-     * que lo pidió no se deshace: quien creó la cuenta puede reenviar el enlace.</p>
+     * <p>Se encola en la transacción actual: si esta se deshace, el correo desaparece. Si el
+     * servidor de correo falla después, el despachador reintenta con espera exponencial.</p>
      *
      * @param user       destinatario
      * @param purpose    para qué sirve el enlace
@@ -22,10 +24,10 @@ public interface EmailService {
     void sendPasswordLink(User user, PasswordTokenPurpose purpose, String link, int validHours);
 
     /**
-     * Envía un correo de texto plano.
+     * Encola un correo de texto plano.
      *
-     * <p>Misma política que {@link #sendPasswordLink}: si el servidor de correo falla, el
-     * error se registra en el log y no se lanza, para no deshacer la operación que lo pidió.</p>
+     * <p>Misma política que {@link #sendPasswordLink}: se encola en la transacción actual y
+     * el envío real y sus reintentos son asunto del despachador.</p>
      *
      * @param to      correo del destinatario
      * @param subject asunto

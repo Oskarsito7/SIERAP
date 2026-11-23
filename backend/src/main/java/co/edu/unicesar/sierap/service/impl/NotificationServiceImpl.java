@@ -15,15 +15,14 @@ import co.edu.unicesar.sierap.entity.User;
 import co.edu.unicesar.sierap.service.EmailService;
 import co.edu.unicesar.sierap.service.NotificationService;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Implementación de {@link NotificationService}.
  *
  * <p>Los datos del correo se leen de las entidades mientras la transacción sigue abierta
- * y se guardan en valores simples, de modo que el envío posterior al commit no toca
- * entidades perezosas. El texto es plano y en español, firmado por SIERAP.</p>
+ * y se encolan en la cola de correos (ADR-022) dentro de la misma transacción de la
+ * operación: si esta se deshace, los avisos desaparecen con ella. El texto es plano y en
+ * español, firmado por SIERAP.</p>
  */
 @Service
 public class NotificationServiceImpl implements NotificationService {
@@ -63,7 +62,7 @@ public class NotificationServiceImpl implements NotificationService {
                 + "Puedes ver el grupo y calificarlo en este enlace:\n"
                 + properties.frontendUrl() + "/assigned-groups/" + group.getId() + "\n\n"
                 + SIGNATURE;
-        sendAfterCommit(evaluator.getEmail(), "SIERAP: te asignaron un proyecto para evaluar", body);
+        emailService.send(evaluator.getEmail(), "SIERAP: te asignaron un proyecto para evaluar", body);
     }
 
     @Override
@@ -95,7 +94,7 @@ public class NotificationServiceImpl implements NotificationService {
                 .append("\n\n").append(SIGNATURE);
         String subject = "SIERAP: tu grupo subió la versión " + submission.getVersionNumber();
         String text = body.toString();
-        recipients.forEach(recipient -> sendAfterCommit(recipient, subject, text));
+        recipients.forEach(recipient -> emailService.send(recipient, subject, text));
     }
 
     @Override
@@ -112,7 +111,7 @@ public class NotificationServiceImpl implements NotificationService {
                 + "Puedes ver tu grupo en este enlace:\n"
                 + properties.frontendUrl() + "/my-group?groupId=" + group.getId() + "\n\n"
                 + SIGNATURE;
-        sendAfterCommit(student.getEmail(), "SIERAP: te agregaron a un grupo", body);
+        emailService.send(student.getEmail(), "SIERAP: te agregaron a un grupo", body);
     }
 
     private static String titleOf(ProjectGroup group) {
@@ -130,23 +129,5 @@ public class NotificationServiceImpl implements NotificationService {
             return String.format(Locale.ROOT, "%.1f MB", bytes / (1024.0 * 1024.0)).replace('.', ',');
         }
         return Math.max(1, Math.round(bytes / 1024.0)) + " KB";
-    }
-
-    /**
-     * Envía cuando la transacción actual hace commit, o de inmediato si no hay
-     * transacción: así no sale un aviso de una operación que luego se deshace ni se
-     * retiene la conexión a la base de datos mientras responde el servidor SMTP.
-     */
-    private void sendAfterCommit(String to, String subject, String body) {
-        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
-            emailService.send(to, subject, body);
-            return;
-        }
-        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-                emailService.send(to, subject, body);
-            }
-        });
     }
 }
