@@ -9,15 +9,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { formatDate, todayIso } from '@/lib/dates'
 import { useConfirm } from '@/lib/useConfirm'
 import { getErrorMessage } from '@/services/api/httpClient'
+import { PAGE_SIZE } from '@/services/api/pagination'
 import { registrationCodeService } from '@/services/api/registrationCodeService'
 import type { RegistrationCode } from '@/types/registrationCode'
 
 import { NewCodeForm } from './NewCodeForm'
+import { PaginationBar } from '@/components/ui/pagination-bar'
 import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 type LoadState =
   | { kind: 'loading' }
-  | { kind: 'success'; codes: RegistrationCode[] }
+  | { kind: 'success'; codes: RegistrationCode[]; total: number }
   | { kind: 'error'; message: string }
 
 /** Estado de un código tal como lo ve el usuario. */
@@ -35,6 +37,7 @@ export function RegistrationCodesPage() {
   const { user } = useAuth()
   const [load, setLoad] = useState<LoadState>({ kind: 'loading' })
   const [attempt, setAttempt] = useState(0)
+  const [page, setPage] = useState(0)
   const [teacherFilter, setTeacherFilter] = useState(ALL_TEACHERS)
   const [actionError, setActionError] = useState<string | null>(null)
   const [copiedId, setCopiedId] = useState<number | null>(null)
@@ -47,9 +50,9 @@ export function RegistrationCodesPage() {
   useEffect(() => {
     let cancelled = false
     registrationCodeService
-      .list()
-      .then((codes) => {
-        if (!cancelled) setLoad({ kind: 'success', codes })
+      .listPage({ page, size: PAGE_SIZE })
+      .then(({ items, total }) => {
+        if (!cancelled) setLoad({ kind: 'success', codes: items, total })
       })
       .catch((error: unknown) => {
         if (!cancelled) setLoad({ kind: 'error', message: getErrorMessage(error) })
@@ -57,7 +60,7 @@ export function RegistrationCodesPage() {
     return () => {
       cancelled = true
     }
-  }, [attempt])
+  }, [attempt, page])
 
   const codes = useMemo(() => (load.kind === 'success' ? load.codes : []), [load])
   const teachers = useMemo(() => {
@@ -73,7 +76,20 @@ export function RegistrationCodesPage() {
   }
 
   const created = (code: RegistrationCode) => {
-    setLoad((current) => (current.kind === 'success' ? { kind: 'success', codes: [code, ...current.codes] } : current))
+    // El código nuevo es el más reciente: va al inicio de la primera página.
+    if (page === 0) {
+      setLoad((current) =>
+        current.kind === 'success'
+          ? {
+              kind: 'success',
+              codes: [code, ...current.codes].slice(0, PAGE_SIZE),
+              total: current.total + 1,
+            }
+          : current,
+      )
+    } else {
+      setPage(0)
+    }
     setCreating(false)
     setTeacherFilter(ALL_TEACHERS)
     setNotice(`Se generó el código ${code.code} para ${code.programName}.`)
@@ -104,7 +120,10 @@ export function RegistrationCodesPage() {
       const updated = await registrationCodeService.deactivate(code.id)
       setLoad((current) =>
         current.kind === 'success'
-          ? { kind: 'success', codes: current.codes.map((item) => (item.id === updated.id ? updated : item)) }
+          ? {
+              ...current,
+              codes: current.codes.map((item) => (item.id === updated.id ? updated : item)),
+            }
           : current,
       )
     } catch (error) {
@@ -192,7 +211,7 @@ export function RegistrationCodesPage() {
           )}
 
           {load.kind === 'success' && visible.length === 0 && (
-            <p className="text-muted-foreground text-sm">Todavía no hay códigos de registro.</p>
+            <p className="text-muted-foreground text-sm">{load.total === 0 ? 'Todavía no hay códigos de registro.' : 'Ningún código de esta página coincide con el filtro.'}</p>
           )}
 
           {load.kind === 'success' && visible.length > 0 && (
@@ -252,6 +271,10 @@ export function RegistrationCodesPage() {
                 })}
               </tbody>
             </ResponsiveTable>
+          )}
+
+          {load.kind === 'success' && (
+            <PaginationBar page={page} size={PAGE_SIZE} total={load.total} onPageChange={setPage} />
           )}
         </CardContent>
       </Card>

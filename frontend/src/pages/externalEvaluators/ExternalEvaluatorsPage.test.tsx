@@ -4,6 +4,7 @@ import { AxiosError, type AxiosResponse } from 'axios'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { pageOf } from '@/test/pageOf'
 import { accountService } from '@/services/api/accountService'
 import type { ApiError } from '@/types/api'
 import type { UserSummary } from '@/types/auth'
@@ -13,6 +14,7 @@ import { ExternalEvaluatorsPage } from './ExternalEvaluatorsPage'
 vi.mock('@/services/api/accountService', () => ({
   accountService: {
     listExternalEvaluators: vi.fn(),
+    listExternalEvaluatorsPage: vi.fn(),
     createExternalEvaluator: vi.fn(),
     resendPasswordLink: vi.fn(),
     listEvaluatorTypes: vi.fn(),
@@ -68,10 +70,10 @@ describe('ExternalEvaluatorsPage', () => {
   })
 
   it('lists the evaluators and filters them by name or email', async () => {
-    service.listExternalEvaluators.mockResolvedValue([
+    service.listExternalEvaluatorsPage.mockResolvedValue(pageOf([
       evaluator(1, 'Sofía', 'Vega'),
       evaluator(2, 'Carlos', 'Pérez', { active: false }),
-    ])
+    ]))
     renderPage()
 
     expect(await screen.findByText('Sofía Vega')).toBeInTheDocument()
@@ -85,7 +87,7 @@ describe('ExternalEvaluatorsPage', () => {
   })
 
   it('resends the password link', async () => {
-    service.listExternalEvaluators.mockResolvedValue([evaluator(1, 'Sofía', 'Vega')])
+    service.listExternalEvaluatorsPage.mockResolvedValue(pageOf([evaluator(1, 'Sofía', 'Vega')]))
     service.resendPasswordLink.mockResolvedValue()
     renderPage()
 
@@ -96,7 +98,7 @@ describe('ExternalEvaluatorsPage', () => {
   })
 
   it('only offers the active evaluator types', async () => {
-    service.listExternalEvaluators.mockResolvedValue([])
+    service.listExternalEvaluatorsPage.mockResolvedValue(pageOf([]))
     renderPage()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Nuevo evaluador' }))
@@ -107,7 +109,7 @@ describe('ExternalEvaluatorsPage', () => {
   })
 
   it('checks the required fields before sending', async () => {
-    service.listExternalEvaluators.mockResolvedValue([])
+    service.listExternalEvaluatorsPage.mockResolvedValue(pageOf([]))
     renderPage()
 
     await userEvent.click(await screen.findByRole('button', { name: 'Nuevo evaluador' }))
@@ -119,7 +121,7 @@ describe('ExternalEvaluatorsPage', () => {
   })
 
   it('creates an evaluator, adds it to the list and says an email was sent', async () => {
-    service.listExternalEvaluators.mockResolvedValue([evaluator(1, 'Sofía', 'Vega')])
+    service.listExternalEvaluatorsPage.mockResolvedValue(pageOf([evaluator(1, 'Sofía', 'Vega')]))
     service.createExternalEvaluator.mockResolvedValue(evaluator(9, 'Carlos', 'Pérez'))
     renderPage()
     await screen.findByText('Sofía Vega')
@@ -145,7 +147,7 @@ describe('ExternalEvaluatorsPage', () => {
   })
 
   it('shows the errors the API returns for the form', async () => {
-    service.listExternalEvaluators.mockResolvedValue([])
+    service.listExternalEvaluatorsPage.mockResolvedValue(pageOf([]))
     service.createExternalEvaluator.mockRejectedValue(
       apiError(409, 'Ya existe una cuenta con ese correo o documento.'),
     )

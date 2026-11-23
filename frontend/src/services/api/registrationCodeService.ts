@@ -1,6 +1,9 @@
 import type { NewRegistrationCodeRequest, RegistrationCode } from '@/types/registrationCode'
 
+import type { Page } from '@/types/api'
+
 import { httpClient } from './httpClient'
+import { toPage } from './pagination'
 
 /** Códigos de registro de estudiantes (`/api/registration-codes`, `docs/07-contrato-api.md`). */
 export const registrationCodeService = {
@@ -8,6 +11,11 @@ export const registrationCodeService = {
   async list(): Promise<RegistrationCode[]> {
     const { data } = await httpClient.get<RegistrationCode[]>('/registration-codes')
     return data
+  },
+
+  /** Una página de los códigos (`page` desde 0); el total viene en `X-Total-Count`. */
+  async listPage(params: { page: number; size: number }): Promise<Page<RegistrationCode>> {
+    return toPage(await httpClient.get<RegistrationCode[]>('/registration-codes', { params }))
   },
 
   /** Genera un código; el docente omite `teacherId` (el código queda a su nombre). */

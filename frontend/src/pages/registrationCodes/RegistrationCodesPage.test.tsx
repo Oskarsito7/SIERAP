@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { AuthContext } from '@/auth/authContext'
 import { apiError } from '@/pages/catalogs/testHelpers'
 import { catalogService } from '@/services/api/catalogService'
+import { pageOf } from '@/test/pageOf'
 import { registrationCodeService } from '@/services/api/registrationCodeService'
 import { teacherService } from '@/services/api/teacherService'
 import type { ApiError } from '@/types/api'
@@ -18,7 +19,7 @@ import { answerConfirm } from '@/test/confirm'
 import { RegistrationCodesPage } from './RegistrationCodesPage'
 
 vi.mock('@/services/api/registrationCodeService', () => ({
-  registrationCodeService: { list: vi.fn(), create: vi.fn(), deactivate: vi.fn() },
+  registrationCodeService: { list: vi.fn(), listPage: vi.fn(), create: vi.fn(), deactivate: vi.fn() },
 }))
 
 vi.mock('@/services/api/catalogService', () => ({
@@ -29,7 +30,7 @@ vi.mock('@/services/api/teacherService', () => ({
   teacherService: { list: vi.fn() },
 }))
 
-const list = vi.mocked(registrationCodeService.list)
+const list = vi.mocked(registrationCodeService.listPage)
 const create = vi.mocked(registrationCodeService.create)
 const deactivate = vi.mocked(registrationCodeService.deactivate)
 const faculties = vi.mocked(catalogService.faculties)
@@ -129,7 +130,7 @@ describe('RegistrationCodesPage', () => {
   })
 
   it('shows each code with its status: active, expired or deactivated', async () => {
-    list.mockResolvedValue(codes.slice(0, 3))
+    list.mockResolvedValue(pageOf(codes.slice(0, 3)))
     renderAs('TEACHER')
 
     expect(await screen.findByText('K7MQ4TZP')).toBeInTheDocument()
@@ -140,7 +141,7 @@ describe('RegistrationCodesPage', () => {
   })
 
   it('only offers copy and deactivate on active codes', async () => {
-    list.mockResolvedValue(codes.slice(0, 3))
+    list.mockResolvedValue(pageOf(codes.slice(0, 3)))
     renderAs('TEACHER')
 
     await screen.findByText('K7MQ4TZP')
@@ -150,7 +151,7 @@ describe('RegistrationCodesPage', () => {
   })
 
   it('hides the teacher column for a teacher and shows it with a filter for an admin', async () => {
-    list.mockResolvedValue(codes)
+    list.mockResolvedValue(pageOf(codes))
     renderAs('ADMIN')
 
     await screen.findByText('K7MQ4TZP')
@@ -163,7 +164,7 @@ describe('RegistrationCodesPage', () => {
   })
 
   it('does not show the teacher column to a teacher', async () => {
-    list.mockResolvedValue(codes.slice(0, 1))
+    list.mockResolvedValue(pageOf(codes.slice(0, 1)))
     renderAs('TEACHER')
 
     await screen.findByText('K7MQ4TZP')
@@ -172,7 +173,7 @@ describe('RegistrationCodesPage', () => {
   })
 
   it('copies an active code', async () => {
-    list.mockResolvedValue(codes.slice(0, 1))
+    list.mockResolvedValue(pageOf(codes.slice(0, 1)))
     const writeText = vi.fn(() => Promise.resolve())
     vi.stubGlobal('navigator', { ...navigator, clipboard: { writeText } })
     renderAs('TEACHER')
@@ -185,7 +186,7 @@ describe('RegistrationCodesPage', () => {
   })
 
   it('deactivates a code after confirming', async () => {
-    list.mockResolvedValue(codes.slice(0, 1))
+    list.mockResolvedValue(pageOf(codes.slice(0, 1)))
     deactivate.mockResolvedValue(code({ id: 1, active: false }))
     renderAs('TEACHER')
 
@@ -197,7 +198,7 @@ describe('RegistrationCodesPage', () => {
   })
 
   it('does nothing if the deactivation is not confirmed', async () => {
-    list.mockResolvedValue(codes.slice(0, 1))
+    list.mockResolvedValue(pageOf(codes.slice(0, 1)))
     renderAs('TEACHER')
 
     await userEvent.click(await screen.findByRole('button', { name: 'Desactivar el código K7MQ4TZP' }))
@@ -207,7 +208,7 @@ describe('RegistrationCodesPage', () => {
   })
 
   it('shows the API message when the deactivation fails', async () => {
-    list.mockResolvedValue(codes.slice(0, 1))
+    list.mockResolvedValue(pageOf(codes.slice(0, 1)))
     const data: ApiError = {
       timestamp: '',
       status: 403,
@@ -227,7 +228,7 @@ describe('RegistrationCodesPage', () => {
 
   it('offers to retry when the list cannot be loaded', async () => {
     list.mockRejectedValueOnce(new Error('Network Error'))
-    list.mockResolvedValueOnce([])
+    list.mockResolvedValueOnce(pageOf([]))
     renderAs('TEACHER')
 
     expect(await screen.findByText('No fue posible comunicarse con el servidor')).toBeInTheDocument()
@@ -237,7 +238,7 @@ describe('RegistrationCodesPage', () => {
   })
 
   it('lets a teacher generate a code for a program of their faculty', async () => {
-    list.mockResolvedValue(codes.slice(1, 2))
+    list.mockResolvedValue(pageOf(codes.slice(1, 2)))
     create.mockResolvedValue(
       code({ id: 9, code: 'N3WC0DEX', programName: 'Ingeniería Electrónica', registeredCount: 0 }),
     )
@@ -260,7 +261,7 @@ describe('RegistrationCodesPage', () => {
   })
 
   it('asks an admin for the teacher and only offers the active teachers of the faculty', async () => {
-    list.mockResolvedValue([])
+    list.mockResolvedValue(pageOf([]))
     create.mockResolvedValue(code({ id: 9, code: 'N3WC0DEX', teacherId: 20, teacherName: 'Rafael Ospino' }))
     renderAs('ADMIN')
 
@@ -285,7 +286,7 @@ describe('RegistrationCodesPage', () => {
   })
 
   it('checks the fields before generating a code', async () => {
-    list.mockResolvedValue([])
+    list.mockResolvedValue(pageOf([]))
     programs.mockResolvedValue([program(1, 'Ingeniería de Sistemas')])
     renderAs('ADMIN')
 
@@ -302,7 +303,7 @@ describe('RegistrationCodesPage', () => {
   })
 
   it('shows the API message when the code cannot be generated', async () => {
-    list.mockResolvedValue([])
+    list.mockResolvedValue(pageOf([]))
     create.mockRejectedValue(apiError(422, 'El programa no pertenece a la facultad del docente.'))
     renderAs('TEACHER')
 

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { FileUp, UserPlus } from 'lucide-react'
 import { Link } from 'react-router'
 
@@ -17,13 +17,19 @@ import { accountService } from '@/services/api/accountService'
 import { catalogService } from '@/services/api/catalogService'
 import { getErrorMessage, getFieldErrors } from '@/services/api/httpClient'
 import { momentService } from '@/services/api/momentService'
+import { PAGE_SIZE } from '@/services/api/pagination'
 import { studentService } from '@/services/api/studentService'
 import type { NewStudentRequest, Student } from '@/types/account'
+import type { Page } from '@/types/api'
 import type { DocumentType, UserSummary } from '@/types/auth'
 import type { Program } from '@/types/catalog'
+import { PaginationBar } from '@/components/ui/pagination-bar'
 import { ResponsiveTable } from '@/components/ui/responsive-table'
 
 import { StudentImportPanel } from './StudentImportPanel'
+
+/** Pausa al teclear en el buscador antes de pedir la búsqueda al servidor. */
+const SEARCH_DELAY_MS = 300
 
 /**
  * "Mis estudiantes" del docente (wireframe DO-08): los estudiantes de cada programa de
@@ -66,12 +72,31 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
   // Momento del filtro "Sin grupo"; `null` muestra a todos los estudiantes del programa.
   const [withoutGroupIn, setWithoutGroupIn] = useState<number | null>(null)
   const moments = useLoad(() => momentService.list(), [])
-  const students = useLoad(
-    () => studentService.list(programId, withoutGroupIn ?? undefined),
-    [programId, withoutGroupIn],
-  )
   const [confirm, confirmDialog] = useConfirm()
+  // `search` es lo que se escribe; `query` es lo que se envía al servidor (con una pausa al teclear).
   const [search, setSearch] = useState('')
+  const [query, setQuery] = useState('')
+  const [page, setPage] = useState(0)
+  const queryRef = useRef('')
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const next = search.trim()
+      if (next === queryRef.current) return
+      queryRef.current = next
+      setQuery(next)
+      setPage(0)
+    }, SEARCH_DELAY_MS)
+    return () => clearTimeout(timer)
+  }, [search])
+  // Con el filtro "Sin grupo" la lista viene completa (sin paginar) y se busca en el cliente;
+  // sin él, el servidor pagina y busca.
+  const students = useLoad<Page<Student>>(async () => {
+    if (withoutGroupIn !== null) {
+      const items = await studentService.list(programId, withoutGroupIn)
+      return { items, total: items.length }
+    }
+    return studentService.listPage(programId, { q: query || undefined, page, size: PAGE_SIZE })
+  }, [programId, withoutGroupIn, withoutGroupIn === null ? query : '', withoutGroupIn === null ? page : 0])
   const [creating, setCreating] = useState(false)
   const [importing, setImporting] = useState(false)
   const [editing, setEditing] = useState<Student | null>(null)
@@ -86,16 +111,21 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
   const programMoments =
     moments.state.kind === 'success' ? moments.state.data.filter((moment) => moment.programId === programId) : []
   const filterMoment = programMoments.find((moment) => moment.id === withoutGroupIn)
-  const list = students.state.kind === 'success' ? sortByLastNames(students.state.data) : []
+  const list = students.state.kind === 'success' ? sortByLastNames(students.state.data.items) : []
+  const total = students.state.kind === 'success' ? students.state.data.total : 0
   const term = search.trim().toLowerCase()
-  const visible = term
-    ? list.filter((student) =>
-        `${student.fullName} ${student.studentCode} ${student.email}`.toLowerCase().includes(term),
-      )
-    : list
+  const visible =
+    withoutGroupIn !== null && term
+      ? list.filter((student) =>
+          `${student.fullName} ${student.studentCode} ${student.email}`.toLowerCase().includes(term),
+        )
+      : list
 
   const replace = (updated: Student) =>
-    students.setData((current) => current.map((student) => (student.id === updated.id ? updated : student)))
+    students.setData((current) => ({
+      ...current,
+      items: current.items.map((student) => (student.id === updated.id ? updated : student)),
+    }))
 
   const manageableVisible = visible.filter((student) => student.manageable)
   const selectedVisible = manageableVisible.filter((student) => selected.has(student.id))
@@ -104,6 +134,7 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
   const changeProgram = (id: number) => {
     setProgramId(id)
     setWithoutGroupIn(null)
+    setPage(0)
     setSelected(new Set())
   }
 
@@ -265,7 +296,10 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
             setNotice(`Se creó a ${student.fullName} en ${target}. Recibirá un correo para crear su contraseña.`)
             // Con el filtro "Sin grupo" no se sabe si el nuevo cumple la regla: se vuelve a pedir la lista.
             if (createdIn === programId && withoutGroupIn === null) {
-              students.setData((current) => [...current, student])
+              students.setData((current) => ({
+                items: current.items.length < PAGE_SIZE ? [...current.items, student] : current.items,
+                total: current.total + 1,
+              }))
             } else if (createdIn === programId) {
               students.reload()
             }
@@ -298,7 +332,10 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
               <SelectField
                 label="Mostrar"
                 value={withoutGroupIn === null ? '' : String(withoutGroupIn)}
-                onChange={(event) => setWithoutGroupIn(event.target.value ? Number(event.target.value) : null)}
+                onChange={(event) => {
+                  setWithoutGroupIn(event.target.value ? Number(event.target.value) : null)
+                  setPage(0)
+                }}
               >
                 <option value="">Todos los estudiantes</option>
                 {programMoments.map((moment) => (
@@ -347,7 +384,7 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
           <LoadStatus state={students.state} onRetry={students.reload} label="Cargando los estudiantes…" />
           {students.state.kind === 'success' && visible.length === 0 && (
             <p className="text-muted-foreground text-sm">
-              {list.length > 0
+              {list.length > 0 || query
                 ? 'Ningún estudiante coincide.'
                 : filterMoment
                   ? `No hay estudiantes sin grupo en ${filterMoment.name}.`
@@ -440,6 +477,9 @@ function ProgramStudents({ programs }: { programs: Program[] }) {
                 ))}
               </tbody>
             </ResponsiveTable>
+          )}
+          {withoutGroupIn === null && students.state.kind === 'success' && (
+            <PaginationBar page={page} size={PAGE_SIZE} total={total} onPageChange={setPage} />
           )}
         </CardContent>
       </Card>

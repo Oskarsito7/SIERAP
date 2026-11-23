@@ -20,6 +20,7 @@ import { StudentsPage } from './StudentsPage'
 vi.mock('@/services/api/studentService', () => ({
   studentService: {
     list: vi.fn(),
+    listPage: vi.fn(),
     create: vi.fn(),
     setActive: vi.fn(),
     setSemester: vi.fn(),
@@ -130,7 +131,7 @@ describe('StudentsPage: edit, bulk semester and CSV upload', () => {
     vi.mocked(saveFile).mockReset()
     vi.mocked(catalogService.programs).mockResolvedValue([systems, electronics])
     vi.mocked(momentService.list).mockResolvedValue([])
-    service.list.mockResolvedValue([camila, andres, luis])
+    service.listPage.mockResolvedValue({ items: [camila, andres, luis], total: 3 })
   })
   afterEach(() => vi.restoreAllMocks())
 
@@ -161,7 +162,7 @@ describe('StudentsPage: edit, bulk semester and CSV upload', () => {
       })
       expect(await screen.findByText(/Se actualizaron los datos de Camila Torres\./)).toBeInTheDocument()
       expect(screen.getByText(/deberá iniciar sesión con el correo nuevo/)).toBeInTheDocument()
-      expect(service.list).toHaveBeenCalledTimes(2)
+      expect(service.listPage).toHaveBeenCalledTimes(2)
       expect(screen.queryByRole('form', { name: 'Editar a Camila Torres' })).not.toBeInTheDocument()
     })
 
@@ -209,7 +210,7 @@ describe('StudentsPage: edit, bulk semester and CSV upload', () => {
 
       expect(service.setSemester).toHaveBeenCalledWith({ studentIds: [2, 1], currentSemester: 4 })
       expect(await screen.findByText('Se actualizó el semestre de 2 estudiantes.')).toBeInTheDocument()
-      expect(service.list).toHaveBeenCalledTimes(2)
+      expect(service.listPage).toHaveBeenCalledTimes(2)
       expect(screen.getByLabelText('Seleccionar a Camila Torres')).not.toBeChecked()
     })
 
@@ -278,7 +279,7 @@ describe('StudentsPage: edit, bulk semester and CSV upload', () => {
       expect(await screen.findByText(
         'Se crearon 2 estudiantes. Cada uno recibirá un correo para crear su contraseña.',
       )).toBeInTheDocument()
-      expect(service.list).toHaveBeenCalledTimes(2)
+      expect(service.listPage).toHaveBeenCalledTimes(2)
     })
 
     it('uses the program chosen in the page and lets the user pick another one', async () => {
