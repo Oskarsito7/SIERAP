@@ -416,7 +416,7 @@ can launch before the group formation window ends: launching closes group format
 
 | Method and route | Who | Body | Answer |
 |---|---|---|---|
-| `PATCH /api/moments/{id}/extension` | super_admin, admin of the moment's faculty | `ExtendMomentRequest` | `200 MomentDetail` with the new dates. `400` if `reason` is missing or outside 10 to 500 characters. `403` for an admin of another faculty. `404` if the moment does not exist. `422` (message in Spanish) if the moment is not `LAUNCHED`, no date is sent, a date is not later than the current one (dates only grow), the grading end passes the period's UPC deadline, or the new submission end would leave the grading window inverted ("amplíe también el fin de calificación") |
+| `PATCH /api/moments/{id}/extension` | super_admin, admin of the moment's faculty | `ExtendMomentRequest` | `200 MomentDetail` with the new dates. `400` if `reason` is missing or outside 10 to 500 characters. `403` for an admin of another faculty. `404` if the moment does not exist. `422` (message in Spanish) if the moment is not `LAUNCHED`, no date is sent, a date is not later than the current one (dates only grow), the grading end passes the period's UPC deadline, or the new submission end would leave the grading window inverted ("amplíe también el fin de calificación"). If grading has already started, the end of submissions cannot reach the grading start (`422`), since moving it would close the grading in progress. |
 
 If the new submission end is on or after the grading start, the grading start moves to the
 day after it (the windows never overlap). Every extension is written to the audit log

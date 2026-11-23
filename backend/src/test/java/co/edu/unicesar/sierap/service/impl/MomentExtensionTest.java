@@ -6,6 +6,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -132,6 +133,21 @@ class MomentExtensionTest {
         verify(auditService).record(eq(AuditAction.MOMENT_EXTENDED), eq("Moment"), eq(200L), eq(10L),
                 eq("Prorrogó el Momento 1 de Sistemas (2026-2): fin de entregas 2026-10-01 a 2026-10-05;"
                         + " inicio de calificación 2026-10-02 a 2026-10-06. Motivo: " + REASON));
+    }
+
+    @Test
+    void doesNotMoveTheStartOfAGradingWindowThatAlreadyStarted() {
+        // Hoy 03/10: la calificación empezó el 02/10; llevar las entregas al 05/10 la cerraría.
+        Clock gradingStarted = Clock.fixed(Instant.parse("2026-10-03T14:30:00Z"), ZoneId.of("America/Bogota"));
+        MomentServiceImpl later = new MomentServiceImpl(momentRepository, academicPeriodRepository, programRepository,
+                evaluatorTypeRepository, projectGroupRepository, accessScope, auditService, gradingStarted);
+
+        assertThatThrownBy(() -> later.extend(actor, 200L,
+                new ExtendMomentRequest(LocalDate.of(2026, 10, 5), null, REASON)))
+                .isInstanceOf(BusinessRuleException.class)
+                .hasMessageContaining("La calificación ya empezó");
+        assertThat(moment.getGradingStart()).isEqualTo(LocalDate.of(2026, 10, 2));
+        verify(auditService, never()).record(any(), any(), any(), any(), any());
     }
 
     @Test

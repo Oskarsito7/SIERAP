@@ -432,7 +432,7 @@ public class MomentServiceImpl implements MomentService {
         LocalDate previousGradingStart = moment.getGradingStart();
         LocalDate previousGradingEnd = moment.getGradingEnd();
 
-        moment.extend(request.submissionEnd(), request.gradingEnd());
+        moment.extend(request.submissionEnd(), request.gradingEnd(), LocalDate.now(clock));
 
         List<String> changes = new ArrayList<>();
         if (!Objects.equals(previousSubmissionEnd, moment.getSubmissionEnd())) {

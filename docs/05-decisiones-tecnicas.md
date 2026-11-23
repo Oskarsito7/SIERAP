@@ -863,6 +863,8 @@ lose records or record operations that rolled back); a PostgreSQL rule instead o
 (a rule silently ignores the change, the trigger fails loudly); letting the admin edit the
 dates of a launched moment freely (it breaks the guarantee of ADR-012).
 
+**Open grading window:** if grading has already started, its start is never moved; the end of submissions cannot reach it (`422`), because moving the start would close the grading in progress.
+
 **Consequences:** this is a **bounded exception to ADR-012**: only the two end dates of a
 launched moment can change, only to widen them, and always leaving a trace; the rubric,
 weights and groups stay locked. Services that audit now depend on `AuditService`. Reading

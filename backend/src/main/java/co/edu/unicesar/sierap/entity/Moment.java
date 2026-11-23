@@ -239,15 +239,18 @@ public class Moment {
      * calificación no puede pasar del límite de evaluación de la UPC del periodo. Si
      * al ampliar las entregas estas terminan el mismo día o después de que empieza la
      * calificación, esta empieza el día siguiente al nuevo fin de entregas; si con eso
-     * la ventana de calificación quedara invertida, se exige ampliar también su fin.</p>
+     * la ventana de calificación quedara invertida, se exige ampliar también su fin. Si
+     * la calificación ya empezó, su inicio no se mueve: correrlo la cerraría a mitad de
+     * camino, así que en ese caso las entregas no pueden llegar hasta ese día.</p>
      *
      * @param newSubmissionEnd nuevo último día de entregas, o {@code null} para no cambiarlo
      * @param newGradingEnd    nuevo último día de calificación, o {@code null} para no cambiarlo
+     * @param today            fecha actual, obtenida del {@code Clock} inyectado en el service
      * @throws BusinessRuleException si el momento no está lanzado, no se indica ninguna
      *                               fecha, una fecha no amplía la actual o se pasa del
      *                               límite de la UPC
      */
-    public void extend(LocalDate newSubmissionEnd, LocalDate newGradingEnd) {
+    public void extend(LocalDate newSubmissionEnd, LocalDate newGradingEnd, LocalDate today) {
         if (status != MomentStatus.LAUNCHED) {
             throw new BusinessRuleException("Solo se puede prorrogar un momento ya lanzado.");
         }
@@ -271,6 +274,11 @@ public class Moment {
         }
         LocalDate targetGradingStart = gradingStart;
         if (!targetSubmissionEnd.isBefore(targetGradingStart)) {
+            if (!today.isBefore(gradingStart)) {
+                throw new BusinessRuleException("La calificación ya empezó el " + gradingStart
+                        + ": el fin de entregas no puede llegar hasta esa fecha porque cerraría la calificación"
+                        + " en curso.");
+            }
             targetGradingStart = targetSubmissionEnd.plusDays(1);
         }
         if (targetGradingStart.isAfter(targetGradingEnd)) {
