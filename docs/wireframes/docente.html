@@ -6,7 +6,7 @@
 <title>SIERAP · Docente</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="wireframes.css">
 <style>
   .crit { display: flex; flex-direction: column; gap: 8px; padding: 12px 0; border-top: 1px solid var(--w-line); }
@@ -19,7 +19,7 @@
   <header class="wf-header">
     <span class="wf-eyebrow">SIERAP · Wireframes de media fidelidad</span>
     <h1>Docente</h1>
-    <p>Habilita sus grupos en cada momento, fija sus fechas, asigna evaluadores externos, agrega estudiantes sin grupo y califica sus grupos, con ajustes individuales cuando un estudiante se destaca o se queda atrás (RF 7, 8, 9 y 4, 6). Solo ve los grupos que él habilitó.</p>
+    <p>Habilita sus grupos en cada momento, fija sus fechas, asigna evaluadores externos, agrega estudiantes sin grupo (uno a uno o con un CSV) y califica sus grupos, con ajustes individuales cuando un estudiante se destaca o se queda atrás (RF 7, 8, 9 y 4, 6). Solo ve los grupos que él habilitó.</p>
     <nav class="wf-roles" aria-label="Roles">
       <a href="index.html">Inicio</a>
       <a href="acceso.html">Acceso</a>
@@ -40,6 +40,8 @@
       <li><a href="#do-08"><code>DO-08</code>Mis estudiantes</a></li>
       <li><a href="#do-09"><code>DO-09</code>Evaluadores externos</a></li>
       <li><a href="#do-10"><code>DO-10</code>Códigos de registro</a></li>
+      <li><a href="#do-11"><code>DO-11</code>Inicio</a></li>
+      <li><a href="#do-12"><code>DO-12</code>Cargar estudiantes (CSV)</a></li>
     </ul>
   </header>
 
@@ -225,13 +227,15 @@
     <ul class="wf-notes">
       <li>Se califica al grupo una vez: un nivel por criterio. Desde la fecha de evaluación del grupo hasta el cierre de la ventana se guarda como borrador, se envía y se corrige.</li>
       <li>Solo se puede enviar con todos los criterios calificados (si falta alguno, la API responde 422). Los ajustes por estudiante se hacen desde la lista de integrantes (DO-06).</li>
+      <li>El borrador se guarda solo unos segundos después de cada cambio ("Borrador guardado automáticamente a las 10:15"); si se intenta salir con cambios sin guardar, la pantalla avisa. Una evaluación ya enviada se corrige con "Guardar corrección" y queda en la bitácora.</li>
+      <li>Si la presentación es PDF, "Ver presentación" la abre en un diálogo grande sin salir de la calificación; los .docx y .pptx solo se descargan.</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame" data-role="teacher" data-active="groups" data-title="Grupo 1 · SIERAP" data-crumb="Mis grupos / Momento 1" data-path="/grupos/7/calificacion">
         <div class="w-tabs"><span>Resumen</span><span>Entregas</span><span class="is-active">Mi calificación</span><span>Resultados</span></div>
         <div class="w-grid-side" style="grid-template-columns:1fr 300px">
           <div class="w-stack">
-            <div class="w-alert"><b>Se califica la v3 (14/11/2026, a tiempo)</b><span class="w-small">Puedes calificar hasta el 28/11/2026. <span class="w-link">Descargar la v3</span></span></div>
+            <div class="w-alert"><b>Se califica la v3 (14/11/2026, a tiempo)</b><span class="w-small">Puedes calificar hasta el 28/11/2026.</span><div class="w-row"><span class="w-btn outline sm">Descargar la v3</span><span class="w-btn outline sm">Descargar la presentación</span><span class="w-btn outline sm">Ver presentación</span></div></div>
             <div class="w-card">
               <div class="w-card-head"><div><span class="w-h2">RAP1</span><span class="w-muted w-small"> · INTEGRA las ciencias básicas… · máx. 0,60</span></div><span class="w-chip soft">1 de 1</span></div>
               <div class="w-card-body">
@@ -275,13 +279,14 @@
           </div>
           <div class="w-stack">
             <div class="w-card"><div class="w-card-body">
-              <div class="w-between"><span class="w-chip">Borrador</span><span class="w-muted w-small">Guardado 24/11 10:15</span></div>
+              <div class="w-between"><span class="w-chip">Borrador</span></div>
               <div class="w-kpi"><b>3,96</b><span>de 5,00 · 7 de 8 criterios calificados</span></div>
               <div class="w-bar"><i style="width:87.5%"></i></div>
               <div class="w-field"><label>Comentario para el grupo</label><div class="w-input area">Buen trabajo en equipo; falta documentar las excepciones.</div><span class="w-help">Los estudiantes lo ven al cierre, sin tu nombre.</span></div>
-              <span class="w-btn outline block">Guardar borrador</span>
+              <span class="w-btn outline block is-disabled">Guardar borrador</span>
               <span class="w-btn block is-disabled">Enviar evaluación</span>
               <span class="w-help">Para enviar, califica los 8 criterios.</span>
+              <span class="w-muted w-small">Borrador guardado automáticamente a las 10:15</span>
             </div></div>
             <div class="w-card">
               <div class="w-card-head"><span class="w-h2">Integrantes</span></div>
@@ -359,6 +364,7 @@
     <ul class="wf-notes">
       <li>Solo cuentan las evaluaciones enviadas. Pesos del momento: docente 60 %, empresario 20 %, egresado 20 %; como el egresado no ha enviado, su peso se reparte (75 % y 25 %).</li>
       <li>Es una vista previa hasta que cierra la calificación; entonces las notas quedan definitivas y el estudiante las ve.</li>
+      <li>Los reportes del docente (menú Reportes) son los de AD-08 a AD-10, limitados a sus grupos; desde ahí descarga el acta del grupo en PDF.</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame" data-role="teacher" data-active="groups" data-title="Grupo 1 · SIERAP" data-crumb="Mis grupos / Momento 1" data-path="/grupos/7/resultados">
@@ -410,25 +416,29 @@
   <section class="wf-screen" id="do-08">
     <div class="wf-caption"><span class="wf-code">DO-08</span><h2>Mis estudiantes</h2><span class="wf-ref">RF 7 · ADR-017 · Etapa 2</span></div>
     <ul class="wf-notes">
-      <li>El docente crea estudiantes de los programas de su facultad o comparte un código (DO-10). La carga masiva espera que se defina el formato del archivo (pendiente en docs/04).</li>
-      <li>El filtro "Sin grupo" ayuda a agregar a un grupo a quienes no se inscribieron (DO-02).</li>
+      <li>El docente crea estudiantes de los programas de su facultad uno a uno, con un CSV (DO-12) o compartiendo un código (DO-10).</li>
+      <li>El filtro "Mostrar" deja ver solo a los que no tienen grupo en un momento, para agregarlos a un grupo (DO-02). La búsqueda es por nombre, código o correo y la lista va paginada en el servidor.</li>
+      <li>Con las casillas se eligen varios estudiantes (hasta 500) y "Fijar semestre" les pone el mismo semestre en una sola operación: todo o nada, y queda en la bitácora.</li>
+      <li>"Editar" cambia sus datos, también el código y el semestre; solo aparecen las acciones de los estudiantes que el docente puede gestionar.</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame" data-role="teacher" data-active="students" data-title="Mis estudiantes" data-crumb="Facultad de Ingenierías y Tecnologías" data-path="/estudiantes">
         <div class="w-between">
-          <div class="w-row"><div class="w-input select" style="width:240px">Ingeniería de Sistemas</div><div class="w-input select" style="width:220px">Sin grupo en Momento 1</div><div class="w-input is-empty" style="width:220px">Buscar por nombre o código</div></div>
-          <div class="w-row"><span class="w-btn outline is-disabled">Carga masiva</span><span class="w-btn">Nuevo estudiante</span></div>
+          <div class="w-row"><div class="w-input select" style="width:220px">Ingeniería de Sistemas</div><div class="w-input select" style="width:220px">Sin grupo en Momento 1</div><div class="w-input is-empty" style="width:260px">Buscar por nombre, código o correo</div></div>
+          <div class="w-row"><span class="w-btn outline">Cargar estudiantes (CSV)</span><span class="w-btn">Nuevo estudiante</span></div>
         </div>
+        <div class="w-card is-soft"><div class="w-card-body" style="padding:10px 16px"><div class="w-row"><b>2 seleccionados</b><span class="w-muted">Semestre para los seleccionados</span><div class="w-input" style="width:70px;height:30px">3</div><span class="w-btn sm">Fijar semestre</span></div></div></div>
         <div class="w-card">
           <table class="w-table">
-            <thead><tr><th>Nombre</th><th>Código</th><th>Semestre</th><th>Correo</th><th>Cómo llegó</th><th>Estado</th><th></th></tr></thead>
+            <thead><tr><th style="width:36px"><span class="w-check"></span></th><th>Nombre</th><th>Código</th><th>Semestre</th><th>Correo</th><th>Cómo llegó</th><th>Estado</th><th>Acciones</th></tr></thead>
             <tbody>
-              <tr><td>Camila Torres</td><td class="w-num">20261053</td><td class="w-num">2</td><td>camila.torres@unicesar.edu.co</td><td>Código K7MQ4TZP</td><td><span class="w-chip solid">Activa</span></td><td class="actions"><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
-              <tr><td>Andrés Molina</td><td class="w-num">20252210</td><td class="w-num">3</td><td>andres.molina@unicesar.edu.co</td><td>Creado por mí</td><td><span class="w-chip solid">Activo</span></td><td class="actions"><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
-              <tr><td>Valentina Rivas</td><td class="w-num">20261068</td><td class="w-num">1</td><td>valentina.rivas@unicesar.edu.co</td><td>Código K7MQ4TZP</td><td><span class="w-chip solid">Activa</span></td><td class="actions"><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
+              <tr><td><span class="w-check on"></span></td><td>Camila Torres</td><td class="w-num">20261053</td><td class="w-num">2</td><td>camila.torres@unicesar.edu.co</td><td>Código K7MQ4TZP</td><td><span class="w-chip solid">Activo</span></td><td class="actions"><span class="w-btn ghost sm">Editar</span><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
+              <tr><td><span class="w-check on"></span></td><td>Andrés Molina</td><td class="w-num">20252210</td><td class="w-num">2</td><td>andres.molina@unicesar.edu.co</td><td>Creado por mí</td><td><span class="w-chip solid">Activo</span></td><td class="actions"><span class="w-btn ghost sm">Editar</span><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
+              <tr><td><span class="w-check"></span></td><td>Valentina Rivas</td><td class="w-num">20261068</td><td class="w-num">1</td><td>valentina.rivas@unicesar.edu.co</td><td>Creado por Laura Mendoza</td><td><span class="w-chip solid">Activo</span></td><td class="actions"><span class="w-btn ghost sm">Editar</span><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
             </tbody>
           </table>
         </div>
+        <div class="w-between"><span class="w-muted w-small">Mostrando 1–3 de 3</span><div class="w-row"><span class="w-btn outline sm is-disabled">Anterior</span><span class="w-btn outline sm is-disabled">Siguiente</span></div></div>
       </div>
     </div>
   </section>
@@ -439,6 +449,7 @@
     <ul class="wf-notes">
       <li>Lista los evaluadores que creó el docente. El tipo sale del catálogo (SA-04); el correo puede ser personal. Año y programa de grado aplican a los egresados.</li>
       <li>Antes de crear uno, conviene buscarlo (DO-03): si otro docente ya lo creó, se reutiliza.</li>
+      <li>"Editar" cambia sus datos de cuenta. La lista va paginada en el servidor.</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame" data-role="teacher" data-active="evaluators" data-title="Evaluadores externos" data-path="/evaluadores">
@@ -450,8 +461,8 @@
           <table class="w-table">
             <thead><tr><th>Nombre</th><th>Tipo</th><th>Organización y cargo</th><th>Correo</th><th class="r">Grupos</th><th></th></tr></thead>
             <tbody>
-              <tr><td>Sofía Vega</td><td>Empresario</td><td>Tecnosoft S.A.S. · Gerente de proyectos</td><td>sofia.vega@tecnosoft.co</td><td class="r w-num">2</td><td class="actions"><span class="w-btn ghost sm">Reenviar enlace</span></td></tr>
-              <tr><td>Carlos Pérez</td><td>Egresado</td><td>Ing. de Sistemas, 2019</td><td>carlos.perez@gmail.com</td><td class="r w-num">1</td><td class="actions"><span class="w-btn ghost sm">Reenviar enlace</span></td></tr>
+              <tr><td>Sofía Vega</td><td>Empresario</td><td>Tecnosoft S.A.S. · Gerente de proyectos</td><td>sofia.vega@tecnosoft.co</td><td class="r w-num">2</td><td class="actions"><span class="w-btn ghost sm">Editar</span><span class="w-btn ghost sm">Reenviar enlace</span></td></tr>
+              <tr><td>Carlos Pérez</td><td>Egresado</td><td>Ing. de Sistemas, 2019</td><td>carlos.perez@gmail.com</td><td class="r w-num">1</td><td class="actions"><span class="w-btn ghost sm">Editar</span><span class="w-btn ghost sm">Reenviar enlace</span></td></tr>
             </tbody>
           </table>
         </div>
@@ -485,7 +496,7 @@
     <div class="wf-caption"><span class="wf-code">DO-10</span><h2>Códigos de registro</h2><span class="wf-ref">RF 7 · ADR-017 · Etapa 2</span></div>
     <ul class="wf-notes">
       <li>Un código queda ligado al docente y a un programa de su facultad, sirve para muchos registros hasta que vence y se puede desactivar antes (no se reactiva).</li>
-      <li>El estudiante lo usa en AU-04 con su correo institucional.</li>
+      <li>El estudiante lo usa en AU-04 con su correo institucional. La lista de códigos va paginada en el servidor.</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame" data-role="teacher" data-active="codes" data-title="Códigos de registro" data-path="/codigos">
@@ -517,6 +528,73 @@
               <div class="w-field"><label>Vence el</label><div class="w-input">30/10/2026</div></div>
               <span class="w-btn block">Generar</span>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DO-11 -->
+  <section class="wf-screen" id="do-11">
+    <div class="wf-caption"><span class="wf-code">DO-11</span><h2>Inicio del docente</h2><span class="wf-ref">RF 6, 7 · Etapa 8</span></div>
+    <ul class="wf-notes">
+      <li>Lo que tiene pendiente con sus grupos: los que tienen la calificación abierta y su evaluación sin enviar, y los que aún no tienen fecha de entrega o de sustentación.</li>
+      <li>Cada fila lleva al grupo (DO-02 o DO-05). Debajo, los momentos del periodo y los accesos rápidos de su menú.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="teacher" data-active="home" data-title="Inicio" data-path="/">
+        <div class="w-stack" style="gap:2px"><span class="w-muted w-small">Docente</span><span class="w-h1">Hola, Marta</span><span class="w-sub">Esto es lo que tienes pendiente con tus grupos.</span></div>
+        <div class="w-grid-3">
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Mis grupos este periodo</span><b>3</b></div></div></div>
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Sin fechas completas</span><b>1</b><span>Entrega o sustentación</span></div></div></div>
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Mis evaluaciones enviadas</span><b>1</b><span>2 por calificar ahora</span></div></div></div>
+        </div>
+        <div class="w-grid-2" style="align-items:start">
+          <div class="w-card">
+            <div class="w-card-head"><div><span class="w-h2">Por calificar</span><div class="w-muted w-small">Grupos con la calificación abierta y tu evaluación sin enviar.</div></div></div>
+            <div class="w-card-body">
+              <div class="w-between w-link-row"><span><b>Grupo 1 · SIERAP</b><div class="w-muted w-small">Sustentación el 24/11/2026</div></span></div>
+              <div class="w-between w-link-row"><span><b>Grupo 2 · Biblioteca digital</b><div class="w-muted w-small">Sustentación el 25/11/2026</div></span></div>
+            </div>
+          </div>
+          <div class="w-card">
+            <div class="w-card-head"><div><span class="w-h2">Requieren fechas</span><div class="w-muted w-small">Fíjalas para que los estudiantes sepan cuándo entregar y sustentar.</div></div></div>
+            <div class="w-card-body">
+              <div class="w-between w-link-row"><span><b>Grupo 3 · Momento 1</b><div class="w-muted w-small">Sin sustentación</div></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- DO-12 -->
+  <section class="wf-screen" id="do-12">
+    <div class="wf-caption"><span class="wf-code">DO-12</span><h2>Cargar estudiantes (CSV) · vista previa</h2><span class="wf-ref">RF 7 · ADR-017 · Etapa 8</span></div>
+    <ul class="wf-notes">
+      <li>Se abre desde "Cargar estudiantes (CSV)" en DO-08 (también lo usa el admin). "Descargar plantilla" baja un CSV con las columnas: nombres, apellidos, tipo_documento, numero_documento, correo, codigo_estudiantil, semestre.</li>
+      <li>El archivo (UTF-8, separado por "," o ";", hasta 1 MB y 500 filas) primero se revisa sin guardar nada: la vista previa lista cada fila con todos sus errores. Al confirmar, solo se crean las filas válidas y cada estudiante recibe el correo para crear su contraseña.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="teacher" data-active="students" data-title="Mis estudiantes" data-crumb="Facultad de Ingenierías y Tecnologías" data-path="/estudiantes">
+        <div class="w-card">
+          <div class="w-card-head"><span class="w-h2">Cargar estudiantes (CSV)</span><span class="w-btn outline sm">Descargar plantilla</span></div>
+          <div class="w-card-body">
+            <div class="w-grid-2">
+              <div class="w-field"><label>Programa de los estudiantes</label><div class="w-input select">Ingeniería de Sistemas</div></div>
+              <div class="w-field"><label>Archivo CSV</label><div class="w-drop"><b>estudiantes-2026-2.csv</b><span>Un archivo .csv de hasta 1 MB, con UTF-8.</span></div></div>
+            </div>
+            <div class="w-between"><b>3 válidas, 1 con errores</b><span class="w-muted w-small">Las filas con errores no se crean.</span></div>
+            <table class="w-table">
+              <thead><tr><th>Fila</th><th>Nombre</th><th>Documento</th><th>Correo</th><th>Código</th><th>Semestre</th><th>Resultado</th></tr></thead>
+              <tbody>
+                <tr><td class="w-num">2</td><td>Ana María Pérez Ruiz</td><td class="w-num">CC 1065000123</td><td>ana.perez@unicesar.edu.co</td><td class="w-num">20261001</td><td class="w-num">3</td><td><span class="w-chip soft">Válida</span></td></tr>
+                <tr><td class="w-num">3</td><td>Mateo Ríos Gil</td><td class="w-num">TI 1065000456</td><td>mateo.rios@unicesar.edu.co</td><td class="w-num">20261002</td><td class="w-num">1</td><td><span class="w-chip soft">Válida</span></td></tr>
+                <tr><td class="w-num">4</td><td>Laura Vence Díaz</td><td class="w-num">CC 1065000789</td><td>laura.vence@unicesar.edu.co</td><td class="w-num">20261003</td><td class="w-num">2</td><td><span class="w-chip soft">Válida</span></td></tr>
+                <tr><td class="w-num">5</td><td>Diego Arias</td><td class="w-num">CC 1065000123</td><td>diego.arias@gmail</td><td class="w-num">20261004</td><td class="w-num">0</td><td><span class="w-error">El documento ya existe · correo inválido · el semestre debe ser 1 o mayor</span></td></tr>
+              </tbody>
+            </table>
+            <div class="w-row"><span class="w-btn">Crear 3 estudiantes</span><span class="w-btn outline">Cancelar</span></div>
           </div>
         </div>
       </div>

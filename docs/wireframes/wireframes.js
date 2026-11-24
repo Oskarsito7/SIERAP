@@ -2,8 +2,10 @@
  * SIERAP wireframes: builds the browser bar and the app shell of every frame.
  *
  * A frame with data-role gets the sidebar with that role's menu (approved by the lead
- * on 2026-09-27, docs/06), the top bar with the user and its content in the main area.
- * A frame without data-role (login, email links) only gets the browser bar.
+ * on 2026-09-27, docs/06; Reports and Audit log were added later, as in roleMenus.ts),
+ * the top bar with the user and its content in the main area.
+ * A frame without data-role (login, email links) gets the public header and footer.
+ * Colors, logos and fonts follow the UPC identity of the frontend (ADR-019).
  *
  *   <div class="frame" data-role="teacher" data-active="groups"
  *        data-title="Mis grupos" data-crumb="Momento 1 · 2026-2" data-path="/grupos">
@@ -19,13 +21,16 @@
       ["periods", "Periodos académicos"],
       ["parameters", "Parámetros globales"],
       ["types", "Tipos de evaluador"],
-      ["admins", "Administradores"]
+      ["admins", "Administradores"],
+      ["reports", "Reportes"],
+      ["audit", "Bitácora"]
     ],
     admin: [
       ["moments", "Momentos"],
       ["teachers", "Docentes"],
       ["codes", "Códigos de registro"],
-      ["reports", "Reportes"]
+      ["reports", "Reportes"],
+      ["audit", "Bitácora"]
     ],
     teacher: [
       ["groups", "Mis grupos"],
@@ -71,6 +76,10 @@
   function sidebar(role, active) {
     var side = el("aside", "w-side");
     var brand = el("div", "w-brand");
+    var logo = el("img");
+    logo.src = "img/upc-logo-horizontal-blanco.svg";
+    logo.alt = "Universidad Popular del Cesar";
+    brand.appendChild(logo);
     brand.appendChild(el("b", null, "SIERAP"));
     brand.appendChild(el("span", null, "Universidad Popular del Cesar"));
     side.appendChild(brand);
@@ -119,6 +128,21 @@
       main.appendChild(body);
       shell.appendChild(main);
       frame.appendChild(shell);
+    } else {
+      var head = el("header", "w-public-head");
+      var mark = el("img");
+      mark.src = "img/upc-logo-horizontal.svg";
+      mark.alt = "Universidad Popular del Cesar";
+      head.appendChild(mark);
+      var name = el("div");
+      name.appendChild(el("b", null, "SIERAP"));
+      name.appendChild(el("span", null, "Sistema Integral Evaluador de Resultados de Aprendizajes por Programa"));
+      head.appendChild(name);
+      frame.insertBefore(head, frame.firstChild);
+      var foot = el("footer", "w-public-foot");
+      foot.appendChild(el("b", null, "Universidad Popular del Cesar · Educación y Futuro"));
+      foot.appendChild(el("span", null, "Programa de Ingeniería de Sistemas · Valledupar, Cesar"));
+      frame.appendChild(foot);
     }
     frame.insertBefore(browserBar(data.path), frame.firstChild);
   });

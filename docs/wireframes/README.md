@@ -1,10 +1,16 @@
 # Wireframes
 
-Medium-fidelity wireframes of every SIERAP screen, grouped by role: 37 screens in
-grayscale, with components that imitate shadcn/ui (ADR-006) so the frontend can build them
-almost as they are. D1 proposed them and the lead approved the format on 2026-09-28
-(`docs/04`, "GUI mockups"). They follow the decisions of `docs/04` and the API contract of
-`docs/07`.
+Medium-fidelity wireframes of every SIERAP screen, grouped by role: 48 screens in
+the UPC institutional identity of the frontend (palette, logosymbols, Open Sans and
+Montserrat, ADR-019 amendment of 2026-11-24), with components that imitate shadcn/ui
+(ADR-006) so the frontend can build them almost as they are. The colors live in the frame
+tokens of `wireframes.css` and the logos in `img/`. D1 proposed them and the lead approved
+the format on 2026-09-28 (`docs/04`, "GUI mockups"). They follow the decisions of
+`docs/04` and the API contract of `docs/07`. They were updated on 2026-11-24 with everything built after that approval
+(home page per role, audit log, exceptional extension, data consent, account editing,
+bulk semester and CSV upload, pagination, reports with Excel and PDF export, autosave and
+the presentation viewer, group filters, upload progress and version limit, and the
+per-criterion detail in My grades), so they match the frontend.
 
 Everything a user sees (screens, captions and notes) is in **Spanish**, because the
 wireframes also go into section 5 ("Diseño de GUI") of the delivery document
@@ -15,12 +21,13 @@ Sistemas (5 RAP, 8 criteria, maximum 5.00); names, emails and figures are made u
 |---|---|
 | `index.html` | Start page: the screens in the flow of a moment and the list by role |
 | `acceso.html` | `AU-01`–`AU-07`: login, password links, registration with a code, temporary password, my account, "coming soon" |
-| `super-admin.html` | `SA-01`–`SA-05`: faculties and programs, periods, global parameters, evaluator types, admins |
-| `admin.html` | `AD-01`–`AD-08`: moments, moment configuration (data and windows, RAP, weights), launch, teachers, registration codes, reports (preliminary) |
-| `docente.html` | `DO-01`–`DO-10`: groups, group detail, assigning evaluators, submissions, grading, individual adjustment, results, students, evaluators, registration codes |
-| `estudiante.html` | `ES-01`–`ES-05`: groups of the moment, switching groups, my group and submissions, my grades |
-| `evaluador-externo.html` | `EV-01`–`EV-02`: assigned groups, correcting a submitted evaluation |
+| `super-admin.html` | `SA-01`–`SA-07`: faculties and programs, periods, global parameters, evaluator types, admins, home, audit log |
+| `admin.html` | `AD-01`–`AD-13`: moments, moment configuration (data and windows, RAP, weights), groups and launch, teachers, registration codes, reports (per moment, group and individual, comparative), exceptional extension, home, audit log |
+| `docente.html` | `DO-01`–`DO-12`: groups, group detail, assigning evaluators, submissions, grading, individual adjustment, results, students, evaluators, registration codes, home, CSV upload of students |
+| `estudiante.html` | `ES-01`–`ES-06`: groups of the moment, switching groups, my group and submissions, my grades, home |
+| `evaluador-externo.html` | `EV-01`–`EV-03`: assigned groups, correcting a submitted evaluation, home |
 | `wireframes.css`, `wireframes.js` | Shared styles and the app shell (browser bar, sidebar with the approved menu of each role, top bar) |
+| `img/` | The white and color UPC logosymbols, copied from `frontend/src/assets/brand/` |
 | `export-png.cjs` | Exports every screen to `png/<code>.png` |
 | `png/` | The exported images, for the delivery document |
 

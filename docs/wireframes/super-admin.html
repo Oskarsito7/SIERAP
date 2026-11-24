@@ -6,7 +6,7 @@
 <title>SIERAP · Super admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="wireframes.css">
 </head>
 <body>
@@ -30,6 +30,8 @@
       <li><a href="#sa-03"><code>SA-03</code>Parámetros globales</a></li>
       <li><a href="#sa-04"><code>SA-04</code>Tipos de evaluador</a></li>
       <li><a href="#sa-05"><code>SA-05</code>Administradores</a></li>
+      <li><a href="#sa-06"><code>SA-06</code>Inicio</a></li>
+      <li><a href="#sa-07"><code>SA-07</code>Bitácora</a></li>
     </ul>
   </header>
 
@@ -118,21 +120,23 @@
 
   <!-- SA-03 -->
   <section class="wf-screen" id="sa-03">
-    <div class="wf-caption"><span class="wf-code">SA-03</span><h2>Parámetros globales</h2><span class="wf-ref">RF 11 · Etapa 3</span></div>
+    <div class="wf-caption"><span class="wf-code">SA-03</span><h2>Parámetros globales</h2><span class="wf-ref">RF 11, 12 · ADR-010, ADR-015 · Etapa 3</span></div>
     <ul class="wf-notes">
-      <li>Valores de todo el sistema que no se programan en el código. Los de la tabla son ejemplos: la lista definitiva se acuerda en la Etapa 3.</li>
-      <li>Se edita en línea: al guardar, el valor aplica desde ese momento.</li>
+      <li>Valores de todo el sistema que no se programan en el código. Los que el sistema lee llevan la marca "En uso por el sistema": su clave no se puede borrar y su valor se valida al guardar (p. ej. los rangos de notas deben ir en orden).</li>
+      <li>Se edita en línea: al guardar, el valor aplica desde ese momento y el cambio queda en la bitácora (SA-07). El super admin también puede crear parámetros nuevos.</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame short" data-role="super_admin" data-active="parameters" data-title="Parámetros globales" data-path="/parametros">
+        <div class="w-between"><span class="w-muted">5 parámetros · 4 en uso por el sistema</span><span class="w-btn">Nuevo parámetro</span></div>
         <div class="w-card">
           <table class="w-table">
-            <thead><tr><th style="width:28%">Parámetro</th><th style="width:26%">Valor</th><th>Descripción</th><th></th></tr></thead>
+            <thead><tr><th style="width:26%">Parámetro</th><th style="width:28%">Valor</th><th>Descripción</th><th>Acciones</th></tr></thead>
             <tbody>
-              <tr><td><b>Nombre de la institución</b></td><td>Universidad Popular del Cesar</td><td class="w-muted">Aparece en los correos y en los reportes.</td><td class="actions"><span class="w-btn ghost sm">Editar</span></td></tr>
-              <tr><td><b>Dominio del correo institucional</b></td><td><div class="w-input" style="height:30px">unicesar.edu.co</div></td><td class="w-muted">Único dominio aceptado al registrarse con un código.</td><td class="actions"><span class="w-btn sm">Guardar</span><span class="w-btn ghost sm">Cancelar</span></td></tr>
-              <tr><td><b>Tamaño máximo del .zip (MB)</b></td><td class="w-num">100</td><td class="w-muted">Límite de cada entrega del proyecto (ADR-015).</td><td class="actions"><span class="w-btn ghost sm">Editar</span></td></tr>
-              <tr><td><b>Tamaño máximo de la presentación (MB)</b></td><td class="w-num">30</td><td class="w-muted">Límite del .pdf, .docx o .pptx de la sustentación.</td><td class="actions"><span class="w-btn ghost sm">Editar</span></td></tr>
+              <tr><td><code>report.passing-percentage</code><div><span class="w-chip soft">En uso por el sistema</span></div></td><td class="w-num">60</td><td class="w-muted">Porcentaje mínimo sobre el puntaje máximo del momento para aprobar.</td><td class="actions"><span class="w-btn ghost sm">Editar</span></td></tr>
+              <tr><td><code>report.grade-bands</code><div><span class="w-chip soft">En uso por el sistema</span></div></td><td><div class="w-input" style="height:30px">Bajo:0;Básico:60;Alto:76;Sobresaliente:90</div></td><td class="w-muted">Rangos de la distribución de notas por porcentaje del puntaje máximo.</td><td class="actions"><span class="w-btn sm">Guardar</span><span class="w-btn ghost sm">Cancelar</span></td></tr>
+              <tr><td><code>submission.max-versions</code><div><span class="w-chip soft">En uso por el sistema</span></div></td><td class="w-num">20</td><td class="w-muted">Número máximo de versiones de entrega que puede subir un grupo en un momento.</td><td class="actions"><span class="w-btn ghost sm">Editar</span></td></tr>
+              <tr><td><code>privacy.policy-url</code><div><span class="w-chip soft">En uso por el sistema</span></div></td><td>https://www.unicesar.edu.co/…/politica-datos</td><td class="w-muted">Enlace de la política de tratamiento de datos que se muestra al registrarse y al crear la contraseña.</td><td class="actions"><span class="w-btn ghost sm">Editar</span></td></tr>
+              <tr><td><code>institution.name</code></td><td>Universidad Popular del Cesar</td><td class="w-muted">Nombre de la institución.</td><td class="actions"><span class="w-btn ghost sm">Editar</span></td></tr>
             </tbody>
           </table>
         </div>
@@ -179,6 +183,7 @@
     <ul class="wf-notes">
       <li>Una facultad puede tener varios administradores con los mismos permisos. La cuenta se crea sin contraseña: la persona recibe un correo para crearla (AU-03).</li>
       <li>"Reenviar enlace" manda uno nuevo; desactivar cierra sus sesiones. Nadie puede desactivar su propia cuenta.</li>
+      <li>"Editar" abre los datos de la cuenta (nombres, documento y correo); solo se guarda lo que cambia. Si cambia el correo, se cierran sus sesiones y entra con el nuevo. Los cambios quedan en la bitácora (SA-07).</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame" data-role="super_admin" data-active="admins" data-title="Administradores" data-path="/administradores">
@@ -190,9 +195,9 @@
           <table class="w-table">
             <thead><tr><th>Nombre</th><th>Correo</th><th>Facultad</th><th>Estado</th><th></th></tr></thead>
             <tbody>
-              <tr><td>Laura Mendoza</td><td>laura.mendoza@unicesar.edu.co</td><td>Ingenierías y Tecnologías</td><td><span class="w-chip solid">Activa</span></td><td class="actions"><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
-              <tr><td>Jorge Arias</td><td>jorge.arias@unicesar.edu.co</td><td>Ingenierías y Tecnologías</td><td><span class="w-chip solid">Activo</span></td><td class="actions"><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
-              <tr><td>Carmen Pérez</td><td>carmen.perez@unicesar.edu.co</td><td>Ciencias de la Salud</td><td><span class="w-chip">Inactiva</span></td><td class="actions"><span class="w-btn ghost sm">Activar</span></td></tr>
+              <tr><td>Laura Mendoza</td><td>laura.mendoza@unicesar.edu.co</td><td>Ingenierías y Tecnologías</td><td><span class="w-chip solid">Activa</span></td><td class="actions"><span class="w-btn ghost sm">Editar</span><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
+              <tr><td>Jorge Arias</td><td>jorge.arias@unicesar.edu.co</td><td>Ingenierías y Tecnologías</td><td><span class="w-chip solid">Activo</span></td><td class="actions"><span class="w-btn ghost sm">Editar</span><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
+              <tr><td>Carmen Pérez</td><td>carmen.perez@unicesar.edu.co</td><td>Ciencias de la Salud</td><td><span class="w-chip">Inactiva</span></td><td class="actions"><span class="w-btn ghost sm">Editar</span><span class="w-btn ghost sm">Reactivar</span></td></tr>
             </tbody>
           </table>
         </div>
@@ -212,6 +217,85 @@
             <div class="w-dialog-foot"><span class="w-btn outline">Cancelar</span><span class="w-btn">Crear y enviar enlace</span></div>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SA-06 -->
+  <section class="wf-screen" id="sa-06">
+    <div class="wf-caption"><span class="wf-code">SA-06</span><h2>Inicio del super admin</h2><span class="wf-ref">RF 11 · Etapa 8</span></div>
+    <ul class="wf-notes">
+      <li>Es la primera pantalla después de iniciar sesión (y el logo de SIERAP lleva a ella). Cada rol tiene su propio inicio: AD-12, DO-11, ES-06 y EV-03.</li>
+      <li>Resumen institucional: facultades, programas, periodo actual y los momentos del periodo de todas las facultades con su fase. "Estado del sistema" consulta el servidor y la base de datos.</li>
+      <li>Abajo, accesos rápidos a cada página del menú con lo que se hace en ella.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="super_admin" data-active="home" data-title="Inicio" data-path="/">
+        <div class="w-stack" style="gap:2px"><span class="w-muted w-small">Super administrador</span><span class="w-h1">Hola, Administrador</span><span class="w-sub">Este es el resumen institucional de SIERAP.</span></div>
+        <div class="w-grid-4">
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Facultades</span><b>6</b></div></div></div>
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Programas</span><b>24</b></div></div></div>
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Periodo actual</span><b>2026-2</b></div></div></div>
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Momentos del periodo</span><b>11</b></div></div></div>
+        </div>
+        <div class="w-grid-side" style="grid-template-columns:1fr 300px">
+          <div class="w-card">
+            <div class="w-card-head"><span class="w-h2">Momentos de todas las facultades</span></div>
+            <div class="w-card-body">
+              <div class="w-between w-link-row"><span><b>Momento 1 · Ingeniería de Sistemas</b><div class="w-muted w-small">Fac. de Ingenierías y Tecnologías</div></span><span class="w-chip solid">Calificación abierta · hasta el 28/11/2026</span></div>
+              <div class="w-between w-link-row"><span><b>Momento 1 · Ingeniería Electrónica</b><div class="w-muted w-small">Fac. de Ingenierías y Tecnologías</div></span><span class="w-chip">Entregas abiertas · hasta el 26/11/2026</span></div>
+              <div class="w-between w-link-row"><span><b>Momento 2 · Enfermería</b><div class="w-muted w-small">Fac. de Ciencias de la Salud</div></span><span class="w-chip dashed">En configuración</span></div>
+            </div>
+          </div>
+          <div class="w-card">
+            <div class="w-card-head"><span class="w-h2">Estado del sistema</span></div>
+            <div class="w-card-body"><div class="w-row"><span class="w-chip solid">✓ Servidor</span><span class="w-chip soft">✓ Base de datos</span></div><span class="w-muted w-small">El servidor y la base de datos responden.</span></div>
+          </div>
+        </div>
+        <span class="w-h2">Accesos rápidos</span>
+        <div class="w-grid-3">
+          <div class="w-card is-soft"><div class="w-card-body"><b>Facultades y programas</b><span class="w-muted w-small">Crea las facultades y sus programas.</span></div></div>
+          <div class="w-card is-soft"><div class="w-card-body"><b>Periodos académicos</b><span class="w-muted w-small">Abre periodos y fija el límite de evaluación de la UPC.</span></div></div>
+          <div class="w-card is-soft"><div class="w-card-body"><b>Bitácora</b><span class="w-muted w-small">Consulta las operaciones sensibles de todo el sistema.</span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SA-07 -->
+  <section class="wf-screen" id="sa-07">
+    <div class="wf-caption"><span class="wf-code">SA-07</span><h2>Bitácora de auditoría</h2><span class="wf-ref">RF 10, 11 · ADR-023 · Etapa 8</span></div>
+    <ul class="wf-notes">
+      <li>Registro inmutable de las operaciones sensibles: cuentas (crear, editar, activar, desactivar, semestre en lote), códigos de registro, lanzamiento y prórroga de momentos, parámetros, corrección de una evaluación enviada, grupos eliminados, integrantes retirados y evaluadores asignados o retirados.</li>
+      <li>El super admin ve todo; el admin de facultad ve solo lo de su facultad, con la misma pantalla. Nadie puede editar ni borrar registros.</li>
+      <li>Filtros combinables por tipo de acción, fechas y texto del resumen o del actor; la lista va paginada en el servidor.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="super_admin" data-active="audit" data-title="Bitácora" data-path="/bitacora">
+        <div class="w-card">
+          <div class="w-card-head"><div><span class="w-h2">Filtros</span><div class="w-muted w-small">Combina el tipo de hecho, las fechas y un texto del resumen o del nombre.</div></div></div>
+          <div class="w-card-body">
+            <div class="w-row" style="align-items:flex-end">
+              <div class="w-field" style="width:240px"><label>Acción</label><div class="w-input select">Todas las acciones</div></div>
+              <div class="w-field" style="width:150px"><label>Desde</label><div class="w-input">01/11/2026</div></div>
+              <div class="w-field" style="width:150px"><label>Hasta</label><div class="w-input">24/11/2026</div></div>
+              <div class="w-field" style="flex:1"><label>Buscar</label><div class="w-input is-empty">Texto del resumen o del actor</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="w-card">
+          <table class="w-table">
+            <thead><tr><th style="width:150px">Fecha</th><th style="width:190px">Actor</th><th style="width:190px">Acción</th><th>Resumen</th></tr></thead>
+            <tbody>
+              <tr><td class="w-num">24/11/2026 10:42</td><td>Laura Mendoza</td><td><span class="w-chip">Prórroga de momento</span></td><td>Momento 1 · Ingeniería Electrónica: entregas del 20/11 al 22/11 y calificación del 26/11 al 28/11. Motivo: corte de energía en el bloque de laboratorios.</td></tr>
+              <tr><td class="w-num">23/11/2026 16:05</td><td>Marta Díaz</td><td><span class="w-chip">Evaluación corregida</span></td><td>Grupo 1 · SIERAP: corrigió su evaluación enviada.</td></tr>
+              <tr><td class="w-num">22/11/2026 09:18</td><td>Marta Díaz</td><td><span class="w-chip">Semestre en lote</span></td><td>Fijó el semestre 3 a 18 estudiantes.</td></tr>
+              <tr><td class="w-num">21/11/2026 18:30</td><td>Administrador SIERAP</td><td><span class="w-chip">Parámetro cambiado</span></td><td>submission.max-versions: 10 → 20.</td></tr>
+              <tr><td class="w-num">21/11/2026 07:00</td><td>Juan Rojas</td><td><span class="w-chip">Cuenta creada</span></td><td>Juan Rojas (estudiante) se registró con el código K7MQ4TZP.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="w-between"><span class="w-muted w-small">Página 2 de 7 · 312 registros</span><div class="w-row"><span class="w-btn outline sm">Anterior</span><span class="w-btn outline sm">Siguiente</span></div></div>
       </div>
     </div>
   </section>

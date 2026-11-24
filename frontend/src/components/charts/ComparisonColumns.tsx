@@ -10,7 +10,7 @@ const TICKS = [100, 75, 50, 25, 0]
 
 /**
  * Columnas agrupadas para comparar dos periodos en una escala de 0 a 100 % (wireframe
- * AD-08). El periodo base (`labelA`) va en gris y el que se compara (`labelB`) en el
+ * AD-10). El periodo base (`labelA`) va en gris y el que se compara (`labelB`) en el
  * color principal, con su leyenda. Al pasar el puntero o enfocar una categoría se leen
  * los dos valores; la tabla que acompaña a la gráfica los muestra siempre. Se dibuja con
  * HTML y Tailwind, sin librería de gráficas.

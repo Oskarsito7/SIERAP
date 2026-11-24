@@ -6,7 +6,7 @@
 <title>SIERAP · Admin</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="wireframes.css">
 <style>
   .chart { display: grid; grid-template-columns: 40px 1fr; gap: 8px; }
@@ -29,7 +29,7 @@
   <header class="wf-header">
     <span class="wf-eyebrow">SIERAP · Wireframes de media fidelidad</span>
     <h1>Admin de facultad</h1>
-    <p>Crea y configura los momentos de los programas de su facultad en cada periodo (RAP, criterios, niveles con puntaje, integrantes, ventanas y pesos de la nota), los lanza cuando los grupos están formados y crea a los docentes (RF 10). Solo ve su facultad.</p>
+    <p>Crea y configura los momentos de los programas de su facultad en cada periodo (RAP, criterios, niveles con puntaje, integrantes, ventanas y pesos de la nota), los lanza cuando los grupos están formados, prorroga sus fechas en casos excepcionales, crea y edita a los docentes, consulta los reportes y la bitácora (RF 10, 12). Solo ve su facultad.</p>
     <nav class="wf-roles" aria-label="Roles">
       <a href="index.html">Inicio</a>
       <a href="acceso.html">Acceso</a>
@@ -47,7 +47,12 @@
       <li><a href="#ad-05"><code>AD-05</code>Grupos y lanzamiento</a></li>
       <li><a href="#ad-06"><code>AD-06</code>Docentes</a></li>
       <li><a href="#ad-07"><code>AD-07</code>Códigos de registro</a></li>
-      <li><a href="#ad-08"><code>AD-08</code>Reportes</a></li>
+      <li><a href="#ad-08"><code>AD-08</code>Reporte por momento</a></li>
+      <li><a href="#ad-09"><code>AD-09</code>Reporte grupal e individual</a></li>
+      <li><a href="#ad-10"><code>AD-10</code>Reporte comparativo</a></li>
+      <li><a href="#ad-11"><code>AD-11</code>Prórroga excepcional</a></li>
+      <li><a href="#ad-12"><code>AD-12</code>Inicio</a></li>
+      <li><a href="#ad-13"><code>AD-13</code>Bitácora</a></li>
     </ul>
   </header>
 
@@ -180,7 +185,8 @@
     <div class="wf-caption"><span class="wf-code">AD-04</span><h2>Configurar momento · Pesos de la nota</h2><span class="wf-ref">RF 10 · ADR-018 · Etapa 3</span></div>
     <ul class="wf-notes">
       <li>Un peso por tipo de evaluador: el docente del grupo y cada tipo activo del catálogo. Varios evaluadores del mismo tipo se promedian.</li>
-      <li>Si un grupo no tiene evaluación enviada de un tipo, su peso se reparte entre los demás en proporción. Pendiente en docs/04: si los pesos deben sumar 100 %.</li>
+      <li>Los pesos deben sumar 100 %: si no, el momento no se puede lanzar (AD-05). Si un grupo no tiene evaluación enviada de un tipo, su peso se reparte entre los demás en proporción.</li>
+      <li>La evaluación de un tipo de evaluador sin peso (o con 0 %) no cuenta en la nota; la pantalla de asignar evaluadores lo advierte (DO-03).</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame short" data-role="admin" data-active="moments" data-title="Momento 1 · Ingeniería de Sistemas" data-crumb="Momentos / 2026-2" data-path="/momentos/1/pesos">
@@ -217,19 +223,20 @@
     <div class="wf-caption"><span class="wf-code">AD-05</span><h2>Grupos y lanzamiento del momento</h2><span class="wf-ref">RF 10 · ADR-012 · Etapa 3</span></div>
     <ul class="wf-notes">
       <li>Lanzar bloquea la configuración y los integrantes y cierra la conformación, aunque su ventana no haya terminado.</li>
-      <li>Si hay grupos por debajo del mínimo, el sistema avisa y deja lanzar después de confirmar. Los estudiantes sin grupo los puede agregar su docente después.</li>
+      <li>Antes de lanzar se revisa el momento: no se puede si los pesos no suman 100 % o faltan RAP o ventanas. Si hay grupos por debajo del mínimo, el sistema avisa y deja lanzar después de confirmar. Los estudiantes sin grupo los puede agregar su docente después.</li>
+      <li>"Reasignar" pasa un grupo a otro docente activo de la facultad hasta que cierre la calificación, salvo que el docente actual ya haya enviado su evaluación (su borrador se descarta). Integrantes, entregas y evaluadores externos se quedan en el grupo.</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame" data-role="admin" data-active="moments" data-title="Momento 1 · Ingeniería de Sistemas" data-crumb="Momentos / 2026-2" data-path="/momentos/1/grupos">
         <div class="w-tabs"><span>Datos y ventanas</span><span>RAP, criterios y niveles</span><span>Pesos de la nota</span><span class="is-active">Grupos</span></div>
         <div class="w-card">
           <table class="w-table">
-            <thead><tr><th>Grupo</th><th>Docente</th><th>Proyecto</th><th class="r">Integrantes</th><th>Estado</th></tr></thead>
+            <thead><tr><th>Grupo</th><th>Docente</th><th>Proyecto</th><th class="r">Integrantes</th><th>Estado</th><th>Acciones</th></tr></thead>
             <tbody>
-              <tr><td>Grupo 1</td><td>Marta Díaz</td><td>SIERAP</td><td class="r w-num">5 / 5</td><td><span class="w-chip soft">Completo</span></td></tr>
-              <tr><td>Grupo 2</td><td>Marta Díaz</td><td>Biblioteca digital</td><td class="r w-num">4 / 5</td><td><span class="w-chip">Listo</span></td></tr>
-              <tr><td>Grupo 3</td><td>Marta Díaz</td><td class="w-muted">Sin título</td><td class="r w-num">2 / 5</td><td><span class="w-chip dashed">Bajo el mínimo (3)</span></td></tr>
-              <tr><td>Grupo 4</td><td>Rafael Ospino</td><td>App de turnos</td><td class="r w-num">5 / 5</td><td><span class="w-chip soft">Completo</span></td></tr>
+              <tr><td>Grupo 1</td><td>Marta Díaz</td><td>SIERAP</td><td class="r w-num">5 / 5</td><td><span class="w-chip soft">Completo</span></td><td class="actions"><span class="w-btn ghost sm">Reasignar</span></td></tr>
+              <tr><td>Grupo 2</td><td>Marta Díaz</td><td>Biblioteca digital</td><td class="r w-num">4 / 5</td><td><span class="w-chip">Listo</span></td><td class="actions"><span class="w-btn ghost sm">Reasignar</span></td></tr>
+              <tr><td>Grupo 3</td><td>Marta Díaz</td><td class="w-muted">Sin título</td><td class="r w-num">2 / 5</td><td><span class="w-chip dashed">Bajo el mínimo (3)</span></td><td class="actions"><span class="w-btn ghost sm">Reasignar</span></td></tr>
+              <tr><td>Grupo 4</td><td>Rafael Ospino</td><td>App de turnos</td><td class="r w-num">5 / 5</td><td><span class="w-chip soft">Completo</span></td><td class="actions"><span class="w-btn ghost sm">Reasignar</span></td></tr>
             </tbody>
           </table>
         </div>
@@ -253,6 +260,7 @@
     <div class="wf-caption"><span class="wf-code">AD-06</span><h2>Docentes de la facultad</h2><span class="wf-ref">RF 10 · ADR-017 · Etapa 2</span></div>
     <ul class="wf-notes">
       <li>El admin crea a los docentes de su facultad; reciben el correo para crear su contraseña. Mismo formulario que SA-05, con la facultad ya fija.</li>
+      <li>"Editar" cambia los datos de la cuenta (nombres, documento y correo), como en SA-05; queda en la bitácora (AD-13).</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame short" data-role="admin" data-active="teachers" data-title="Docentes" data-crumb="Facultad de Ingenierías y Tecnologías" data-path="/docentes">
@@ -264,9 +272,9 @@
           <table class="w-table">
             <thead><tr><th>Nombre</th><th>Correo</th><th>Documento</th><th class="r">Grupos 2026-2</th><th>Estado</th><th></th></tr></thead>
             <tbody>
-              <tr><td>Marta Díaz</td><td>marta.diaz@unicesar.edu.co</td><td class="w-num">CC 49 777 123</td><td class="r w-num">3</td><td><span class="w-chip solid">Activa</span></td><td class="actions"><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
-              <tr><td>Rafael Ospino</td><td>rafael.ospino@unicesar.edu.co</td><td class="w-num">CC 12 345 678</td><td class="r w-num">2</td><td><span class="w-chip solid">Activo</span></td><td class="actions"><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
-              <tr><td>Diana Quintero</td><td>diana.quintero@unicesar.edu.co</td><td class="w-num">CC 36 555 010</td><td class="r w-num">0</td><td><span class="w-chip solid">Activa</span></td><td class="actions"><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
+              <tr><td>Marta Díaz</td><td>marta.diaz@unicesar.edu.co</td><td class="w-num">CC 49 777 123</td><td class="r w-num">3</td><td><span class="w-chip solid">Activa</span></td><td class="actions"><span class="w-btn ghost sm">Editar</span><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
+              <tr><td>Rafael Ospino</td><td>rafael.ospino@unicesar.edu.co</td><td class="w-num">CC 12 345 678</td><td class="r w-num">2</td><td><span class="w-chip solid">Activo</span></td><td class="actions"><span class="w-btn ghost sm">Editar</span><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
+              <tr><td>Diana Quintero</td><td>diana.quintero@unicesar.edu.co</td><td class="w-num">CC 36 555 010</td><td class="r w-num">0</td><td><span class="w-chip solid">Activa</span></td><td class="actions"><span class="w-btn ghost sm">Editar</span><span class="w-btn ghost sm">Reenviar enlace</span><span class="w-btn ghost sm">Desactivar</span></td></tr>
             </tbody>
           </table>
         </div>
@@ -279,6 +287,7 @@
     <div class="wf-caption"><span class="wf-code">AD-07</span><h2>Códigos de registro (a nombre de un docente)</h2><span class="wf-ref">RF 7, 10 · ADR-017 · Etapa 2</span></div>
     <ul class="wf-notes">
       <li>Es la misma página del docente (DO-10) con un selector de docente: el código queda a nombre de ese docente y de un programa de la facultad.</li>
+      <li>La lista va paginada en el servidor ("Mostrando 1–50 de 320") cuando hay muchos códigos.</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame" data-role="admin" data-active="codes" data-title="Códigos de registro" data-crumb="Facultad de Ingenierías y Tecnologías" data-path="/codigos">
@@ -295,6 +304,7 @@
             </tbody>
           </table>
         </div>
+        <div class="w-between"><span class="w-muted w-small">Mostrando 1–2 de 2</span><div class="w-row"><span class="w-btn outline sm is-disabled">Anterior</span><span class="w-btn outline sm is-disabled">Siguiente</span></div></div>
         <div class="w-dim">
           <div class="w-dialog">
             <div class="w-dialog-head"><span class="w-h2">Generar código de registro</span><span class="w-sub">Los estudiantes que lo usen quedan en el programa elegido y en la lista del docente.</span></div>
@@ -312,24 +322,112 @@
 
   <!-- AD-08 -->
   <section class="wf-screen" id="ad-08">
-    <div class="wf-caption"><span class="wf-code">AD-08</span><h2>Reportes (preliminar)</h2><span class="wf-ref">RF 12 · Etapa 7</span></div>
+    <div class="wf-caption"><span class="wf-code">AD-08</span><h2>Reportes · por momento</h2><span class="wf-ref">RF 12 · ADR-020 · Etapa 7</span></div>
     <ul class="wf-notes">
-      <li>Boceto de la Etapa 7: reportes individuales, grupales y comparativos. Se detalla al llegar a esa etapa.</li>
-      <li>El comparativo muestra el desempeño promedio por RAP (porcentaje de su máximo) entre dos periodos. Pendiente en docs/04: si hay que anonimizar datos.</li>
+      <li>Cuatro reportes: por momento, grupal (AD-09), individual (AD-09) y comparativo (AD-10). El admin ve los de su facultad, el super admin los de todas (con filtro de facultad) y el docente los de sus grupos (DO-07).</li>
+      <li>Por momento: nota promedio, aprobados, estudiantes calificados, mínimo y máximo, logro promedio por RAP, distribución de notas y detalle por RAP. El umbral de aprobación y las franjas salen de los parámetros globales (SA-03).</li>
+      <li>"Sábana en Excel" descarga las notas de todos los estudiantes del momento; "Informe en PDF" el reporte con el membrete de la UPC. "Imprimir o guardar como PDF" imprime la vista. Mientras la calificación esté abierta, el reporte se marca como vista previa.</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame" data-role="admin" data-active="reports" data-title="Reportes" data-crumb="Facultad de Ingenierías y Tecnologías" data-path="/reportes">
-        <div class="w-tabs"><span>Individual</span><span>Grupal</span><span class="is-active">Comparativo</span></div>
-        <div class="w-row">
-          <div class="w-input select" style="width:240px">Ingeniería de Sistemas</div>
-          <div class="w-input select" style="width:160px">Momento 1</div>
-          <div class="w-input select" style="width:130px">2026-1</div><span class="w-muted">frente a</span>
-          <div class="w-input select" style="width:130px">2026-2</div>
-          <span class="w-btn outline">Descargar</span>
+        <div class="w-between"><span class="w-sub">El desempeño por RAP de los momentos, grupos y estudiantes de tu facultad. Mientras la calificación esté abierta, las cifras son una vista previa.</span><span class="w-btn outline sm">Imprimir o guardar como PDF</span></div>
+        <div class="w-tabs"><span class="is-active">Por momento</span><span>Grupal</span><span>Individual</span><span>Comparativo</span></div>
+        <div class="w-between">
+          <div class="w-row"><div class="w-field" style="width:150px"><label>Periodo</label><div class="w-input select">2026-2</div></div><div class="w-field" style="width:300px"><label>Momento</label><div class="w-input select">Momento 1 · Ingeniería de Sistemas</div></div></div>
+          <div class="w-row"><span class="w-chip">Vista previa</span><span class="w-btn outline">Sábana en Excel</span><span class="w-btn outline">Informe en PDF</span></div>
+        </div>
+        <div class="w-grid-4">
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Nota promedio</span><b>3,84</b></div></div></div>
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Aprobados</span><b>38 / 42</b></div></div></div>
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Estudiantes calificados</span><b>42</b></div></div></div>
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Nota mínima y máxima</span><b>2,10 – 4,92</b></div></div></div>
+        </div>
+        <div class="w-grid-2" style="align-items:start">
+          <div class="w-card">
+            <div class="w-card-head"><div><span class="w-h2">Logro promedio por RAP</span><div class="w-muted w-small">Puntaje promedio sobre el máximo de cada RAP.</div></div></div>
+            <div class="w-card-body">
+              <div class="chart">
+                <div class="chart-axis"><span style="bottom:100%">100 %</span><span style="bottom:75%">75 %</span><span style="bottom:50%">50 %</span><span style="bottom:25%">25 %</span><span style="bottom:0">0 %</span></div>
+                <div class="chart-plot">
+                  <div class="chart-pair"><i class="b" style="height:78%"></i></div>
+                  <div class="chart-pair"><i class="b" style="height:71%"></i></div>
+                  <div class="chart-pair"><i class="b" style="height:66%"></i></div>
+                  <div class="chart-pair"><i class="b" style="height:69%"></i></div>
+                  <div class="chart-pair"><i class="b" style="height:74%"></i></div>
+                </div>
+              </div>
+              <div class="chart-labels"><span>RAP1</span><span>RAP2</span><span>RAP3</span><span>RAP4</span><span>RAP5</span></div>
+            </div>
+          </div>
+          <div class="w-card">
+            <div class="w-card-head"><div><span class="w-h2">Distribución de notas</span><div class="w-muted w-small">Estudiantes calificados en cada franja de la nota.</div></div></div>
+            <div class="w-card-body">
+              <table class="w-table">
+                <tr><td>Bajo</td><td style="width:60%"><div class="w-progress"><i style="width:10%"></i></div></td><td class="r w-num">4</td></tr>
+                <tr><td>Básico</td><td><div class="w-progress"><i style="width:29%"></i></div></td><td class="r w-num">12</td></tr>
+                <tr><td>Alto</td><td><div class="w-progress"><i style="width:40%"></i></div></td><td class="r w-num">17</td></tr>
+                <tr><td>Sobresaliente</td><td><div class="w-progress"><i style="width:21%"></i></div></td><td class="r w-num">9</td></tr>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AD-09 -->
+  <section class="wf-screen" id="ad-09">
+    <div class="wf-caption"><span class="wf-code">AD-09</span><h2>Reportes · grupal e individual</h2><span class="wf-ref">RF 12 · ADR-018, ADR-020 · Etapa 7</span></div>
+    <ul class="wf-notes">
+      <li>Grupal: nota del grupo, evaluaciones enviadas, logro del grupo por RAP y la nota de cada integrante (marcando quién tiene ajuste individual). "Acta en PDF" descarga el acta de evaluación del grupo.</li>
+      <li>Individual: se elige además el estudiante; muestra su nota, la del grupo y su puntaje por RAP frente al del grupo antes de los ajustes. "Boletín en PDF" descarga su boletín (el estudiante descarga el suyo en ES-04).</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="admin" data-active="reports" data-title="Reportes" data-crumb="Facultad de Ingenierías y Tecnologías" data-path="/reportes">
+        <div class="w-tabs"><span>Por momento</span><span class="is-active">Grupal</span><span>Individual</span><span>Comparativo</span></div>
+        <div class="w-between">
+          <div class="w-row"><div class="w-field" style="width:130px"><label>Periodo</label><div class="w-input select">2026-2</div></div><div class="w-field" style="width:280px"><label>Momento</label><div class="w-input select">Momento 1 · Ingeniería de Sistemas</div></div><div class="w-field" style="width:200px"><label>Grupo</label><div class="w-input select">Grupo 1 · SIERAP</div></div></div>
+          <div class="w-row"><span class="w-chip solid">Notas definitivas</span><span class="w-btn outline">Acta en PDF</span></div>
+        </div>
+        <div class="w-grid-3">
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Nota del grupo</span><b>4,51</b></div></div></div>
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Evaluaciones enviadas</span><b>3</b></div></div></div>
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Integrantes</span><b>5</b></div></div></div>
+        </div>
+        <div class="w-card">
+          <div class="w-card-head"><div><span class="w-h2">Integrantes</span><div class="w-muted w-small">Nota individual y logro de cada integrante en cada RAP.</div></div></div>
+          <table class="w-table">
+            <thead><tr><th>Código</th><th>Integrante</th><th class="r">RAP1</th><th class="r">RAP2</th><th class="r">RAP3</th><th class="r">RAP4</th><th class="r">RAP5</th><th class="r">Nota</th><th>Ajuste</th></tr></thead>
+            <tbody>
+              <tr><td class="w-num">20261001</td><td>Juan Rojas</td><td class="r w-num">100 %</td><td class="r w-num">90 %</td><td class="r w-num">80 %</td><td class="r w-num">90 %</td><td class="r w-num">86 %</td><td class="r w-num"><b>4,63</b></td><td><span class="w-chip soft">Con ajuste</span></td></tr>
+              <tr><td class="w-num">20261002</td><td>Ana Gómez</td><td class="r w-num">100 %</td><td class="r w-num">90 %</td><td class="r w-num">80 %</td><td class="r w-num">85 %</td><td class="r w-num">86 %</td><td class="r w-num"><b>4,51</b></td><td></td></tr>
+              <tr><td class="w-num">20261007</td><td>Luis Martínez</td><td class="r w-num">100 %</td><td class="r w-num">90 %</td><td class="r w-num">80 %</td><td class="r w-num">85 %</td><td class="r w-num">86 %</td><td class="r w-num"><b>4,51</b></td><td></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AD-10 -->
+  <section class="wf-screen" id="ad-10">
+    <div class="wf-caption"><span class="wf-code">AD-10</span><h2>Reportes · comparativo entre periodos</h2><span class="wf-ref">RF 12 · Etapa 7</span></div>
+    <ul class="wf-notes">
+      <li>Compara el mismo momento de un programa en dos periodos: desempeño promedio por RAP (porcentaje de su máximo), cambio por RAP en puntos porcentuales y distribución de notas.</li>
+      <li>Solo cifras agregadas: sin nombres, códigos ni filas por estudiante. Hacen falta al menos dos periodos académicos.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame" data-role="admin" data-active="reports" data-title="Reportes" data-crumb="Facultad de Ingenierías y Tecnologías" data-path="/reportes">
+        <div class="w-tabs"><span>Por momento</span><span>Grupal</span><span>Individual</span><span class="is-active">Comparativo</span></div>
+        <div class="w-row" style="align-items:flex-end">
+          <div class="w-field" style="width:240px"><label>Programa</label><div class="w-input select">Ingeniería de Sistemas</div></div>
+          <div class="w-field" style="width:160px"><label>Momento</label><div class="w-input select">Momento 1</div></div>
+          <div class="w-field" style="width:130px"><label>Periodo base</label><div class="w-input select">2026-1</div></div>
+          <div class="w-field" style="width:130px"><label>Frente a</label><div class="w-input select">2026-2</div></div>
         </div>
         <div class="w-grid-side" style="grid-template-columns:1fr 360px">
           <div class="w-card">
-            <div class="w-card-head"><span class="w-h2">Desempeño promedio por RAP</span><div class="legend"><span><i style="background:var(--w-line-strong)"></i>2026-1</span><span><i style="background:var(--w-dark)"></i>2026-2</span></div></div>
+            <div class="w-card-head"><div><span class="w-h2">Desempeño promedio por RAP</span><div class="w-muted w-small">Logro promedio de cada RAP sobre su máximo.</div></div><div class="legend"><span><i style="background:var(--w-line-strong)"></i>2026-1</span><span><i style="background:var(--w-dark)"></i>2026-2</span></div></div>
             <div class="w-card-body">
               <div class="chart">
                 <div class="chart-axis"><span style="bottom:100%">100 %</span><span style="bottom:75%">75 %</span><span style="bottom:50%">50 %</span><span style="bottom:25%">25 %</span><span style="bottom:0">0 %</span></div>
@@ -345,6 +443,7 @@
             </div>
           </div>
           <div class="w-card">
+            <div class="w-card-head"><div><span class="w-h2">Cambio por RAP</span><div class="w-muted w-small">En puntos porcentuales.</div></div></div>
             <table class="w-table">
               <thead><tr><th>RAP</th><th class="r">2026-1</th><th class="r">2026-2</th><th class="r">Cambio</th></tr></thead>
               <tbody>
@@ -357,6 +456,89 @@
             </table>
           </div>
         </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AD-11 -->
+  <section class="wf-screen" id="ad-11">
+    <div class="wf-caption"><span class="wf-code">AD-11</span><h2>Prórroga excepcional de un momento lanzado</h2><span class="wf-ref">RF 10 · ADR-012, ADR-023 · Etapa 8</span></div>
+    <ul class="wf-notes">
+      <li>Excepción a ADR-012: con el momento ya lanzado, el admin (o el super admin) puede ampliar el fin de las entregas y/o el de la calificación. Las fechas solo crecen, no pasan del límite de la UPC y mantienen el orden de las ventanas; nunca se mueve el inicio de una ventana que ya empezó.</li>
+      <li>El motivo es obligatorio (10 a 500 caracteres). Se confirma en un diálogo y queda en la bitácora con las fechas anteriores y las nuevas (AD-13).</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame short" data-role="admin" data-active="moments" data-title="Momento 1 · Ingeniería Electrónica" data-crumb="Momentos / 2026-2" data-path="/momentos/3">
+        <div class="w-row"><span class="w-chip solid">Lanzado</span><span class="w-muted">Circuitos I · semestres 1 a 4 · grupos de 3 a 5 · la configuración ya no se edita</span></div>
+        <div class="w-tabs"><span class="is-active">Datos y ventanas</span><span>RAP, criterios y niveles</span><span>Pesos de la nota</span><span>Grupos</span></div>
+        <div class="w-card">
+          <div class="w-card-head"><div><span class="w-h2">Prórroga excepcional</span><div class="w-muted w-small" style="max-width:820px">Excepción para un momento ya lanzado: solo se puede ampliar el fin de las entregas y el de la calificación, sin pasar del límite de la UPC (28/11/2026). Queda en la bitácora con el motivo.</div></div></div>
+          <div class="w-card-body">
+            <div class="w-grid-2">
+              <div class="w-field"><label>Fin de entregas actual</label><span>20/11/2026</span></div>
+              <div class="w-field"><label>Fin de calificación actual</label><span>26/11/2026</span></div>
+              <div class="w-field"><label>Nuevo fin de entregas</label><div class="w-input">22/11/2026</div></div>
+              <div class="w-field"><label>Nuevo fin de calificación</label><div class="w-input">28/11/2026</div></div>
+            </div>
+            <div class="w-field"><label>Motivo</label><div class="w-input" style="height:64px;align-items:flex-start;padding-top:8px">Corte de energía en el bloque de laboratorios el 19 y 20 de noviembre.</div></div>
+            <span class="w-btn" style="align-self:flex-start">Prorrogar fechas</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AD-12 -->
+  <section class="wf-screen" id="ad-12">
+    <div class="wf-caption"><span class="wf-code">AD-12</span><h2>Inicio del admin de facultad</h2><span class="wf-ref">RF 10 · Etapa 8</span></div>
+    <ul class="wf-notes">
+      <li>Cómo van los momentos de los programas de su facultad en el periodo actual: cuántos hay, cuántos siguen en configuración (aún no se lanzan) y cuántos están en curso, con la fase de cada uno.</li>
+      <li>Debajo, los accesos rápidos a las páginas de su menú (como en SA-06).</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame short" data-role="admin" data-active="home" data-title="Inicio" data-crumb="Facultad de Ingenierías y Tecnologías" data-path="/">
+        <div class="w-stack" style="gap:2px"><span class="w-muted w-small">Administrador</span><span class="w-h1">Hola, Laura</span><span class="w-sub">Así van los momentos de los programas de tu facultad.</span></div>
+        <div class="w-grid-4">
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Periodo actual</span><b>2026-2</b></div></div></div>
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Momentos del periodo</span><b>5</b></div></div></div>
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>En configuración</span><b>1</b><span>Aún no se lanzan</span></div></div></div>
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>En curso</span><b>4</b></div></div></div>
+        </div>
+        <div class="w-card">
+          <div class="w-card-head"><span class="w-h2">Momentos de la facultad</span></div>
+          <div class="w-card-body">
+            <div class="w-between w-link-row"><span><b>Momento 1 · Ingeniería de Sistemas</b><div class="w-muted w-small">9 grupos</div></span><span class="w-chip solid">Calificación abierta · hasta el 28/11/2026</span></div>
+            <div class="w-between w-link-row"><span><b>Momento 1 · Ingeniería Electrónica</b><div class="w-muted w-small">7 grupos</div></span><span class="w-chip">Entregas abiertas · hasta el 22/11/2026</span></div>
+            <div class="w-between w-link-row"><span><b>Momento 2 · Ingeniería de Sistemas</b><div class="w-muted w-small">0 grupos</div></span><span class="w-chip dashed">En configuración</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AD-13 -->
+  <section class="wf-screen" id="ad-13">
+    <div class="wf-caption"><span class="wf-code">AD-13</span><h2>Bitácora de la facultad</h2><span class="wf-ref">RF 10 · ADR-023 · Etapa 8</span></div>
+    <ul class="wf-notes">
+      <li>Es la misma pantalla del super admin (SA-07), limitada a lo que ocurre en su facultad: sus momentos, grupos, docentes, estudiantes y códigos. Los cambios de parámetros globales no aparecen.</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame short" data-role="admin" data-active="audit" data-title="Bitácora" data-crumb="Facultad de Ingenierías y Tecnologías" data-path="/bitacora">
+        <div class="w-row" style="align-items:flex-end">
+          <div class="w-field" style="width:240px"><label>Acción</label><div class="w-input select">Prórroga de momento</div></div>
+          <div class="w-field" style="width:150px"><label>Desde</label><div class="w-input is-empty">dd/mm/aaaa</div></div>
+          <div class="w-field" style="width:150px"><label>Hasta</label><div class="w-input is-empty">dd/mm/aaaa</div></div>
+          <div class="w-field" style="flex:1"><label>Buscar</label><div class="w-input is-empty">Texto del resumen o del actor</div></div>
+        </div>
+        <div class="w-card">
+          <table class="w-table">
+            <thead><tr><th style="width:150px">Fecha</th><th style="width:170px">Actor</th><th style="width:190px">Acción</th><th>Resumen</th></tr></thead>
+            <tbody>
+              <tr><td class="w-num">24/11/2026 10:42</td><td>Laura Mendoza</td><td><span class="w-chip">Prórroga de momento</span></td><td>Momento 1 · Ingeniería Electrónica: entregas del 20/11 al 22/11 y calificación del 26/11 al 28/11. Motivo: corte de energía en el bloque de laboratorios.</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="w-between"><span class="w-muted w-small">Página 1 de 1 · 1 registro</span><div class="w-row"><span class="w-btn outline sm is-disabled">Anterior</span><span class="w-btn outline sm is-disabled">Siguiente</span></div></div>
       </div>
     </div>
   </section>

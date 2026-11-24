@@ -6,7 +6,7 @@
 <title>SIERAP · Evaluador externo</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="wireframes.css">
 </head>
 <body>
@@ -27,6 +27,7 @@
     <ul class="wf-toc">
       <li><a href="#ev-01"><code>EV-01</code>Grupos asignados</a></li>
       <li><a href="#ev-02"><code>EV-02</code>Corregir una evaluación enviada</a></li>
+      <li><a href="#ev-03"><code>EV-03</code>Inicio</a></li>
     </ul>
   </header>
 
@@ -36,6 +37,7 @@
     <ul class="wf-notes">
       <li>Solo los grupos asignados, que pueden ser de varios docentes y programas. "Calificar" se habilita desde la fecha de evaluación del grupo.</li>
       <li>Ve la versión a calificar de cada grupo y su evaluación; no ve las evaluaciones de los demás.</li>
+      <li>Recibe un correo cuando un docente lo asigna a un grupo y recordatorios antes de la fecha de evaluación.</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame" data-role="external_evaluator" data-active="assigned" data-title="Grupos asignados" data-path="/asignados">
@@ -60,12 +62,13 @@
     <ul class="wf-notes">
       <li>Mismo formulario que DO-05. Una evaluación enviada se puede corregir hasta el cierre y sigue enviada, así que debe seguir completa.</li>
       <li>El evaluador externo también puede ajustar a un estudiante (DO-06); su evaluación pesa según su tipo.</li>
+      <li>Como en DO-05, el borrador se autoguarda, la presentación PDF se abre con "Ver presentación" y la corrección de una evaluación enviada queda en la bitácora.</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame" data-role="external_evaluator" data-active="assigned" data-title="Grupo 1 · SIERAP" data-crumb="Grupos asignados / Momento 1" data-path="/asignados/7">
         <div class="w-grid-side" style="grid-template-columns:1fr 300px">
           <div class="w-stack">
-            <div class="w-alert"><b>Se califica la v3 (14/11/2026, a tiempo)</b><span class="w-small"><span class="w-link">Descargar la v3</span> · <span class="w-link">Descargar la presentación</span></span></div>
+            <div class="w-alert"><b>Se califica la v3 (14/11/2026, a tiempo)</b><div class="w-row"><span class="w-btn outline sm">Descargar la v3</span><span class="w-btn outline sm">Descargar la presentación</span><span class="w-btn outline sm">Ver presentación</span></div></div>
             <div class="w-card">
               <div class="w-card-head"><div><span class="w-h2">RAP5</span><span class="w-muted w-small"> · EMPRENDE aplicando ciencia, tecnología e innovación… · máx. 1,40</span></div><span class="w-chip soft">2 de 2</span></div>
               <div class="w-card-body">
@@ -108,6 +111,31 @@
               </table>
               <div class="w-card-body"><span class="w-help">y 2 integrantes más</span></div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EV-03 -->
+  <section class="wf-screen" id="ev-03">
+    <div class="wf-caption"><span class="wf-code">EV-03</span><h2>Inicio del evaluador externo</h2><span class="wf-ref">RF 5, 6 · Etapa 8</span></div>
+    <ul class="wf-notes">
+      <li>Sus grupos asignados, cuántos tiene por calificar y cuántas evaluaciones envió. Los pendientes van ordenados por fecha de sustentación; cada fila lleva a la calificación (EV-02).</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame short" data-role="external_evaluator" data-active="home" data-title="Inicio" data-path="/">
+        <div class="w-stack" style="gap:2px"><span class="w-muted w-small">Evaluador externo</span><span class="w-h1">Hola, Sofía</span><span class="w-sub">Gracias por apoyar la evaluación de los proyectos de aula de la UPC.</span></div>
+        <div class="w-grid-3">
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Grupos asignados</span><b>3</b></div></div></div>
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Por calificar</span><b>2</b></div></div></div>
+          <div class="w-card"><div class="w-card-body"><div class="w-kpi"><span>Evaluaciones enviadas</span><b>1</b></div></div></div>
+        </div>
+        <div class="w-card">
+          <div class="w-card-head"><div><span class="w-h2">Pendientes por calificar</span><div class="w-muted w-small">Ordenados por fecha de sustentación. Puedes calificar desde esa fecha hasta que cierre la calificación.</div></div></div>
+          <div class="w-card-body">
+            <div class="w-between w-link-row"><span><b>Grupo 1 · SIERAP</b><div class="w-muted w-small">Momento 1 · Docente: Marta Díaz · Sustentación el 24/11/2026</div></span><span class="w-chip">Borrador</span></div>
+            <div class="w-between w-link-row"><span><b>Grupo 4 · App de turnos</b><div class="w-muted w-small">Momento 1 · Docente: Rafael Ospino · Sustentación el 26/11/2026</div></span></div>
           </div>
         </div>
       </div>

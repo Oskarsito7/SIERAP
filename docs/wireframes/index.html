@@ -6,7 +6,7 @@
 <title>Wireframes de SIERAP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="wireframes.css">
 <style>
   .hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
@@ -35,7 +35,7 @@
   <header class="wf-header">
     <span class="wf-eyebrow">SIERAP · Diseño de GUI · Momento 1</span>
     <h1>Wireframes de SIERAP</h1>
-    <p>Pantallas de media fidelidad para los cinco roles del sistema, en escala de grises y con componentes al estilo shadcn/ui (ADR-006), para que el equipo las implemente casi tal cual. Siguen las decisiones de <code>docs/04</code> y el contrato de la API de <code>docs/07</code>. Los datos son de ejemplo, con el Momento 1 real de Ingeniería de Sistemas (5 RAP, 8 criterios, máximo 5,00).</p>
+    <p>Pantallas de media fidelidad para los cinco roles del sistema, con la identidad institucional de la UPC del frontend (colores, logosímbolos y tipografías, ADR-019) y componentes al estilo shadcn/ui (ADR-006), para que el equipo las implemente casi tal cual. Siguen las decisiones de <code>docs/04</code> y el contrato de la API de <code>docs/07</code>. Los datos son de ejemplo, con el Momento 1 real de Ingeniería de Sistemas (5 RAP, 8 criterios, máximo 5,00).</p>
     <nav class="wf-roles" aria-label="Roles">
       <a href="index.html" aria-current="page">Inicio</a>
       <a href="acceso.html">Acceso</a>
@@ -53,11 +53,11 @@
       <div class="flow">
         <div><b>1. Configuración</b><span>Admin y docentes</span><a href="admin.html#ad-02"><code>AD-02</code>Datos y ventanas</a><a href="admin.html#ad-03"><code>AD-03</code>RAP y criterios</a><a href="admin.html#ad-04"><code>AD-04</code>Pesos</a><a href="docente.html#do-01"><code>DO-01</code>Habilitar grupos</a><a href="docente.html#do-03"><code>DO-03</code>Evaluadores</a></div>
         <div><b>2. Conformación</b><span>Estudiantes</span><a href="estudiante.html#es-01"><code>ES-01</code>Grupos del momento</a><a href="estudiante.html#es-02"><code>ES-02</code>Cambiar de grupo</a></div>
-        <div><b>3. Lanzamiento</b><span>Admin</span><a href="admin.html#ad-05"><code>AD-05</code>Lanzar momento</a></div>
-        <div><b>4. Entregas</b><span>Estudiantes</span><a href="estudiante.html#es-03"><code>ES-03</code>Subir versiones</a><a href="docente.html#do-04"><code>DO-04</code>Ver entregas</a></div>
+        <div><b>3. Lanzamiento</b><span>Admin</span><a href="admin.html#ad-05"><code>AD-05</code>Lanzar momento</a><a href="admin.html#ad-11"><code>AD-11</code>Prórroga excepcional</a></div>
+        <div><b>4. Entregas</b><span>Estudiantes</span><a href="estudiante.html#es-03"><code>ES-03</code>Subir versiones</a><a href="docente.html#do-04"><code>DO-04</code>Ver entregas</a><a href="docente.html#do-12"><code>DO-12</code>Cargar estudiantes</a></div>
         <div><b>5. Calificación</b><span>Docente y externos</span><a href="docente.html#do-05"><code>DO-05</code>Calificar</a><a href="docente.html#do-06"><code>DO-06</code>Ajuste individual</a><a href="evaluador-externo.html#ev-01"><code>EV-01</code>Asignados</a></div>
         <div><b>6. Cierre</b><span>Notas definitivas</span><a href="docente.html#do-07"><code>DO-07</code>Resultados</a><a href="estudiante.html#es-04"><code>ES-04</code>Mis notas</a></div>
-        <div><b>7. Reportes</b><span>Admin y docentes</span><a href="admin.html#ad-08"><code>AD-08</code>Comparativo</a></div>
+        <div><b>7. Reportes</b><span>Admin, super admin y docentes</span><a href="admin.html#ad-08"><code>AD-08</code>Por momento</a><a href="admin.html#ad-09"><code>AD-09</code>Grupal e individual</a><a href="admin.html#ad-10"><code>AD-10</code>Comparativo</a></div>
       </div>
     </div>
   </section>
@@ -79,19 +79,21 @@
         </ul>
       </article>
       <article class="hub-card">
-        <div class="wf-caption"><h2><a href="super-admin.html">Super admin</a></h2><span class="hub-count">5 pantallas</span></div>
-        <p>Lo que comparte toda la universidad (RF 11).</p>
+        <div class="wf-caption"><h2><a href="super-admin.html">Super admin</a></h2><span class="hub-count">7 pantallas</span></div>
+        <p>Lo que comparte toda la universidad, los reportes de todas las facultades y la bitácora (RF 11, 12).</p>
         <ul>
           <li><a href="super-admin.html#sa-01"><code>SA-01</code>Facultades y programas</a></li>
           <li><a href="super-admin.html#sa-02"><code>SA-02</code>Periodos académicos</a></li>
           <li><a href="super-admin.html#sa-03"><code>SA-03</code>Parámetros globales</a></li>
           <li><a href="super-admin.html#sa-04"><code>SA-04</code>Tipos de evaluador</a></li>
           <li><a href="super-admin.html#sa-05"><code>SA-05</code>Administradores</a></li>
+          <li><a href="super-admin.html#sa-06"><code>SA-06</code>Inicio</a></li>
+          <li><a href="super-admin.html#sa-07"><code>SA-07</code>Bitácora</a></li>
         </ul>
       </article>
       <article class="hub-card">
-        <div class="wf-caption"><h2><a href="admin.html">Admin de facultad</a></h2><span class="hub-count">8 pantallas</span></div>
-        <p>Momentos de su facultad, lanzamiento y docentes (RF 10, 12).</p>
+        <div class="wf-caption"><h2><a href="admin.html">Admin de facultad</a></h2><span class="hub-count">13 pantallas</span></div>
+        <p>Momentos de su facultad, lanzamiento y prórroga, docentes, reportes y bitácora (RF 10, 12).</p>
         <ul>
           <li><a href="admin.html#ad-01"><code>AD-01</code>Momentos</a></li>
           <li><a href="admin.html#ad-02"><code>AD-02</code>Datos y ventanas</a></li>
@@ -100,11 +102,16 @@
           <li><a href="admin.html#ad-05"><code>AD-05</code>Grupos y lanzamiento</a></li>
           <li><a href="admin.html#ad-06"><code>AD-06</code>Docentes</a></li>
           <li><a href="admin.html#ad-07"><code>AD-07</code>Códigos de registro</a></li>
-          <li><a href="admin.html#ad-08"><code>AD-08</code>Reportes (preliminar)</a></li>
+          <li><a href="admin.html#ad-08"><code>AD-08</code>Reporte por momento</a></li>
+          <li><a href="admin.html#ad-09"><code>AD-09</code>Reporte grupal e individual</a></li>
+          <li><a href="admin.html#ad-10"><code>AD-10</code>Reporte comparativo</a></li>
+          <li><a href="admin.html#ad-11"><code>AD-11</code>Prórroga excepcional</a></li>
+          <li><a href="admin.html#ad-12"><code>AD-12</code>Inicio</a></li>
+          <li><a href="admin.html#ad-13"><code>AD-13</code>Bitácora</a></li>
         </ul>
       </article>
       <article class="hub-card">
-        <div class="wf-caption"><h2><a href="docente.html">Docente</a></h2><span class="hub-count">10 pantallas</span></div>
+        <div class="wf-caption"><h2><a href="docente.html">Docente</a></h2><span class="hub-count">12 pantallas</span></div>
         <p>Sus grupos, evaluadores, estudiantes y calificación (RF 4, 6 a 9).</p>
         <ul>
           <li><a href="docente.html#do-01"><code>DO-01</code>Mis grupos</a></li>
@@ -117,10 +124,12 @@
           <li><a href="docente.html#do-08"><code>DO-08</code>Mis estudiantes</a></li>
           <li><a href="docente.html#do-09"><code>DO-09</code>Evaluadores externos</a></li>
           <li><a href="docente.html#do-10"><code>DO-10</code>Códigos de registro</a></li>
+          <li><a href="docente.html#do-11"><code>DO-11</code>Inicio</a></li>
+          <li><a href="docente.html#do-12"><code>DO-12</code>Cargar estudiantes (CSV)</a></li>
         </ul>
       </article>
       <article class="hub-card">
-        <div class="wf-caption"><h2><a href="estudiante.html">Estudiante</a></h2><span class="hub-count">5 pantallas</span></div>
+        <div class="wf-caption"><h2><a href="estudiante.html">Estudiante</a></h2><span class="hub-count">6 pantallas</span></div>
         <p>Inscripción, entregas versionadas y notas (RF 1 a 4).</p>
         <ul>
           <li><a href="estudiante.html#es-01"><code>ES-01</code>Grupos del momento</a></li>
@@ -128,14 +137,16 @@
           <li><a href="estudiante.html#es-03"><code>ES-03</code>Mi grupo y entregas</a></li>
           <li><a href="estudiante.html#es-04"><code>ES-04</code>Mis notas</a></li>
           <li><a href="estudiante.html#es-05"><code>ES-05</code>Notas aún no disponibles</a></li>
+          <li><a href="estudiante.html#es-06"><code>ES-06</code>Inicio</a></li>
         </ul>
       </article>
       <article class="hub-card">
-        <div class="wf-caption"><h2><a href="evaluador-externo.html">Evaluador externo</a></h2><span class="hub-count">2 pantallas</span></div>
+        <div class="wf-caption"><h2><a href="evaluador-externo.html">Evaluador externo</a></h2><span class="hub-count">3 pantallas</span></div>
         <p>Solo sus grupos asignados (RF 5, 6). Usa el formulario DO-05.</p>
         <ul>
           <li><a href="evaluador-externo.html#ev-01"><code>EV-01</code>Grupos asignados</a></li>
           <li><a href="evaluador-externo.html#ev-02"><code>EV-02</code>Corregir evaluación</a></li>
+          <li><a href="evaluador-externo.html#ev-03"><code>EV-03</code>Inicio</a></li>
         </ul>
       </article>
     </div>
@@ -145,8 +156,9 @@
     <h2 id="read-title">Cómo leerlos</h2>
     <ul class="wf-notes" style="max-width:90ch">
       <li>Cada pantalla tiene un código (<code>DO-05</code>), los requerimientos y la etapa que la cubren, y las reglas que el frontend debe respetar.</li>
-      <li>El menú lateral de cada rol es el aprobado el 27/09/2026 (<code>docs/06</code>). Las opciones sin página todavía muestran AU-07.</li>
-      <li>Estados: fondo oscuro para lo activo o abierto; borde simple para lo neutro o cerrado; borde punteado para lo que requiere atención (tardío, bajo el mínimo, pendiente).</li>
+      <li>El menú lateral de cada rol es el aprobado el 27/09/2026 (<code>docs/06</code>), más Reportes para el super admin y Bitácora para el super admin y el admin, como en <code>roleMenus.ts</code>. Todas las opciones ya tienen página; AU-07 queda para secciones futuras.</li>
+      <li>Actualizados el 24/11/2026 con lo construido después de su aprobación: inicio por rol, bitácora, prórroga excepcional, consentimiento de datos, edición de cuentas, semestre en lote y carga CSV, paginación, reportes con exportación a Excel y PDF, autoguardado y visor de la presentación, filtros de grupos, avance y tope de las entregas y detalle por criterio en Mis notas.</li>
+      <li>Estados: verde institucional para lo activo o abierto; borde simple para lo neutro o cerrado; borde punteado para lo que requiere atención (tardío, bajo el mínimo, pendiente); naranja para las advertencias y rojo para los errores.</li>
       <li>Las imágenes para el documento de entrega se generan con <code>docs/wireframes/export-png.cjs</code>.</li>
     </ul>
   </section>

@@ -15,7 +15,7 @@ import { ReportCard, ReportTable } from './ReportParts'
 import { formatDelta, formatGrade, formatPercentage } from './reportFormat'
 
 /**
- * Reporte comparativo (wireframe AD-08): un periodo frente a otro, para el mismo
+ * Reporte comparativo (wireframe AD-10): un periodo frente a otro, para el mismo
  * programa y número de momento. Solo muestra cifras agregadas, nunca estudiantes.
  */
 export function ComparativeReport({
