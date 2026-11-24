@@ -1,10 +1,12 @@
 # Wireframes
 
 Medium-fidelity wireframes of every SIERAP screen, grouped by role: 48 screens in
-grayscale, with components that imitate shadcn/ui (ADR-006) so the frontend can build them
-almost as they are. D1 proposed them and the lead approved the format on 2026-09-28
-(`docs/04`, "GUI mockups"). They follow the decisions of `docs/04` and the API contract of
-`docs/07`. They were updated on 2026-11-24 with everything built after that approval
+the UPC institutional identity of the frontend (palette, logosymbols, Open Sans and
+Montserrat, ADR-019 amendment of 2026-11-24), with components that imitate shadcn/ui
+(ADR-006) so the frontend can build them almost as they are. The colors live in the frame
+tokens of `wireframes.css` and the logos in `img/`. D1 proposed them and the lead approved
+the format on 2026-09-28 (`docs/04`, "GUI mockups"). They follow the decisions of
+`docs/04` and the API contract of `docs/07`. They were updated on 2026-11-24 with everything built after that approval
 (home page per role, audit log, exceptional extension, data consent, account editing,
 bulk semester and CSV upload, pagination, reports with Excel and PDF export, autosave and
 the presentation viewer, group filters, upload progress and version limit, and the
@@ -25,6 +27,7 @@ Sistemas (5 RAP, 8 criteria, maximum 5.00); names, emails and figures are made u
 | `estudiante.html` | `ES-01`–`ES-06`: groups of the moment, switching groups, my group and submissions, my grades, home |
 | `evaluador-externo.html` | `EV-01`–`EV-03`: assigned groups, correcting a submitted evaluation, home |
 | `wireframes.css`, `wireframes.js` | Shared styles and the app shell (browser bar, sidebar with the approved menu of each role, top bar) |
+| `img/` | The white and color UPC logosymbols, copied from `frontend/src/assets/brand/` |
 | `export-png.cjs` | Exports every screen to `png/<code>.png` |
 | `png/` | The exported images, for the delivery document |
 

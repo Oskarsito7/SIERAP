@@ -6,7 +6,7 @@
 <title>Wireframes de SIERAP</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Source+Sans+3:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&family=Montserrat:wght@600;700&family=Open+Sans:wght@400;600;700&family=Source+Sans+3:wght@400;600;700&display=swap">
 <link rel="stylesheet" href="wireframes.css">
 <style>
   .hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
@@ -35,7 +35,7 @@
   <header class="wf-header">
     <span class="wf-eyebrow">SIERAP · Diseño de GUI · Momento 1</span>
     <h1>Wireframes de SIERAP</h1>
-    <p>Pantallas de media fidelidad para los cinco roles del sistema, en escala de grises y con componentes al estilo shadcn/ui (ADR-006), para que el equipo las implemente casi tal cual. Siguen las decisiones de <code>docs/04</code> y el contrato de la API de <code>docs/07</code>. Los datos son de ejemplo, con el Momento 1 real de Ingeniería de Sistemas (5 RAP, 8 criterios, máximo 5,00).</p>
+    <p>Pantallas de media fidelidad para los cinco roles del sistema, con la identidad institucional de la UPC del frontend (colores, logosímbolos y tipografías, ADR-019) y componentes al estilo shadcn/ui (ADR-006), para que el equipo las implemente casi tal cual. Siguen las decisiones de <code>docs/04</code> y el contrato de la API de <code>docs/07</code>. Los datos son de ejemplo, con el Momento 1 real de Ingeniería de Sistemas (5 RAP, 8 criterios, máximo 5,00).</p>
     <nav class="wf-roles" aria-label="Roles">
       <a href="index.html" aria-current="page">Inicio</a>
       <a href="acceso.html">Acceso</a>
@@ -158,7 +158,7 @@
       <li>Cada pantalla tiene un código (<code>DO-05</code>), los requerimientos y la etapa que la cubren, y las reglas que el frontend debe respetar.</li>
       <li>El menú lateral de cada rol es el aprobado el 27/09/2026 (<code>docs/06</code>), más Reportes para el super admin y Bitácora para el super admin y el admin, como en <code>roleMenus.ts</code>. Todas las opciones ya tienen página; AU-07 queda para secciones futuras.</li>
       <li>Actualizados el 24/11/2026 con lo construido después de su aprobación: inicio por rol, bitácora, prórroga excepcional, consentimiento de datos, edición de cuentas, semestre en lote y carga CSV, paginación, reportes con exportación a Excel y PDF, autoguardado y visor de la presentación, filtros de grupos, avance y tope de las entregas y detalle por criterio en Mis notas.</li>
-      <li>Estados: fondo oscuro para lo activo o abierto; borde simple para lo neutro o cerrado; borde punteado para lo que requiere atención (tardío, bajo el mínimo, pendiente).</li>
+      <li>Estados: verde institucional para lo activo o abierto; borde simple para lo neutro o cerrado; borde punteado para lo que requiere atención (tardío, bajo el mínimo, pendiente); naranja para las advertencias y rojo para los errores.</li>
       <li>Las imágenes para el documento de entrega se generan con <code>docs/wireframes/export-png.cjs</code>.</li>
     </ul>
   </section>

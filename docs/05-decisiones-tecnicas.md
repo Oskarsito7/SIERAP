@@ -673,6 +673,12 @@ component without hard-coding colors; changing a color means editing `index.css`
 The grayscale wireframes in `docs/wireframes/` stay as they are: they describe the
 structure, not the visual identity.
 
+**Amendment (2026-11-24):** at the team's request the wireframes now use the same
+identity as the frontend (the palette of `index.css`, the white and color logosymbols,
+Open Sans and Montserrat, the Verde 900 side menu with the yellow mark and the public
+header and footer), so the PNGs of the delivery document and the poster look like the
+real app. The colors live in the frame tokens of `docs/wireframes/wireframes.css`.
+
 ---
 
 ## ADR-020 — Exporting reports to Excel and PDF on the server
