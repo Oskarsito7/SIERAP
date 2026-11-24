@@ -103,6 +103,7 @@
     <ul class="wf-notes">
       <li>Sirve para las cuentas nuevas (enlace de 72 horas) y para recuperar la contraseña (1 hora). El enlace es de un solo uso.</li>
       <li>Si el enlace venció, se muestra el error y el botón para pedir uno nuevo (AU-02).</li>
+      <li>Las cuentas que creó otra persona (admin, docente o carga CSV) autorizan aquí, la primera vez, el tratamiento de sus datos personales (Ley 1581 de 2012). Sin la casilla no se guarda la contraseña; quien ya autorizó no la vuelve a ver.</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame short" data-path="/set-password?token=kzTC…">
@@ -112,6 +113,7 @@
             <p class="w-sub">La contraseña debe tener al menos 8 caracteres, con al menos una letra y un número.</p>
             <div class="w-field"><label>Contraseña nueva</label><div class="w-input">••••••••</div></div>
             <div class="w-field"><label>Confirmar contraseña nueva</label><div class="w-input">••••••••</div><span class="w-error">Las contraseñas no coinciden.</span></div>
+            <div class="w-row" style="align-items:flex-start"><span class="w-check on"></span><span class="w-small">Autorizo a la Universidad Popular del Cesar el tratamiento de mis datos personales según la <span class="w-link">Política de tratamiento de datos</span> (Ley 1581 de 2012).</span></div>
             <span class="w-btn block">Guardar contraseña</span>
           </div></div>
         </div>
@@ -125,6 +127,7 @@
     <ul class="wf-notes">
       <li>El código lo comparte el docente; el estudiante queda en el programa del código. Solo se acepta el correo institucional.</li>
       <li>Al registrarse recibe el enlace de AU-03 para crear su contraseña.</li>
+      <li>La autorización del tratamiento de datos personales es obligatoria. El enlace a la política aparece si el super admin configuró su URL (parámetro <code>privacy.policy-url</code>, SA-03); si no, el texto va sin enlace.</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame" data-path="/register">
@@ -144,6 +147,8 @@
               <div class="w-field"><label>Código estudiantil</label><div class="w-input">20261001</div></div>
               <div class="w-field"><label>Semestre actual</label><div class="w-input">2</div></div>
             </div>
+            <div class="w-row" style="align-items:flex-start"><span class="w-check"></span><span class="w-small">Autorizo a la Universidad Popular del Cesar el tratamiento de mis datos personales según la <span class="w-link">Política de tratamiento de datos</span> (Ley 1581 de 2012).</span></div>
+            <span class="w-error">Debes autorizar el tratamiento de tus datos personales para registrarte.</span>
             <span class="w-btn block">Registrarme</span>
             <span class="w-link w-small">Ya tengo cuenta: iniciar sesión</span>
           </div></div>

@@ -196,6 +196,13 @@ a { color: inherit; }
 .w-stack { display: flex; flex-direction: column; gap: 12px; }
 .w-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 .w-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.w-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+/* Fila de una lista que lleva a otra página (inicio de cada rol). */
+.w-link-row { border: 1px solid var(--w-line); border-radius: 6px; padding: 8px 12px; }
+.w-link-row::after { content: "›"; color: var(--w-muted); margin-left: 4px; }
+/* Barra de avance (subida de archivos). */
+.w-progress { height: 8px; border-radius: 999px; background: var(--w-line); overflow: hidden; }
+.w-progress i { display: block; height: 100%; background: var(--w-dark); }
 .w-grid-side { display: grid; grid-template-columns: 1fr 320px; gap: 18px; align-items: start; }
 
 .w-card { border: 1px solid var(--w-line); border-radius: 10px; background: var(--w-bg); }

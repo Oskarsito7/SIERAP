@@ -35,6 +35,7 @@
       <li><a href="#es-03"><code>ES-03</code>Mi grupo y entregas</a></li>
       <li><a href="#es-04"><code>ES-04</code>Mis notas</a></li>
       <li><a href="#es-05"><code>ES-05</code>Notas aún no disponibles</a></li>
+      <li><a href="#es-06"><code>ES-06</code>Inicio</a></li>
     </ul>
   </header>
 
@@ -44,6 +45,7 @@
     <ul class="wf-notes">
       <li>Solo ve los momentos de su programa cuyo rango de semestres incluye su semestre actual, con los grupos de todos los docentes.</li>
       <li>De los otros grupos ve solo el nombre de los integrantes. Se inscribe, sale o cambia mientras la conformación está abierta; un grupo lleno no acepta más.</li>
+      <li>Puede filtrar por docente y ocultar los grupos completos para encontrar cupo más rápido.</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame" data-role="student" data-active="moment" data-title="Grupos del momento" data-crumb="Ingeniería de Sistemas · 2026-2" data-path="/momento">
@@ -53,6 +55,7 @@
             <div class="w-row"><span class="w-chip solid">Conformación abierta hasta el 24/08/2026</span><span class="w-chip">Estás en el Grupo 1</span></div>
           </div>
         </div></div>
+        <div class="w-row" style="align-items:flex-end"><div class="w-field" style="width:260px"><label>Docente</label><div class="w-input select">Todos los docentes</div></div><div class="w-row" style="height:38px"><span class="w-check"></span><span>Ocultar grupos completos</span></div></div>
         <div class="w-grid-3">
           <div class="w-card is-mine"><div class="w-card-body">
             <div class="w-between"><span class="w-h2">Grupo 1</span><span class="w-chip solid">Mi grupo</span></div>
@@ -108,6 +111,8 @@
     <ul class="wf-notes">
       <li>Los integrantes escriben el título del proyecto hasta que cierra la ventana de entregas.</li>
       <li>Cada versión lleva el .zip (hasta 100 MB); la presentación (.pdf, .docx o .pptx, hasta 30 MB) es opcional. Después de la fecha límite del grupo se acepta, pero se marca como tardía; al cerrar la ventana ya no se reciben.</li>
+      <li>Los archivos se arrastran o se eligen. Durante la subida se ve el avance y se puede cancelar: los archivos siguen elegidos para intentarlo de nuevo. Al subir, los integrantes reciben un correo de constancia.</li>
+      <li>Cada grupo tiene un tope de versiones por momento (parámetro <code>submission.max-versions</code>, SA-03; cuenta también las tardías). Al llegar al tope ya no se puede subir más.</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame" data-role="student" data-active="mygroup" data-title="Mi grupo y entregas" data-crumb="Momento 1 · 2026-2" data-path="/mi-grupo">
@@ -116,14 +121,13 @@
             <div class="w-card">
               <div class="w-card-head"><span class="w-h2">Subir una versión nueva</span><span class="w-chip solid">Entregas abiertas hasta el 20/11</span></div>
               <div class="w-card-body">
+                <span class="w-muted w-small">Tu grupo ha subido 3 de 20 versiones permitidas.</span>
                 <div class="w-grid-2">
                   <div class="w-drop"><b>Proyecto (.zip)</b><span>Arrastra el archivo o haz clic · hasta 100 MB</span><span class="w-chip soft">sierap-v4.zip · 41 MB</span></div>
                   <div class="w-drop"><b>Presentación (opcional)</b><span>.pdf, .docx o .pptx · hasta 30 MB</span></div>
                 </div>
-                <div class="w-between">
-                  <span class="w-help">Será la versión 4. Tu fecha límite es el 15/11/2026: desde el 16/11 las versiones se marcan como tardías.</span>
-                  <span class="w-btn">Subir versión 4</span>
-                </div>
+                <span class="w-help">Será la versión 4. Tu fecha límite es el 15/11/2026: desde el 16/11 las versiones se marcan como tardías.</span>
+                <div class="w-stack" style="gap:4px"><div class="w-progress"><i style="width:62%"></i></div><div class="w-between"><span class="w-muted w-small">62 % · 25,4 MB de 41 MB</span><span class="w-btn outline sm">Cancelar subida</span></div></div>
               </div>
             </div>
             <div class="w-card">
@@ -164,6 +168,7 @@
     <ul class="wf-notes">
       <li>Aparecen al cerrar la ventana de calificación. La nota final es la individual; la grupal se muestra como referencia.</li>
       <li>Los comentarios se ven con el tipo de evaluador, sin su nombre, y sin el nivel que eligió cada uno.</li>
+      <li>"Ver criterios" despliega, en cada RAP, su puntaje consolidado en cada criterio (el que cuenta en su nota, combinando a todos los evaluadores). "Descargar mi boletín en PDF" baja el boletín individual con el membrete de la UPC.</li>
     </ul>
     <div class="wf-scroll">
       <div class="frame" data-role="student" data-active="grades" data-title="Mis notas" data-path="/notas">
@@ -174,6 +179,7 @@
               <div class="w-kpi"><b>4,63</b><span>Mi nota final · de 5,00</span></div>
               <div class="w-kpi"><b style="font-size:22px">4,51</b><span>Nota del Grupo 1 (SIERAP)</span></div>
               <span class="w-help">Tu nota es distinta a la del grupo porque un evaluador ajustó tu calificación en algún criterio.</span>
+              <span class="w-btn outline sm" style="align-self:flex-start">Descargar mi boletín en PDF</span>
             </div></div>
           </div>
           <div class="w-stack">
@@ -182,6 +188,13 @@
               <div class="w-card-body" style="gap:0">
                 <div class="rap-row"><b>RAP1</b><div class="w-bar"><i style="width:95%"></i></div><span class="w-num r">0,57 / 0,60</span></div>
                 <div class="rap-row"><b>RAP2</b><div class="w-bar"><i style="width:87.5%"></i></div><span class="w-num">1,05 / 1,20</span></div>
+                <div style="margin:2px 0 10px 64px;padding:10px 12px;border:1px solid var(--w-line);border-radius:6px" class="w-stack">
+                  <span class="w-small"><b>▾ Ver criterios</b> <span class="w-muted">· Es el puntaje que cuenta en tu nota, combinando a todos tus evaluadores.</span></span>
+                  <div class="w-between w-small"><span>Implementación de arquitectura por capas</span><span class="w-num">0,60 / 0,60</span></div>
+                  <div class="w-bar"><i style="width:100%"></i></div>
+                  <div class="w-between w-small"><span>Uso de técnicas generales de POO</span><span class="w-num">0,45 / 0,60</span></div>
+                  <div class="w-bar"><i style="width:75%"></i></div>
+                </div>
                 <div class="rap-row"><b>RAP3</b><div class="w-bar"><i style="width:80%"></i></div><span class="w-num">0,48 / 0,60</span></div>
                 <div class="rap-row"><b>RAP4</b><div class="w-bar"><i style="width:97.5%"></i></div><span class="w-num">1,17 / 1,20</span></div>
                 <div class="rap-row"><b>RAP5</b><div class="w-bar"><i style="width:97.1%"></i></div><span class="w-num">1,36 / 1,40</span></div>
@@ -213,6 +226,45 @@
             <div class="w-placeholder" style="width:64px;height:64px;border-radius:50%"></div>
             <h1 class="w-h1">Tus notas del Momento 1 aún no están listas</h1>
             <p class="w-sub">La calificación cierra el 28/11/2026. Desde el 29/11 verás tu nota final, tu desempeño por RAP y los comentarios de los evaluadores.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ES-06 -->
+  <section class="wf-screen" id="es-06">
+    <div class="wf-caption"><span class="wf-code">ES-06</span><h2>Inicio del estudiante</h2><span class="wf-ref">RF 2, 3, 4 · Etapa 8</span></div>
+    <ul class="wf-notes">
+      <li>Sus grupos del periodo con el proyecto, el docente y las fechas de entrega y sustentación; los momentos con la inscripción abierta en los que todavía le falta grupo, y el acceso a sus notas.</li>
+      <li>Recibe además recordatorios por correo antes de sus fechas (entrega y sustentación).</li>
+    </ul>
+    <div class="wf-scroll">
+      <div class="frame short" data-role="student" data-active="home" data-title="Inicio" data-crumb="Ingeniería de Sistemas · 2026-2" data-path="/">
+        <div class="w-stack" style="gap:2px"><span class="w-muted w-small">Estudiante</span><span class="w-h1">Hola, Juan</span><span class="w-sub">Aquí tienes tu grupo, tus entregas y tus fechas.</span></div>
+        <div class="w-grid-side" style="grid-template-columns:1fr 320px">
+          <div class="w-card">
+            <div class="w-card-head"><span class="w-h2">Mis grupos de este periodo</span></div>
+            <div class="w-card-body">
+              <b>Grupo 1 · Momento 1</b>
+              <table class="w-table">
+                <tr><td class="w-muted">Proyecto</td><td>SIERAP</td></tr>
+                <tr><td class="w-muted">Docente</td><td>Marta Díaz</td></tr>
+                <tr><td class="w-muted">Entrega hasta</td><td class="w-num">15/11/2026</td></tr>
+                <tr><td class="w-muted">Sustentación</td><td class="w-num">24/11/2026</td></tr>
+              </table>
+              <span class="w-btn outline sm" style="align-self:flex-start">Ver mi grupo</span>
+            </div>
+          </div>
+          <div class="w-stack">
+            <div class="w-card">
+              <div class="w-card-head"><span class="w-h2">Inscripción en grupos</span></div>
+              <div class="w-card-body"><span class="w-muted w-small">No hay momentos con la inscripción abierta en los que te falte grupo.</span></div>
+            </div>
+            <div class="w-card">
+              <div class="w-card-head"><span class="w-h2">Mis notas</span></div>
+              <div class="w-card-body"><div class="w-between w-link-row"><span><b>Ver mis notas por RAP</b><div class="w-muted w-small">Aparecen cuando cierra la calificación</div></span></div></div>
+            </div>
           </div>
         </div>
       </div>

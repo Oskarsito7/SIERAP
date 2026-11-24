@@ -2,7 +2,8 @@
  * SIERAP wireframes: builds the browser bar and the app shell of every frame.
  *
  * A frame with data-role gets the sidebar with that role's menu (approved by the lead
- * on 2026-09-27, docs/06), the top bar with the user and its content in the main area.
+ * on 2026-09-27, docs/06; Reports and Audit log were added later, as in roleMenus.ts),
+ * the top bar with the user and its content in the main area.
  * A frame without data-role (login, email links) only gets the browser bar.
  *
  *   <div class="frame" data-role="teacher" data-active="groups"
@@ -19,13 +20,16 @@
       ["periods", "Periodos académicos"],
       ["parameters", "Parámetros globales"],
       ["types", "Tipos de evaluador"],
-      ["admins", "Administradores"]
+      ["admins", "Administradores"],
+      ["reports", "Reportes"],
+      ["audit", "Bitácora"]
     ],
     admin: [
       ["moments", "Momentos"],
       ["teachers", "Docentes"],
       ["codes", "Códigos de registro"],
-      ["reports", "Reportes"]
+      ["reports", "Reportes"],
+      ["audit", "Bitácora"]
     ],
     teacher: [
       ["groups", "Mis grupos"],
