@@ -27,7 +27,7 @@ const TABS: { tab: ReportTab; label: string }[] = [
 ]
 
 /**
- * Reportes del super_admin, del admin y del docente (wireframe AD-08, RF 12): consolidado
+ * Reportes del super_admin, del admin y del docente (wireframes AD-08 a AD-10, RF 12): consolidado
  * de un momento, grupal, individual y comparativo entre dos periodos. Se ven en pantalla
  * con gráficas y tablas, y se imprimen (o se guardan como PDF) desde el navegador; la
  * exportación oficial a PDF o Excel queda para el Momento 2. El alcance lo

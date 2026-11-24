@@ -927,7 +927,7 @@ the two periods, the other period's fields (`averageScore`, `maxScore`, `percent
 `deltaPercentage` are `null`. Because `maxScore` can change between periods (ADR-010), the
 comparison across periods is expressed as achievement percentage (`0–100 %`) and its
 change in percentage points (`deltaPercentage = percentageB - percentageA`, as shown in
-wireframe `AD-08`).
+wireframe `AD-10`).
 
 ```jsonc
 // ComparativeReportData
